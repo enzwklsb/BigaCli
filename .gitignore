@@ -1,0 +1,9 @@
+**/node_modules/
+cloudcli/dist/
+cloudcli/dist-server*/
+build/
+downloads/
+*.log
+.env
+**/auth.json
+**/*.db*

@@ -1,0 +1,32 @@
+name: Build release draft
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: cloudcli/package-lock.json
+      - name: Build CloudCLI source
+        working-directory: cloudcli
+        run: |
+          npm ci
+          npm run build
+      - name: Build BigaCli
+        run: node scripts/build.mjs
+      - name: Package
+        shell: pwsh
+        run: ./scripts/package.ps1 -NodeDirectory (Split-Path (Get-Command node).Source)
+      - name: Create draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version=(Get-Content release.json -Raw | ConvertFrom-Json).version
+          gh release create "v$version" --draft --target '${{ github.sha }}' --title "BigaCli $version" --notes-file "releases/$version.md" "build/$version/assets/*"

@@ -1,0 +1,1387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-visual">
+<title>Codex</title>
+<style>
+:root {
+  color-scheme: light;
+  font-size: 18px;
+  --bg: #f7f7f4;
+  --panel: #fff;
+  --card: #e4e4e7;
+  --text: #18181b;
+  --muted: #71717a;
+  --border: #18181b;
+  --border-subtle: #e4e4e7;
+  --border-focus: #18181b;
+  --accent: #18181b;
+  --accent-text: #fff;
+  --blue: #2456a6;
+  --danger: #b91c1c;
+  --danger-bg: #fff1f2;
+  --danger-border: #be123c;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 24px;
+  --font-mono: "JetBrains Mono", "Fira Code", Monaco, ui-monospace, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --app-height: 100dvh;
+  font-family: var(--font-sans);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; width: 100%; height: var(--app-height); overflow: hidden; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button, select { cursor: pointer; }
+button { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; background: var(--panel); font-size: 14px; font-weight: 700; transition: background .15s, transform .15s; }
+button:hover:not(:disabled) { background: var(--bg); }
+button:active:not(:disabled) { transform: scale(.97); }
+button.primary, .send { background: var(--text); color: #fff; }
+button.primary:hover:not(:disabled), .send:hover:not(:disabled) { background: #363639; }
+button.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger); }
+button:disabled, select:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+input, select, textarea { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); background: var(--panel); box-shadow: 0 0 0 1px var(--border); }
+input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--text); flex: 0 0 16px; }
+.hidden { display: none !important; }
+.small { font-size: 13px; color: var(--muted); line-height: 1.5; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #c4c4c8; border-radius: 4px; }
+
+/* 固定视口：只有消息区滚动，输入区随移动端可视高度布局。 */
+.app { width: 100%; max-width: 430px; height: 100%; margin: auto; border-inline: 2px solid var(--border); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.mainhead { background: var(--panel); border-bottom: 1px solid var(--border); padding: max(12px, env(safe-area-inset-top)) 14px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.menuBtn { width: 34px; height: 34px; flex: 0 0 34px; padding: 0; background: var(--bg); font-size: 16px; }
+.headText { min-width: 0; flex: 1; margin-left: 5px; }
+.headTitle { font-size: 16px; font-weight: 800; letter-spacing: -.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border: 1px solid var(--border); border-radius: 50%; }
+.dot.ok { background: var(--green); }
+.dot.busy { background: var(--yellow); }
+.dot.bad { background: var(--danger); }
+.headerActions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.headerActions button { height: 30px; padding: 0 7px; font-size: 12px; background: var(--bg); }
+.versionTags { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 11px var(--font-mono); white-space: nowrap; }
+#buildVersion { padding: 2px 6px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--bg); font-weight: 700; }
+#serverVersion { color: var(--muted); font-size: 10px; }
+.chat { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 16px; }
+.msg { margin: 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
+.msg.user { align-items: flex-end; }
+.bubble { line-height: 1.6; overflow-wrap: anywhere; font-size: 15px; min-width: 0; }
+.user .bubble { max-width: 85%; background: var(--panel); border: none; border-radius: 12px 12px 2px 12px; padding: 12px 14px; }
+.assistant .label { align-self: flex-start; border: 1.5px solid var(--border); background: var(--text); color: #fff; font: 800 12px var(--font-mono); padding: 3px 8px; border-radius: 4px; }
+.assistant .bubble { width: 100%; background: var(--panel); border: none; border-radius: 2px 12px 12px; padding: 14px; }
+.error .bubble { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-border); }
+.markdown p { margin: .6em 0; }
+.markdown p:first-child { margin-top: 0; }
+.markdown p:last-child { margin-bottom: 0; }
+.markdown h1, .markdown h2, .markdown h3 { margin: 1.2em 0 .5em; font-weight: 800; }
+.markdown h1 { font-size: 1.4em; } .markdown h2 { font-size: 1.25em; } .markdown h3 { font-size: 1.1em; }
+.markdown ul, .markdown ol { padding-left: 1.5em; margin: .5em 0; }
+.markdown li { margin-bottom: .3em; }
+.markdown blockquote { margin: 1em 0; padding-left: 12px; border-left: 3px solid var(--border-subtle); color: var(--muted); }
+.markdown code { background: var(--bg); padding: 2px 5px; border-radius: 4px; font: .9em var(--font-mono); }
+.markdown pre, .toolbox pre { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px; overflow-x: auto; font: 13px/1.6 var(--font-mono); }
+.markdown pre code { padding: 0; background: transparent; font: inherit; }
+.markdown a { color: var(--blue); text-underline-offset: 3px; }
+
+/* 沿用真实工具输出和 details 折叠交互。 */
+.reasoning, .toolbox { margin: 0 0 12px; }
+.reasoning details, .toolbox details { background: var(--panel); border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.reasoning summary, .toolbox summary { cursor: pointer; display: flex; align-items: center; padding: 9px 12px; list-style: none; background: var(--bg); font: 800 13px var(--font-mono); }
+.reasoning summary::-webkit-details-marker, .toolbox summary::-webkit-details-marker { display: none; }
+.reasoning summary::before, .toolbox summary::before { content: "›"; font-size: 18px; margin-right: 8px; }
+.reasoning details[open] summary::before, .toolbox details[open] summary::before { transform: rotate(90deg); }
+.reasoning details[open] summary, .toolbox details[open] summary { border-bottom: 1.5px solid var(--border); }
+.reasoning .inner, .toolbox .inner { padding: 12px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.toolmeta { color: var(--muted); margin-left: 8px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toolbox pre { margin: 8px 0; }
+#permissionArea { flex-shrink: 0; max-height: 30%; overflow-y: auto; }
+.permission { margin: 12px; border: 1.5px solid var(--border); background: var(--panel); border-radius: var(--radius); padding: 12px; font-size: 14px; }
+.permission pre { max-height: 110px; overflow: auto; background: var(--bg); padding: 10px; font-size: 13px; }
+.permission .actions { display: flex; gap: 10px; }
+.permission .actions button { flex: 1; }
+.activity { display: none; flex-shrink: 0; padding: 8px 14px; border-top: 1px solid var(--border-subtle); background: var(--bg); }
+.activity .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 13px var(--font-mono); }
+.activity .bar > div { min-width: 0; overflow-wrap: anywhere; }
+.activity .dot { margin-right: 6px; }
+#stopBtn { flex-shrink: 0; }
+.composer { background: var(--panel); border-top: 1px solid var(--border); padding: 12px 14px calc(26px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+.providerGate { border: 1.5px solid var(--border); background: var(--bg); border-radius: var(--radius); padding: 10px; display: flex; align-items: center; gap: 10px; }
+.gateText { min-width: 0; flex: 1; font-size: 14px; line-height: 1.5; }
+.providerGate button { flex-shrink: 0; padding: 8px; }
+.inputShell { position: relative; background: transparent; }
+
+#input { display: block; width: 100%; height: 56px; min-height: 56px; max-height: 50dvh; resize: none; border: none; border-radius: 0; background: transparent; font-size: 15px; line-height: 1.6; padding: 10px 0; box-shadow: none; overflow-y: auto; }
+#input:focus { border: none; background: transparent; box-shadow: none; outline: none; }
+.attachmentList { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; max-height: 96px; }
+.attachmentChip { display: flex; align-items: center; flex-shrink: 0; gap: 6px; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 4px 8px; font-size: 13px; }
+.attachmentChip span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachmentChip button { border: none; padding: 4px; min-width: 30px; background: transparent; }
+.attachmentChip.imageChip { position: relative; border: none; padding: 0; width: 76px; height: 76px; }
+.imageChip .thumbnailButton { padding: 0; width: 76px; height: 76px; overflow: hidden; border-radius: 10px; }
+.thumbnailButton img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.imageChip .removeAttachment { position: absolute; right: 2px; top: 2px; min-width: 24px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: #18181bcc; color: white; }
+.imagePreview { position: fixed; inset: 0; z-index: 110; background: #000d; display: flex; align-items: center; justify-content: center; padding: 48px 16px; }
+.imagePreview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.imagePreview button { position: absolute; top: max(16px, env(safe-area-inset-top)); right: 16px; width: 44px; height: 44px; padding: 0; border: 1px solid #fff6; background: #18181b; color: white; border-radius: 50%; font-size: 24px; }
+.sentAttachments { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.composerStatus { display: flex; align-items: center; gap: 8px; padding: 8px 0 0; }
+.composerStatus svg { width: 21px; height: 21px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.iconEntry, .picker > summary { height: 44px; min-width: 44px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--panel); display: flex; align-items: center; justify-content: center; padding: 0 10px; }
+.picker { min-width: 0; }
+.modelPicker { flex: 1; max-width: 200px; }
+.picker > summary { cursor: pointer; list-style: none; gap: 6px; font-size: 13px; font-weight: 700; }
+.picker > summary::-webkit-details-marker { display: none; }
+.picker[open] > summary { border-color: var(--border); }
+#composerModelLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pickerChevron { flex-shrink: 0; color: var(--muted); }
+.pickerPanel { position: absolute; z-index: 35; bottom: calc(100% + 10px); left: 0; right: 0; max-height: min(55dvh, 360px); overflow-y: auto; padding: 16px; border: 1.5px solid var(--border); border-radius: 16px; background: var(--panel); box-shadow: 0 8px 24px #18181b18; }
+.pickerPanel label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.pickerPanel select { font-size: 16px; min-height: 44px; background: var(--bg); }
+.pickerPanel select + label { margin-top: 16px; }
+.pickerPanel .small { margin: 10px 0 0; font-size: 13px; }
+.send { height: 44px; min-width: 48px; margin-left: auto; padding: 0 12px; border-radius: 10px; flex-shrink: 0; }
+@media (max-height: 500px) {
+  #input { height: 56px; min-height: 56px; }
+  .composer { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+}
+
+/* 工作区抽屉与独立底部设置面板。 */
+.scrim, .settingsPane, .authModalBackdrop, .usageModalBackdrop { position: fixed; inset: 0; z-index: 39; background: rgba(0,0,0,.4); }
+.drawer { position: fixed; top: 0; left: max(0px, calc((100vw - 430px) / 2)); width: min(85vw, 365px); height: var(--app-height); z-index: 40; background: var(--bg); border-right: 2px solid var(--border); display: flex; flex-direction: column; transition: transform .25s, visibility .25s; }
+.drawer.hidden { display: flex !important; transform: translateX(-100%); visibility: hidden; pointer-events: none; }
+.drawerHead { padding: max(14px, env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border); flex-shrink: 0; }
+.brand { font-size: 18px; font-weight: 900; letter-spacing: -.5px; }
+#closeDrawer, #backSettings { width: 30px; height: 30px; padding: 0; background: var(--bg); }
+.drawerBody { flex: 1; min-height: 0; }
+.half { height: 100%; min-height: 0; display: flex; flex-direction: column; padding: 14px; }
+.sectionHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.sectionTitle { font: 800 12px var(--font-mono); color: var(--muted); letter-spacing: .8px; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.mother, .proj, .sess { margin: 0 0 8px; }
+.motherBtn, .projBtn, .sessBtn { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; }
+.motherBtn { padding: 7px 10px; font-family: var(--font-mono); }
+.grow { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta { font: 12px var(--font-mono); color: var(--muted); margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.motherBtn .grow { flex-direction: row; align-items: center; gap: 8px; }
+.motherBtn .meta { margin: 0; flex-shrink: 0; }
+.children { padding: 8px 0 0 8px; }
+.sessBtn { padding: 12px; border-color: var(--border-subtle); border-radius: var(--radius); }
+.sess.active .sessBtn, .proj.active .projBtn { border: 2px solid var(--border); border-left-width: 5px; }
+.chev { font-size: 18px; }
+.drawerFoot { padding: 12px 14px max(16px, env(safe-area-inset-bottom)); flex-shrink: 0; }
+.settingsBtn { width: 100%; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; border: 2px solid var(--border); border-radius: var(--radius); box-shadow: 0 2px 0 var(--border); font-size: 15px; font-weight: 800; }
+.settingsPane { z-index: 60; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); height: var(--app-height); bottom: auto; }
+.settingsCard { width: min(100%, 430px); max-height: 78%; display: flex; flex-direction: column; gap: 14px; background: var(--panel); border: 2px solid var(--border); border-bottom: none; border-radius: 24px 24px 0 0; padding: 12px 18px max(18px, env(safe-area-inset-bottom)); animation: sheetIn .25s ease; }
+@keyframes sheetIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.popupHandle { width: 36px; height: 5px; background: var(--border-subtle); border-radius: 3px; align-self: center; flex-shrink: 0; }
+.settingsHeader { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0; }
+.settingsHeader strong { font-size: 17px; font-weight: 900; }
+.settingsContent { overflow-y: auto; min-height: 0; }
+.settingsContent input:not([type=radio]) { margin-bottom: 10px; }
+.connectionSettings { margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px; }
+.connectionSettings summary { cursor: pointer; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.settingActions { display: flex; gap: 8px; }
+.settingActions button { flex: 1; }
+.accountSummary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border: 1.5px solid var(--border); border-radius: var(--radius); }
+.accountSummaryLabel { font-size: 12px; color: var(--muted); }
+.accountSummaryValue { font-size: 15px; font-weight: 800; margin-top: 3px; overflow-wrap: anywhere; }
+.accountModeBadge, .accountBadge { flex-shrink: 0; border-radius: 4px; padding: 2px 6px; background: var(--text); color: #fff; font-size: 11px; font-weight: 800; }
+.accountList { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.accountRow { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--border-subtle); padding: 12px 14px; border-radius: var(--radius); cursor: pointer; }
+.accountRow.selected { border: 2px solid var(--border); border-left-width: 5px; }
+.accountRow input { order: 2; }
+.accountMain { min-width: 0; flex: 1; }
+.accountTop { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.accountName { font-size: 14px; font-weight: 800; }
+.accountMeta { font: 12px/1.5 var(--font-mono); color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
+.accountActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#codexAddAccount { grid-column: 1 / -1; border-radius: var(--radius); padding: 11px; }
+.accountHelp { font-size: 12px; line-height: 1.5; color: var(--muted); margin-top: 8px; }
+#codexAccountMode { font: 700 13px var(--font-mono); background: var(--panel); border-radius: var(--radius); }
+.settingsDivider { height: 1px; background: var(--border-subtle); margin: 16px 0; }
+.systemNote { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px; background: var(--panel); font-size: 14px; line-height: 1.6; margin: 12px 0; }
+.recoveryAccounts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.recoveryAccounts label { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; cursor: pointer; }
+
+/* 额度及真实 OAuth 登录沿用原有入口。 */
+.authModalBackdrop, .usageModalBackdrop { z-index: 70; display: flex; align-items: center; justify-content: center; padding: 20px; height: var(--app-height); bottom: auto; backdrop-filter: blur(4px); }
+.usageModalBackdrop { z-index: 72; }
+.authModal, .usageModal { width: min(100%, 390px); max-height: 90%; overflow-y: auto; background: var(--panel); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+.authModalHead, .usageHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+.authModalTitle, .usageTitle { font-size: 17px; font-weight: 800; }
+#authModalClose, #usageClose { width: 28px; height: 28px; padding: 0; background: var(--bg); }
+.usageCard { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 12px 0; }
+.usageRow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.usageName { font-size: 14px; font-weight: 700; }
+.usagePct, .usageTokenBig { font: 800 24px var(--font-mono); }
+.usageBar { height: 6px; background: var(--border-subtle); border-radius: 4px; overflow: hidden; margin: 12px 0; }
+.usageFill { height: 100%; width: 0; background: var(--text); transition: width .3s; }
+.usageMeta { font: 12px/1.5 var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
+.authCodeBig { font: 800 32px var(--font-mono); letter-spacing: 5px; text-align: center; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px 8px; margin: 16px 0; overflow-wrap: anywhere; }
+#deviceAuthUrl { color: var(--blue); }
+.authModalActions, .usageActions { display: flex; gap: 10px; margin-top: 18px; }
+.toast { position: fixed; z-index: 100; left: 50%; transform: translateX(-50%); bottom: 130px; max-width: calc(100% - 32px); padding: 10px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--text); color: #fff; font-size: 14px; display: none; }
+@media (pointer: coarse) {
+  .settingsContent input:not([type=radio]), .settingsContent select { font-size: 18px; }
+}
+@media (max-width: 360px) {
+  .mainhead { padding-inline: 10px; gap: 6px; }
+  .headerActions { gap: 4px; }
+  .chat { padding: 12px; }
+  .composer { padding-inline: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.messageMeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.messageTime { color: var(--muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+.reasoning .messageTime, .toolbox .messageTime { display: block; margin-bottom: 5px; }
+.hideToolDetails .toolbox { display: none; }
+.historyMore { width: 100%; padding: 10px; margin: 0 0 12px; border: none; background: transparent; color: var(--muted); font-size: 12px; }
+.settingsTabs { display: flex; gap: 8px; flex-shrink: 0; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; }
+.settingsTabs button { flex: 1; border-color: var(--border-subtle); }
+.settingsTabs button[aria-selected="true"] { background: var(--text); color: white; border-color: var(--text); }
+.replyPreference { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
+.replyPreference input { width: 20px; height: 20px; flex-shrink: 0; margin: 0 !important; accent-color: var(--text); }
+.assistant.commentary .bubble { background: transparent; padding: 4px 0; color: var(--muted); font-size: 14px; }
+.assistant.commentary .label { background: transparent; border: none; color: var(--muted); padding: 0; }
+.assistant.finalAnswer .label { background: var(--text); color: white; }
+.assistant.planMessage .label { background: var(--bg); color: var(--text); }
+.reasoning details { background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 12px; }
+.reasoning summary { background: transparent; font-family: var(--font-sans); font-size: 13px; color: var(--muted); gap: 8px; }
+.reasoning summary strong { white-space: nowrap; }
+.reasoningPreview { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.reasoning details[open] .reasoningPreview { display: none; }
+.reasoning details[open] summary { border-bottom: 1px solid var(--border-subtle); }
+.replyLegend { padding: 12px 0; border-top: 1px solid var(--border-subtle); margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区">☰</button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><div class="headerActions"><div class="versionTags"><span id="buildVersion">v21</span><span id="serverVersion">S v?</span></div><button id="reloadBtn">刷新</button></div></div>
+  <div id="permissionArea"></div>
+  <div id="chat" class="chat"><div class="small">登录后选择项目和 Session。</div></div>
+
+  <div id="activity" class="activity">
+    <div class="bar">
+      <div><span class="dot busy"></span><span id="activityText">Thinking…</span> <span id="elapsed" class="small">0s</span></div>
+      <button id="stopBtn" class="danger" style="padding:6px 10px">Stop</button>
+    </div>
+  </div>
+
+  <div class="composer">
+    <div id="providerGate" class="providerGate hidden">
+      <div id="providerGateText" class="gateText"></div>
+      <button id="providerGateLogin" class="primary">去登录</button>
+    </div>
+    <div class="inputShell">
+      <input id="attachmentInput" type="file" multiple hidden>
+      <div id="attachmentList" class="attachmentList hidden"></div>
+      <textarea aria-label="消息" id="input" placeholder="输入给 Codex 的消息…" disabled></textarea>
+      <div class="composerStatus">
+        <button id="attachmentBtn" class="iconEntry" aria-label="添加文件或图片" title="添加文件或图片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button id="usageBtn" class="iconEntry" aria-label="查看额度与用量" title="额度与用量"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 18a9 9 0 1 1 15.6 0"/><path d="m12 12 4-4M5 15h2m10 0h2M12 3v2"/><circle cx="12" cy="12" r="1.5"/></svg></button>
+        <details id="modelPicker" class="picker modelPicker">
+          <summary aria-label="选择模型与思考深度"><span id="composerModelLabel">模型 / 思考</span><span class="pickerChevron" aria-hidden="true">⌃</span></summary>
+          <div class="pickerPanel">
+            <label for="modelSelect">模型</label><select id="modelSelect" disabled><option>模型</option></select>
+            <label for="effortSelect">思考深度</label><select id="effortSelect" disabled><option>思考深度</option></select>
+          </div>
+        </details>
+        <details id="permissionPicker" class="picker">
+          <summary aria-label="选择权限模式" title="权限模式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></summary>
+          <div class="pickerPanel">
+            <label for="permissionSelect">权限模式</label><select id="permissionSelect" disabled><option>权限</option></select>
+            <p class="small">设置当前对话的操作权限。</p>
+          </div>
+        </details>
+        <button id="sendBtn" class="send" aria-label="发送消息" title="发送" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v15"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="scrim" class="scrim hidden"></div>
+<aside id="drawer" class="drawer hidden" aria-label="工作区与对话">
+  <div class="drawerHead"><div class="brand">WORKSPACES</div><button id="closeDrawer" aria-label="关闭工作区">✕</button></div>
+  <div id="drawerMain" class="drawerBody"><section class="half"><div class="sectionHead"><span class="sectionTitle">工作树 / 对话</span></div><div id="projectTree" class="scroll"><div class="small">加载中…</div></div></section></div>
+  <div class="drawerFoot"><button id="settingsBtn" class="settingsBtn"><span>⚙ 账号 &amp; 系统配置</span><span aria-hidden="true">›</span></button></div>
+</aside>
+<div id="settingsPane" class="settingsPane hidden">
+  <section class="settingsCard" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="popupHandle" aria-hidden="true"></div>
+    <div class="settingsHeader"><strong id="settingsTitle">CONFIG &amp; ACCOUNTS</strong><button id="backSettings" aria-label="关闭设置">✕</button></div>
+    <div class="settingsTabs" role="tablist" aria-label="设置分类"><button id="accountsTab" role="tab" aria-selected="true" aria-controls="accountsPanel">账号</button><button id="replyTab" role="tab" aria-selected="false" aria-controls="replyPanel">回复偏好</button></div>
+    <div class="settingsContent">
+<div id="accountsPanel" role="tabpanel" aria-labelledby="accountsTab">
+<div class="sectionHead"><span class="sectionTitle">Codex 账号</span><button id="refreshCodexAuth" style="padding:5px 9px;font-size: 14px">刷新</button></div>
+<div class="accountSummary"><div style="min-width:0"><div class="accountSummaryLabel">当前对话使用</div><div id="codexCurrentAccount" class="accountSummaryValue">未选择对话</div></div><span id="codexModeBadge" class="accountModeBadge">手动</span></div>
+<div id="codexAuthStatus" class="small hidden">未检查</div><div id="codexAuthMode" class="small" style="margin-bottom:6px;color:#777"></div>
+<div id="codexAccountList" class="accountList"></div>
+<div class="accountActions"><button id="codexAddAccount" class="primary">＋ 添加账号</button><button id="codexDeleteAccount">删除</button><button id="codexSelectAccount">选中</button></div>
+<div class="settingsDivider"></div>
+<label class="small">额度耗尽后的处理</label><select id="codexAccountMode" style="width:100%;margin-top:5px"><option value="manual">手动选择其他账号</option><option value="auto">自动选择并继续</option></select>
+<div class="accountHelp">任务运行中不能切换账号。只有明确检测到 Codex 额度耗尽时，自动模式才会切换账号并继续任务。</div>
+
+      <details id="connectionSettings" class="connectionSettings" open><summary>连接设置</summary>
+<input id="baseUrl" type="hidden" value="">
+<input id="username" placeholder="账号" autocomplete="username">
+<input id="password" type="password" placeholder="密码" autocomplete="current-password">
+<div class="settingActions"><button id="loginBtn" class="primary">登录</button><button id="registerBtn">首次注册</button><button id="testBtn">测试</button></div>
+<div id="settingsStatus" class="small" style="margin-top:10px"></div>
+
+      </details>
+</div>
+<div id="replyPanel" class="hidden" role="tabpanel" aria-labelledby="replyTab"><label class="replyPreference"><input id="showToolDetails" type="checkbox"><span>显示工具调用与处理详情</span></label><p class="small">默认隐藏 exec、命令、补丁及工具输出。只改变页面显示，不影响任务执行、正文回复和权限确认。</p><div class="replyLegend">进度说明：弱化显示，便于快速略过。<br>思考摘要：默认折叠，点击查看。<br>最终答复：白底正文，优先阅读。<br>普通回复：历史记录未提供明确阶段时保留原样。</div></div>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast" role="status"></div>
+<div id="imagePreview" class="imagePreview hidden" role="dialog" aria-modal="true" aria-label="图片预览">
+  <img id="previewImage" alt="">
+  <button id="closeImagePreview" aria-label="关闭图片预览">×</button>
+</div>
+<div id="usageBox" class="usageModalBackdrop hidden">
+  <div class="usageModal" role="dialog" aria-modal="true" aria-labelledby="usageTitle">
+    <div class="usageHead">
+      <div id="usageTitle" class="usageTitle">Codex 用量</div>
+      <button id="usageClose" aria-label="关闭">✕</button>
+    </div>
+    <div id="usageError" class="small hidden" style="margin-bottom:8px"></div>
+
+    <div class="usageCard">
+      <div class="usageRow"><span class="usageName">5小时额度</span><span id="quota5Pct" class="usagePct">--</span></div>
+      <div class="usageBar"><div id="quota5Bar" class="usageFill"></div></div>
+      <div id="quota5Meta" class="usageMeta">等待 Codex 返回…</div>
+    </div>
+
+    <div class="usageCard">
+      <div class="usageRow"><span class="usageName">7天额度</span><span id="quota7Pct" class="usagePct">--</span></div>
+      <div class="usageBar"><div id="quota7Bar" class="usageFill"></div></div>
+      <div id="quota7Meta" class="usageMeta">等待 Codex 返回…</div>
+    </div>
+
+    <div class="usageCard">
+      <div class="usageName">当前对话 Token / Context</div>
+      <div id="tokenUsageBig" class="usageTokenBig" style="margin-top:7px">--</div>
+      <div id="tokenUsageMeta" class="usageMeta" style="margin-top:5px">选择 Codex 对话后显示</div>
+    </div>
+
+    <div class="usageActions">
+      <button id="usageRefresh" class="primary">刷新</button>
+      <button id="usageDone">关闭</button>
+    </div>
+  </div>
+</div>
+<div id="deviceAuthBox" class="authModalBackdrop hidden">
+  <div class="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <div class="authModalHead">
+      <div id="authModalTitle" class="authModalTitle">Codex 登录</div>
+      <button id="authModalClose" aria-label="关闭">✕</button>
+    </div>
+    <div id="authFlowHint" class="small">正在准备 Codex 登录…</div>
+    <a id="deviceAuthUrl" target="_blank" rel="noopener" style="display:block;margin:9px 0;word-break:break-all;color:var(--blue)"></a>
+    <div id="authCodeLabel" class="small" style="text-align:center;margin-top:12px">验证码</div>
+    <div id="deviceAuthCode" class="authCodeBig"></div>
+    <button id="openDeviceAuth" class="primary" style="width:100%">打开 Codex 验证页面</button>
+    <div id="deviceAuthState" class="small" style="margin-top:10px;text-align:center"></div>
+    <div class="authModalActions">
+      <button id="codexCancelBtn" class="hidden">取消登录</button>
+      <button id="authModalDone">关闭</button>
+    </div>
+  </div>
+</div>
+<script>
+/* 保留业务逻辑；界面滚动与面板交互适配新布局。 */
+const $=id=>document.getElementById(id);
+const TOKEN_KEY='cloudcli_token_v2',BASE_KEY='cloudcli_base_v2';
+let ws=null,currentProject=null,currentSession=null,currentProvider='codex',allProjects=[],allRecent=[];
+let lastSeq=new Map(),processing=false,activityStartedAt=0,elapsedTimer=null,streamingEl=null;
+let providerModels=null,providerCapabilities=null,currentModel='',currentEffort='default',currentPermission='default';
+const toolNodes=new Map();
+let codexAccounts=[],selectedCodexAccountId='default',currentSessionAccountConfig={mode:'manual',currentAccountId:'default',preferredAccountId:'default'},pendingAccountLimit=null,pendingAddedAccountId=null,pendingAccountCleanup=false;
+const recoveryTriedAccounts=new Map();
+
+function base(){return location.origin}
+function token(){return localStorage.getItem(TOKEN_KEY)||''}
+function setStatus(t,s='bad'){if(s==='bad'&&t)toast(t)}
+function headers(extra={}){const h=new Headers(extra);if(token())h.set('Authorization','Bearer '+token());return h}
+async function api(path,opts={}){
+  localStorage.setItem(BASE_KEY,base());
+  const h=headers(opts.headers||{});
+  if(opts.body && !(opts.body instanceof FormData) && !h.has('Content-Type'))h.set('Content-Type','application/json');
+  const r=await fetch(base()+path,{...opts,headers:h});
+  const rt=r.headers.get('X-Refreshed-Token');if(rt)localStorage.setItem(TOKEN_KEY,rt);
+  const text=await r.text();let data;try{data=JSON.parse(text)}catch{data=text}
+  if(!r.ok)throw new Error(`HTTP ${r.status}\n${typeof data==='string'?data:JSON.stringify(data,null,2)}`);
+  return data;
+}
+function unwrap(d){return d&&typeof d==='object'&&'data'in d?d.data:d}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function pretty(v){if(typeof v==='string')return v;try{return JSON.stringify(v,null,2)}catch{return String(v)}}
+function toast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').style.display='none',2600)}
+function projectPath(p){return p?.fullPath??p?.path??p?.projectPath??''}
+function normPath(p){return String(p||'').replaceAll('/','\\').replace(/\\+$/,'').toLowerCase()}
+function filenameOf(p){return String(p).replaceAll('\\','/').split('/').pop()||'download'}
+function decodeFileHref(path){
+  path=String(path||'').replace(/^file:\/\//i,'');
+  try{return decodeURIComponent(path)}catch{return path}
+}
+async function downloadLocalFile(path,label){
+  path=decodeFileHref(path);
+  const abs=/^[a-zA-Z]:[\\/]/.test(path)||path.startsWith('/');
+
+  try{
+    toast('正在下载…');
+
+    // Absolute paths are intentionally downloaded through CloudCLI's
+    // authenticated local-file stream endpoint. They do NOT need to belong
+    // to a registered CloudCLI project.
+    let url;
+    if(abs){
+      url=base()+`/api/file-tree/local-file/content?path=${encodeURIComponent(path)}`;
+    }else{
+      if(!currentProject)throw new Error('尚未选择项目，无法解析相对路径');
+      url=base()+`/api/file-tree/projects/${encodeURIComponent(projectId(currentProject))}/files/content?path=${encodeURIComponent(path)}`;
+    }
+
+    const r=await fetch(url,{headers:headers()});
+    if(!r.ok){
+      let detail='';
+      try{
+        const body=await r.json();
+        detail=body?.error||body?.message||'';
+      }catch{}
+      throw new Error(detail||`HTTP ${r.status}`);
+    }
+
+    const blob=await r.blob();
+    const u=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=u;
+    a.download=filenameOf(path)||label||'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),30000);
+    toast('已开始下载');
+  }catch(e){
+    toast('下载失败：'+e.message);
+  }
+}
+document.addEventListener('click',e=>{const a=e.target.closest?.('.file-link');if(a){e.preventDefault();downloadLocalFile(a.dataset.file,a.dataset.name)}});
+
+/* 轻量 Markdown：支持本地文件链接 */
+function md(src){src=String(src??'');const links=[];src=src.replace(/\[([^\]]+)\]\(\s*(?:<([^>]+)>|([^)]+))\s*\)/g,(m,label,a,b)=>{const href=(a||b||'').trim(),id=links.length,ext=/^(https?:|mailto:|tel:|data:|#)/i.test(href);links.push(ext?`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:`<a href="#" class="file-link" data-file="${esc(href)}" data-name="${esc(label)}">⬇ ${esc(label)}</a>`);return `@@LINK${id}@@`});let s=esc(src).replace(/\r\n?/g,'\n');const blocks=[];s=s.replace(/```([^\n]*)\n([\s\S]*?)```/g,(_,lang,code)=>{const id=blocks.length;blocks.push(`<pre><code>${code}</code></pre>`);return `@@BLOCK${id}@@`});s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*\n]+)\*/g,'<em>$1</em>');const lines=s.split('\n');let out=[],inUl=false,inOl=false;const close=()=>{if(inUl){out.push('</ul>');inUl=false}if(inOl){out.push('</ol>');inOl=false}};for(const line of lines){let m;if((m=line.match(/^###\s+(.+)/))){close();out.push(`<h3>${m[1]}</h3>`)}else if((m=line.match(/^##\s+(.+)/))){close();out.push(`<h2>${m[1]}</h2>`)}else if((m=line.match(/^#\s+(.+)/))){close();out.push(`<h1>${m[1]}</h1>`)}else if((m=line.match(/^\s*[-*]\s+(.+)/))){if(inOl){out.push('</ol>');inOl=false}if(!inUl){out.push('<ul>');inUl=true}out.push(`<li>${m[1]}</li>`)}else if((m=line.match(/^\s*\d+\.\s+(.+)/))){if(inUl){out.push('</ul>');inUl=false}if(!inOl){out.push('<ol>');inOl=true}out.push(`<li>${m[1]}</li>`)}else if(!line.trim()){close()}else{close();out.push(`<p>${line}</p>`)}}close();let h=out.join('');blocks.forEach((b,i)=>h=h.replaceAll(`@@BLOCK${i}@@`,b));links.forEach((b,i)=>h=h.replaceAll(`@@LINK${i}@@`,b));return h;}
+const messageStreams=new Map();
+let historyRenderTarget=null,followLatest=true,historyState=null;
+let showToolDetails=localStorage.getItem('codexlite-show-tool-details')==='true';
+document.body.classList.toggle('hideToolDetails',!showToolDetails);
+function scrollBottom(){if(!historyRenderTarget&&followLatest)$('chat').scrollTop=$('chat').scrollHeight}
+function appendMessageNode(node){(historyRenderTarget||$('chat')).appendChild(node)}
+function messageStamp(timestamp){
+  const received=timestamp===undefined;
+  const date=timestamp===null?null:new Date(received?Date.now():timestamp);
+  return date&&!Number.isNaN(date.getTime())?`<time class="messageTime" datetime="${date.toISOString()}" title="${received?'接收时间':'消息时间'}">${date.toLocaleString('zh-CN',{hour12:false})}</time>`:'<span class="messageTime">未记录时间</span>';
+}
+function clearChat(t=''){streamingEl=null;messageStreams.clear();toolNodes.clear();$('chat').innerHTML=t?`<div class="small">${esc(t)}</div>`:''}
+
+function addUser(content){
+  const d=document.createElement('div');d.className='msg user';
+  d.innerHTML=`<div class="bubble markdown">${md(content)}</div>`;appendMessageNode(d);scrollBottom()
+}
+function styleAssistantMessage(node,phase,kind='text',streaming=false){
+  node.classList.toggle('commentary',phase==='commentary');
+  node.classList.toggle('finalAnswer',phase==='final_answer');
+  node.classList.toggle('planMessage',kind==='plan');
+  node.querySelector('.label').textContent=node.classList.contains('error')?'执行提示':kind==='plan'?'计划':phase==='commentary'?'进度说明':phase==='final_answer'?'最终答复':streaming?'正在回复':'Codex 回复';
+}
+function addAssistant(content,cls='',timestamp,phase=null,kind='text'){
+  const d=document.createElement('div');d.className='msg assistant '+cls;
+  d.innerHTML=`<div class="messageMeta"><div class="label"></div>${messageStamp(timestamp)}</div><div class="bubble markdown">${md(content)}</div>`;
+  styleAssistantMessage(d,phase,kind);
+  appendMessageNode(d);scrollBottom();return d.querySelector('.bubble')
+}
+function updateReasoningPreview(inner,content){
+  inner.closest('.reasoning').querySelector('.reasoningPreview').textContent=String(content||'正在整理…').replace(/\s+/g,' ').slice(0,100);
+}
+function addThinking(content,timestamp){
+  const d=document.createElement('div');d.className='reasoning';
+  d.innerHTML=`${messageStamp(timestamp)}<details><summary><strong>思考摘要</strong><span class="reasoningPreview"></span></summary><div class="inner markdown">${md(content)}</div></details>`;
+  appendMessageNode(d);const inner=d.querySelector('.inner');updateReasoningPreview(inner,content);scrollBottom();return inner
+}
+function renderMessageStream(m,done=false){
+  const key=m.itemId||'legacy',kind=m.messageKind||'text';
+  let node=messageStreams.get(key);
+  if(!node){
+    if(done&&!m.content)return;
+    node=kind==='thinking'?addThinking('',m.timestamp):addAssistant('','',m.timestamp,m.phase,kind);
+    node.dataset.raw='';messageStreams.set(key,node);
+  }
+  const raw=done&&typeof m.content==='string'?m.content:(node.dataset.raw||'')+String(m.content||'');
+  node.dataset.raw=raw;node.innerHTML=md(raw);
+  if(kind==='thinking')updateReasoningPreview(node,raw);
+  else styleAssistantMessage(node.closest('.msg'),m.phase,kind,!done);
+  if(done)messageStreams.delete(key);
+  scrollBottom();
+}
+function toolSummary(name,input){
+  let hint='';
+  if(typeof input==='string')hint=input.split('\n')[0];
+  else if(input&&typeof input==='object')hint=input.command||input.cmd||input.path||input.file_path||'';
+  hint=String(hint||'').trim(); if(hint.length>52)hint=hint.slice(0,49)+'…';
+  return `${esc(name||'Tool')}${hint?` <span class="toolmeta">${esc(hint)}</span>`:''}`;
+}
+function addTool(name,input,result,toolId,timestamp){
+  const d=document.createElement('div');d.className='toolbox';
+  d.innerHTML=`${messageStamp(timestamp)}<details><summary>${toolSummary(name,input)}</summary><div class="inner">`+
+    (input!==undefined?`<pre>${esc(pretty(input))}</pre>`:'')+
+    (result!==undefined?`<pre>${esc(pretty(result))}</pre>`:'')+
+    `</div></details>`;
+  appendMessageNode(d);
+  if(toolId)toolNodes.set(String(toolId),d);
+  scrollBottom();return d;
+}
+function appendToolResult(msg){
+  const id=String(msg.toolId??msg.id??'');
+  const node=id?toolNodes.get(id):null;
+  const result=msg.result??msg.toolResult??msg.content??msg.output??'';
+  if(node){
+    node.querySelector('.inner').insertAdjacentHTML('beforeend',`<pre>${esc(pretty(result))}</pre>`);
+  }else addTool(msg.toolName??'Tool result',undefined,result,id);
+}
+function addError(c,timestamp){addAssistant(c,'error',timestamp)}
+
+async function login(){
+  const username=$('username').value.trim(),password=$('password').value;if(!username||!password)return $('settingsStatus').textContent='请输入账号密码';
+  try{
+    const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username,password})});
+    if(!d?.token)throw new Error('登录成功但没有 token');localStorage.setItem(TOKEN_KEY,d.token);
+    $('settingsStatus').textContent='登录成功';await loadProjects();await loadRecent();connectWs();$('settingsPane').classList.add('hidden');$('drawerMain').classList.remove('hidden')
+  }catch(e){$('settingsStatus').textContent='登录失败：'+e.message}
+}
+
+async function registerCloudCli(){
+  const username=$('username').value.trim(),password=$('password').value;
+  if(!username||!password)return $('settingsStatus').textContent='请输入账号密码';
+  try{
+    const d=await api('/api/auth/register',{method:'POST',body:JSON.stringify({username,password})});
+    const t=d?.token||d?.data?.token||'';
+    if(!t)throw new Error('注册成功但没有 token');
+    localStorage.setItem(TOKEN_KEY,t);
+    $('settingsStatus').textContent='注册成功，已自动登录';
+    await loadProjects();await loadRecent();connectWs();
+  }catch(e){$('settingsStatus').textContent='注册失败：'+e.message}
+}
+
+let deviceAuthPollTimer=null;
+let authPopupDismissed=false;
+let lastAutoCopiedDeviceCode='';
+async function autoCopyDeviceCode(code){
+  const rawCode=String(code||'').trim();
+  // OpenAI 的分格验证码输入框更容易接受纯连续字符；
+  // 显示仍保留原始格式，剪贴板去掉空格/连字符等分隔符。
+  code=rawCode.replace(/[^A-Za-z0-9]/g,'');
+  if(!code||code===lastAutoCopiedDeviceCode)return false;
+
+  let copied=false;
+
+  // Secure context path (HTTPS / localhost).
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(code);
+      copied=true;
+    }
+  }catch{}
+
+  // HTTP/Tailscale fallback for browsers that still allow legacy copy.
+  if(!copied){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=code;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed';
+      ta.style.left='-9999px';
+      ta.style.top='0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0,ta.value.length);
+      copied=document.execCommand('copy');
+      ta.remove();
+    }catch{}
+  }
+
+  if(copied)lastAutoCopiedDeviceCode=code;
+  return copied;
+}
+
+
+function accountLabel(a){return a?.label||a?.email||a?.id||'Codex账号'}
+async function loadCodexAccounts(){
+  if(!token())return;
+  try{
+    codexAccounts=unwrap(await api('/api/providers/codex/accounts'))||[];
+    if(currentSession&&currentProvider==='codex')currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}`))||currentSessionAccountConfig;
+    selectedCodexAccountId=currentSessionAccountConfig.currentAccountId||selectedCodexAccountId||'default';
+    renderCodexAccounts();
+  }catch(e){if($('codexAccountList'))$('codexAccountList').innerHTML=`<div class="small">账号读取失败：${esc(e.message)}</div>`}
+}
+function renderCodexAccounts(){
+  const box=$('codexAccountList');if(!box)return;box.innerHTML='';
+  codexAccounts.forEach(a=>{
+    const row=document.createElement('label');
+    const isCurrent=a.id===currentSessionAccountConfig.currentAccountId;
+    const isSelected=a.id===selectedCodexAccountId;
+    row.className=`accountRow${isCurrent?' current':''}${isSelected?' selected':''}`;
+    const checked=isSelected?'checked':'';
+    const meta=[a.email||'',a.planType||'',a.authenticated?'已绑定':''].filter(Boolean).join(' · ');
+    row.innerHTML=`<input type="radio" name="codexAccountRadio" value="${esc(a.id)}" ${checked}><div class="accountMain"><div class="accountTop"><span class="accountName">${esc(accountLabel(a))}</span>${isCurrent?'<span class="accountBadge current">当前对话</span>':''}</div><div class="accountMeta">${esc(meta||'Codex 账号')}</div></div>`;
+    row.querySelector('input').onchange=()=>{selectedCodexAccountId=a.id;renderCodexAccounts()};box.appendChild(row)
+  });
+  if(!codexAccounts.length)box.innerHTML='<div class="small" style="padding:8px 2px">暂无已绑定的 Codex 账号</div>';
+  if($('codexAccountMode'))$('codexAccountMode').value=currentSessionAccountConfig.mode||'manual';
+  const current=codexAccounts.find(a=>a.id===currentSessionAccountConfig.currentAccountId);
+  if($('codexCurrentAccount'))$('codexCurrentAccount').textContent=currentSession&&currentProvider==='codex'?(current?accountLabel(current):'未绑定账号'):'未选择 Codex 对话';
+  if($('codexModeBadge'))$('codexModeBadge').textContent=(currentSessionAccountConfig.mode==='auto'?'自动':'手动');
+  const locked=processing||!currentSession||currentProvider!=='codex';
+  if($('codexDeleteAccount'))$('codexDeleteAccount').disabled=processing||!codexAccounts.find(a=>a.id===selectedCodexAccountId&&!a.isDefault);
+  if($('codexSelectAccount'))$('codexSelectAccount').disabled=locked||!codexAccounts.some(a=>a.id===selectedCodexAccountId);
+  if($('codexAccountMode'))$('codexAccountMode').disabled=locked;
+}
+async function cleanupPendingAddedAccount(){
+  const id=pendingAddedAccountId;if(!id||pendingAccountCleanup)return;pendingAccountCleanup=true;pendingAddedAccountId=null;
+  try{await api(`/api/providers/codex/accounts/${encodeURIComponent(id)}`,{method:'DELETE'})}catch{}finally{pendingAccountCleanup=false;await loadCodexAccounts().catch(()=>{})}
+}
+async function addCodexAccount(){
+  try{
+    const a=unwrap(await api('/api/providers/codex/accounts',{method:'POST',body:'{}'}));
+    pendingAddedAccountId=a.id;selectedCodexAccountId=currentSessionAccountConfig.currentAccountId||'default';
+    await startDeviceAuth(a.id)
+  }catch(e){await cleanupPendingAddedAccount();toast('添加账号失败：'+e.message)}
+}
+async function deleteSelectedCodexAccount(){
+  if(processing)return toast('任务运行中不能删除账号');
+  const a=codexAccounts.find(x=>x.id===selectedCodexAccountId);if(!a)return;if(a.isDefault)return toast('默认账号不能删除');
+  try{await api(`/api/providers/codex/accounts/${encodeURIComponent(a.id)}`,{method:'DELETE'});selectedCodexAccountId='default';await loadCodexAccounts()}catch(e){toast('删除失败：'+e.message)}
+}
+async function selectCodexAccountForSession(accountId=selectedCodexAccountId){
+  if(!currentSession||currentProvider!=='codex')return false;if(processing){toast('任务运行中，停止后才能切换账号');return false}
+  try{currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}`,{method:'POST',body:JSON.stringify({accountId,mode:$('codexAccountMode')?.value||currentSessionAccountConfig.mode||'manual'})}));selectedCodexAccountId=accountId;await loadCodexAccounts();toast('当前对话 Codex 账号已切换');return true}catch(e){toast('切换失败：'+e.message);return false}
+}
+async function changeCodexAccountMode(){
+  if(!currentSession||processing)return renderCodexAccounts();
+  try{currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}/mode`,{method:'POST',body:JSON.stringify({mode:$('codexAccountMode').value})}));renderCodexAccounts()}catch(e){toast('模式修改失败：'+e.message);await loadCodexAccounts()}
+}
+function addSystemNote(html){const d=document.createElement('div');d.className='systemNote';d.innerHTML=html;appendMessageNode(d);scrollBottom();return d}
+async function sendRecoveryContinuation(){
+  const text='刚才由于额度耗尽导致任务中断，现在继续。';
+  if(!currentSession||processing)return;
+  addUser(text);setProcessing(true,'Thinking');
+  sendWs({type:'chat.send',sessionId:sessionId(currentSession),content:text,options:sendOptions()});
+}
+async function recoverFromAccountLimit(limit){
+  if(!currentSession||currentProvider!=='codex')return;const sid=sessionId(currentSession);
+  let data;try{data=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sid)}/recovery-options`))}catch(e){addSystemNote(`<strong>额度耗尽</strong><br>备用账号读取失败：${esc(e.message)}`);return}
+  const tried=recoveryTriedAccounts.get(sid)||new Set();if(limit?.accountId)tried.add(limit.accountId);recoveryTriedAccounts.set(sid,tried);
+  const choices=(data.accounts||[]).filter(a=>a.id!==data.config.currentAccountId&&a.compatible&&!tried.has(a.id)&&(a.usedPercent===null||a.usedPercent<100)&&(a.weeklyUsedPercent===null||a.weeklyUsedPercent<100));
+  if(data.config.mode==='auto'){
+    const pick=choices.filter(a=>a.usedPercent!==null&&a.weeklyUsedPercent!==null&&a.usedPercent<100&&a.weeklyUsedPercent<100).sort((a,b)=>Math.max(a.usedPercent,a.weeklyUsedPercent)-Math.max(b.usedPercent,b.weeklyUsedPercent))[0];
+    if(!pick){addSystemNote('<strong>额度耗尽</strong><br>没有可自动切换的兼容账号，自动恢复已停止。');return}
+    tried.add(pick.id);const ok=await selectCodexAccountForSession(pick.id);if(!ok)return;
+    addSystemNote(`当前账号额度已耗尽。已自动切换到 <strong>${esc(accountLabel(pick))}</strong>，正在继续任务。`);setTimeout(sendRecoveryContinuation,150);return;
+  }
+  if(!choices.length){addSystemNote('<strong>当前 Codex 账号额度已耗尽。</strong><br>没有可切换的兼容账号。');return}
+  const n=addSystemNote('<strong>当前 Codex 账号额度已耗尽。</strong><br>请选择账号后继续：');const list=document.createElement('div');list.className='recoveryAccounts';choices.forEach((a,i)=>{const l=document.createElement('label');l.innerHTML=`<input type="radio" name="recoveryAccount" value="${esc(a.id)}" ${i===0?'checked':''}><span>${esc(accountLabel(a))}${a.usedPercent!==null?` · 5h 已用 ${Math.round(a.usedPercent)}%`:''}${a.weeklyUsedPercent!==null?` · 7d 已用 ${Math.round(a.weeklyUsedPercent)}%`:''}</span>`;list.appendChild(l)});const b=document.createElement('button');b.className='primary';b.textContent='切换并继续';b.onclick=async()=>{const id=list.querySelector('input:checked')?.value;if(!id)return;const pick=choices.find(a=>a.id===id);if(await selectCodexAccountForSession(id)){b.disabled=true;list.querySelectorAll('input').forEach(x=>x.disabled=true);n.insertAdjacentHTML('beforeend',`<div class="small" style="margin-top:7px">已切换到 ${esc(accountLabel(pick))}，正在继续。</div>`);setTimeout(sendRecoveryContinuation,150)}};n.appendChild(list);n.appendChild(b)
+}
+
+function bridgeHeaders(){const h={'Content-Type':'application/json'};if(token())h.Authorization=`Bearer ${token()}`;return h}
+async function bridgeApi(path,options={}){
+  const r=await fetch(path,{...options,headers:{...bridgeHeaders(),...(options.headers||{})}});
+  let d=null;try{d=await r.json()}catch{}
+  if(!r.ok)throw new Error(d?.error||d?.message||`${r.status} ${r.statusText}`);
+  return d;
+}
+function setAuthModeText(mode){
+  $('codexAuthMode').textContent=
+    mode==='browser'?'本机 PC 模式 · 使用浏览器 OAuth，无需设备代码授权':
+    mode==='device'?'远程 / 手机模式 · 使用 Device Code 授权':
+    '';
+}
+function renderCodexAuthFlow(s){
+  if(!s)return;
+  const mode=s.mode||s.recommendedMode;
+  setAuthModeText(s.recommendedMode||mode);
+  const waiting=s.state==='waiting'||s.state==='starting';
+
+  const shouldAutoShow =
+    s.state==='starting' || s.state==='waiting' ||
+    (!authPopupDismissed && (s.state==='failed' || s.state==='expired'));
+  if(shouldAutoShow)$('deviceAuthBox').classList.remove('hidden');
+
+  if(mode==='device'){
+    $('authFlowHint').textContent='在浏览器中完成 Codex 授权';
+    $('authCodeLabel').classList.remove('hidden');
+    $('deviceAuthCode').classList.remove('hidden');
+    $('openDeviceAuth').classList.remove('hidden');
+    $('openDeviceAuth').textContent='打开 Codex 验证页面';
+    if(s.verificationUrl){
+      $('deviceAuthUrl').classList.remove('hidden');
+      $('deviceAuthUrl').href=s.verificationUrl;
+      $('deviceAuthUrl').textContent=s.verificationUrl;
+    }else{
+      $('deviceAuthUrl').classList.add('hidden');
+    }
+    $('deviceAuthCode').textContent=s.userCode||'';
+    if(s.userCode){
+      autoCopyDeviceCode(s.userCode).then(copied=>{
+        if(copied && s.state==='waiting' && $('deviceAuthState').textContent==='等待手机授权…'){
+          $('deviceAuthState').textContent='验证码已自动复制 · 等待手机授权…';
+        }
+      });
+    }
+  }else if(mode==='browser'){
+    $('authFlowHint').textContent='请在这台 PC 的浏览器中完成 Codex 授权。';
+    $('authCodeLabel').classList.add('hidden');
+    $('deviceAuthCode').classList.add('hidden');
+    $('openDeviceAuth').textContent='打开 Codex 授权页面';
+    if(s.browserAuthUrl){
+      $('deviceAuthUrl').classList.remove('hidden');
+      $('deviceAuthUrl').href=s.browserAuthUrl;
+      $('deviceAuthUrl').textContent=s.browserAuthUrl;
+      $('openDeviceAuth').classList.remove('hidden');
+    }else{
+      $('deviceAuthUrl').classList.add('hidden');
+      $('openDeviceAuth').classList.add('hidden');
+    }
+  }
+
+  $('deviceAuthState').textContent=
+    s.state==='starting'?(mode==='browser'?'正在启动电脑浏览器登录…':'正在申请设备验证码…'):
+    s.state==='waiting'?(mode==='browser'?'等待电脑浏览器完成授权…':'等待手机授权…'):
+    s.state==='success'?'绑定成功':
+    s.state==='failed'?`绑定失败：${s.error||'未知错误'}`:
+    s.state==='cancelled'?'已取消':
+    s.state==='expired'?'登录已超时，请重新开始':'';
+
+  $('codexCancelBtn').classList.toggle('hidden',!waiting);
+  if(!waiting&&deviceAuthPollTimer){clearInterval(deviceAuthPollTimer);deviceAuthPollTimer=null}
+  if(s.state==='success'){
+    authPopupDismissed=true;
+    pendingAddedAccountId=null;
+    selectedCodexAccountId=s.profileId||selectedCodexAccountId;
+    $('deviceAuthBox').classList.add('hidden');
+    refreshCodexAuth();loadCodexAccounts();
+  }else if((s.state==='failed'||s.state==='cancelled'||s.state==='expired')&&pendingAddedAccountId&&s.profileId===pendingAddedAccountId){
+    cleanupPendingAddedAccount();
+  }
+}
+async function refreshCodexAuth(){
+  try{
+    await loadCodexAccounts();
+    const a=codexAccounts.find(v=>v.id===currentSessionAccountConfig.currentAccountId)||codexAccounts.find(v=>v.id===selectedCodexAccountId)||codexAccounts[0];
+    $('codexAuthStatus').textContent=a
+      ? `${accountLabel(a)} · ${a.authenticated?'已绑定':'未绑定'}${a.planType?` · ${a.planType}`:''}`
+      : '暂无 Codex 账号';
+    try{
+      const s=await bridgeApi('/bridge/codex/auth/status');
+      setAuthModeText(s.recommendedMode);
+      if(s.state==='starting'||s.state==='waiting')renderCodexAuthFlow(s);
+    }catch{}
+  }catch(e){$('codexAuthStatus').textContent='检查失败：'+e.message}
+  if(currentProvider==='codex'&&currentSession)checkCurrentProviderAuth({showGuide:true});
+}
+async function pollDeviceAuth(){
+  try{renderCodexAuthFlow(await bridgeApi('/bridge/codex/auth/status'))}
+  catch(e){$('deviceAuthState').textContent='状态检查失败：'+e.message}
+}
+async function startDeviceAuth(profileId=selectedCodexAccountId||'default'){
+  if(!token())return $('codexAuthStatus').textContent='请先登录';
+  // 收起设置抽屉，让认证流程独立显示在 popup 中。
+  authPopupDismissed=false;
+  closeDrawer();
+  $('deviceAuthBox').classList.remove('hidden');
+  $('authFlowHint').textContent='正在准备 Codex 登录…';
+  $('deviceAuthUrl').classList.add('hidden');
+  $('authCodeLabel').classList.add('hidden');
+  $('deviceAuthCode').classList.add('hidden');
+  $('openDeviceAuth').classList.add('hidden');
+  $('deviceAuthState').textContent='正在启动…';
+  try{
+    const s=await bridgeApi('/bridge/codex/auth/start',{method:'POST',body:JSON.stringify({baseUrl:base(),profileId})});
+    renderCodexAuthFlow(s);
+    if(!deviceAuthPollTimer)deviceAuthPollTimer=setInterval(pollDeviceAuth,1500);
+  }catch(e){$('deviceAuthState').textContent='启动失败：'+e.message;await cleanupPendingAddedAccount()}
+}
+async function cancelDeviceAuth(){
+  try{renderCodexAuthFlow(await bridgeApi('/bridge/codex/auth/cancel',{method:'POST',body:JSON.stringify({baseUrl:base()})}))}
+  catch(e){$('deviceAuthState').textContent='取消失败：'+e.message}
+}
+
+function asNumber(v){const n=Number(v);return Number.isFinite(n)?n:null}
+function rateWindowMinutes(w){return asNumber(w?.windowDurationMins??w?.window_duration_mins??w?.windowMinutes??w?.window_minutes)}
+function rateUsedPercent(w){return asNumber(w?.usedPercent??w?.used_percent)}
+function rateResetAt(w){return asNumber(w?.resetsAt??w?.resets_at)}
+function formatResetAt(v){
+  const n=asNumber(v);if(n===null)return '重置时间未返回';
+  const d=new Date(n<1e12?n*1000:n);
+  if(Number.isNaN(d.getTime()))return '重置时间未返回';
+  return `重置：${d.toLocaleString([], {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+}
+function setQuotaCard(prefix,w){
+  const pct=rateUsedPercent(w);
+  if(!w||pct===null){
+    $(prefix+'Pct').textContent='--';
+    $(prefix+'Bar').style.width='0%';
+    $(prefix+'Meta').textContent='Codex 未返回这个额度窗口';
+    return;
+  }
+  const safe=Math.max(0,Math.min(100,pct));
+  $(prefix+'Pct').textContent=`${Math.round(pct)}%`;
+  $(prefix+'Bar').style.width=`${safe}%`;
+  const mins=rateWindowMinutes(w);
+  $(prefix+'Meta').textContent=`已使用 ${pct.toFixed(1)}% · ${mins??'?'} 分钟窗口 · ${formatResetAt(rateResetAt(w))}`;
+}
+function collectNativeQuotaWindows(payload){
+  const snapshots=[];
+
+  // Current Codex can return multiple quota buckets under rateLimitsByLimitId
+  // (for example the `codex` bucket). Prefer those backend-owned buckets first.
+  const byId=payload?.rateLimitsByLimitId??payload?.rate_limits_by_limit_id??null;
+  if(byId&&typeof byId==='object'){
+    if(byId.codex&&typeof byId.codex==='object')snapshots.push(byId.codex);
+    for(const [key,value] of Object.entries(byId)){
+      if(key==='codex')continue;
+      if(value&&typeof value==='object')snapshots.push(value);
+    }
+  }
+
+  // Backward-compatible single-bucket view.
+  const legacy=payload?.rateLimits??payload?.rate_limits??null;
+  if(legacy&&typeof legacy==='object')snapshots.push(legacy);
+
+  const windows=[];
+  for(const snapshot of snapshots){
+    if(snapshot.primary)windows.push(snapshot.primary);
+    if(snapshot.secondary)windows.push(snapshot.secondary);
+  }
+  return windows;
+}
+function findExactQuotaWindow(windows,minutes){
+  return windows.find(w=>rateWindowMinutes(w)===minutes)||null;
+}
+function formatTokenNumber(v){const n=asNumber(v);return n===null?'--':n.toLocaleString()}
+async function loadUsageData(){
+  $('usageError').classList.add('hidden');
+  $('quota5Meta').textContent='正在读取 Codex 原生额度…';
+  $('quota7Meta').textContent='正在读取 Codex 原生额度…';
+
+  try{
+    const quota=unwrap(await api('/api/providers/codex/rate-limits?accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId||'default')));
+    const windows=collectNativeQuotaWindows(quota);
+    // Only classify windows by the duration Codex itself returned.
+    // Never infer account quota from token counts or Session history.
+    setQuotaCard('quota5',findExactQuotaWindow(windows,300));
+    setQuotaCard('quota7',findExactQuotaWindow(windows,10080));
+  }catch(e){
+    setQuotaCard('quota5',null);setQuotaCard('quota7',null);
+    $('usageError').textContent='额度读取失败：'+e.message;
+    $('usageError').classList.remove('hidden');
+  }
+
+  if(!currentSession){
+    $('tokenUsageBig').textContent='--';
+    $('tokenUsageMeta').textContent='先从左侧选择一个对话后再读取 Session Token';
+    return;
+  }
+  try{
+    const u=unwrap(await api(`/api/providers/sessions/${encodeURIComponent(sessionId(currentSession))}/token-usage`));
+    const used=asNumber(u?.used),total=asNumber(u?.total);
+    $('tokenUsageBig').textContent=total!==null
+      ? `${formatTokenNumber(used)} / ${formatTokenNumber(total)}`
+      : formatTokenNumber(used);
+    const pieces=[
+      `输入 ${formatTokenNumber(u?.inputTokens)}`,
+      `输出 ${formatTokenNumber(u?.outputTokens)}`
+    ];
+    if(total!==null&&used!==null&&total>0)pieces.unshift(`Context ${(used/total*100).toFixed(1)}%`);
+    $('tokenUsageMeta').textContent=pieces.join(' · ');
+  }catch(e){
+    $('tokenUsageBig').textContent='--';
+    $('tokenUsageMeta').textContent='Token 用量读取失败：'+e.message;
+  }
+}
+function openUsagePopup(){
+  $('usageBox').classList.remove('hidden');
+  loadUsageData();
+}
+function closeUsagePopup(){$('usageBox').classList.add('hidden')}
+
+let providerReadyState={provider:null,checked:false,ready:false,status:null};
+
+function setComposerEnabled(enabled){
+  $('input').disabled=!enabled;
+  $('sendBtn').disabled=!enabled;
+}
+function providerDisplayName(p){
+  return p==='codex'?'Codex':(p||'Provider');
+}
+function showProviderGate(message,showLogin=true){
+  $('providerGateText').textContent=message||'Provider 尚未就绪';
+  $('providerGate').classList.remove('hidden');
+  $('providerGateLogin').classList.toggle('hidden',!showLogin);
+  setComposerEnabled(false);
+}
+function hideProviderGate(){
+  $('providerGate').classList.add('hidden');
+}
+async function checkCurrentProviderAuth({showGuide=true}={}){
+  if(!currentSession||!currentProvider){
+    providerReadyState={provider:null,checked:false,ready:false,status:null};
+    setComposerEnabled(false);
+    return false;
+  }
+
+  try{
+    let x;
+    if(currentProvider==='codex'){
+      await loadCodexAccounts();
+      const a=codexAccounts.find(v=>v.id===currentSessionAccountConfig.currentAccountId);
+      x={installed:true,authenticated:a?.authenticated===true,email:a?.email,planType:a?.planType};
+    }else x=unwrap(await api(`/api/providers/${encodeURIComponent(currentProvider)}/auth/status`));
+    const installed=x?.installed!==false;
+    const authenticated=x?.authenticated===true;
+    const ready=installed&&authenticated;
+    providerReadyState={provider:currentProvider,checked:true,ready,status:x};
+
+    if(!ready){
+      const name=providerDisplayName(currentProvider);
+      let reason=!installed?`${name} 未安装`: `${name} 尚未登录`;
+      if(x?.error)reason+=` · ${x.error}`;
+      if(showGuide)showProviderGate(`${reason}。完成登录后才能发送消息。`,true);
+      else setComposerEnabled(false);
+      return false;
+    }
+
+    hideProviderGate();
+    setComposerEnabled(true);
+    return true;
+  }catch(e){
+    providerReadyState={provider:currentProvider,checked:true,ready:false,status:null};
+    if(showGuide)showProviderGate(`无法确认 ${providerDisplayName(currentProvider)} 登录状态：${e.message}。为避免直接请求失败，当前已禁止发送。`,true);
+    else setComposerEnabled(false);
+    return false;
+  }
+}
+function openProviderLoginGuide(){
+  selectSettingsTab('accounts');
+  openDrawer();
+  
+  $('settingsPane').classList.remove('hidden');
+  if(currentProvider==='codex'){
+    refreshCodexAuth();
+    setTimeout(()=>document.getElementById('codexAccountList')?.scrollIntoView({behavior:'smooth',block:'center'}),60);
+  }else{
+    $('settingsStatus').textContent=`请先完成 ${providerDisplayName(currentProvider)} 登录，然后刷新状态。`;
+  }
+}
+function errorText(m){
+  const candidates=[
+    m?.content,m?.error,m?.message,m?.detail,m?.details,
+    m?.data?.error,m?.data?.message,m?.payload?.error,m?.payload?.message
+  ];
+  for(const v of candidates){
+    if(typeof v==='string'&&v.trim())return v.trim();
+    if(v&&typeof v==='object'){
+      try{return JSON.stringify(v,null,2)}catch{}
+    }
+  }
+  try{return JSON.stringify(m,null,2)}catch{return 'Unknown error'}
+}
+function surfaceRuntimeError(m,prefix=''){
+  const txt=(prefix?prefix+'：':'')+errorText(m);
+  addError(txt);
+  setProcessing(false);
+  setStatus('执行失败','bad');
+  streamingEl=null;
+}
+function projectId(p){return p?.projectId??p?.id??p?.uuid??''}
+function projectName(p){return p?.displayName??p?.name??p?.projectName??p?.fullPath??p?.path??projectId(p)}
+function defaultCodexDatePath(rawPath){const parts=String(rawPath||'').replaceAll('/','\\').split('\\').filter(Boolean),i=parts.findIndex(x=>x.toLowerCase()==='codex');return i>=0&&/^\d{4}-\d{2}-\d{2}$/.test(parts[i+1]||'')}
+function classifyUiGroup(p){const raw=projectPath(p),parts=String(raw||'').replaceAll('/','\\').split('\\').filter(Boolean);if(defaultCodexDatePath(raw))return{key:'__default__',name:'默认'};const ci=parts.findIndex(x=>x.toLowerCase()==='chatgpt');if(ci>=0&&parts[ci+1])return{key:'named:'+projectId(p),name:projectName(p)||parts[ci+1]};const di=parts.findIndex(x=>x.toLowerCase()==='codex');if(di>=0&&parts[di+1]&&!/^\d{4}-\d{2}-\d{2}$/.test(parts[di+1]))return{key:'named:'+projectId(p),name:projectName(p)||parts[di+1]};return{key:'__default__',name:'默认'}}
+function timeOfSession(s){const v=s?.lastActivity??s?.updatedAt??s?.updated_at??s?.createdAt??s?.created_at??0,t=typeof v==='number'?v:Date.parse(v||0);return Number.isFinite(t)?t:0}
+function sessionsForProject(p){return allRecent.filter(s=>sessionProjectId(s)===projectId(p))}
+function renderProjectTree(){const groups=new Map();allProjects.forEach(p=>{const g=classifyUiGroup(p);if(!groups.has(g.key))groups.set(g.key,{...g,projects:[],sessions:[]});const b=groups.get(g.key);b.projects.push(p);sessionsForProject(p).forEach(s=>b.sessions.push(s))});const ordered=[...groups.values()].sort((a,b)=>{if(a.key==='__default__')return 1;if(b.key==='__default__')return-1;const at=Math.max(0,...a.sessions.map(timeOfSession)),bt=Math.max(0,...b.sessions.map(timeOfSession));return bt-at||a.name.localeCompare(b.name)});$('projectTree').innerHTML='';ordered.forEach(g=>{g.sessions.sort((a,b)=>timeOfSession(b)-timeOfSession(a));const w=document.createElement('div');w.className='mother';w.innerHTML=`<button class="motherBtn"><span>${g.key==='__default__'?'◫':'▣'}</span><span class="grow"><div class="name">${esc(g.name)}</div><div class="meta">${g.sessions.length} 个对话</div></span><span class="chev">›</span></button><div class="children hidden"></div>`;const ch=w.querySelector('.children');w.querySelector('.motherBtn').onclick=()=>{ch.classList.toggle('hidden');w.querySelector('.chev').textContent=ch.classList.contains('hidden')?'›':'⌄'};if(g.sessions.length){g.sessions.forEach(s=>{const d=document.createElement('div');d.className='sess'+(currentSession&&sessionId(currentSession)===sessionId(s)?' active':'');d.innerHTML=`<button class="sessBtn"><span>◉</span><span class="grow"><div class="name">${esc(recentTitle(s))}</div><div class="meta">${esc(sessionProvider(s))}</div></span><span class="chev">›</span></button>`;d.onclick=()=>openRecentSession(s);ch.appendChild(d)})}else{const e=document.createElement('div');e.className='small';e.style.padding='8px 10px';e.textContent='暂无对话';ch.appendChild(e)}$('projectTree').appendChild(w)});if(!ordered.length)$('projectTree').innerHTML='<div class="small">没有项目。</div>'}
+async function loadProjects(){
+  try{
+    // 与原生 CloudCLI 保持同一数据源和同步流程：
+    // 不传 skipSync，让后端先同步 Codex session，
+    // 再从 CloudCLI 自己的 projects DB 返回项目。
+    const x=unwrap(await api('/api/projects?sessionsLimit=50'));
+    allProjects=Array.isArray(x)?x:(x?.projects||[]);
+    renderProjectTree();
+    setStatus(`项目 ${allProjects.length} 个`,'ok');
+  }catch(e){
+    setStatus('读取项目失败：'+e.message,'bad');
+  }
+}
+function sessionId(s){return s?.id??s?.sessionId??''}function sessionProvider(s){return s?.provider??s?.__provider??'codex'}function sessionProjectId(s){return s?.__projectId??s?.projectId??s?.project_id??s?.project?.projectId??''}function recentTitle(s){return s?.summary??s?.title??s?.name??s?.initial_message??s?.id??'Session'}
+async function loadRecent(){const out=[];allProjects.forEach(p=>(Array.isArray(p.sessions)?p.sessions:[]).forEach(s=>out.push({...s,__projectId:projectId(p),__projectName:projectName(p)})));out.sort((a,b)=>timeOfSession(b)-timeOfSession(a));allRecent=out;renderProjectTree()}
+async function openRecentSession(s){currentSession=s;currentProvider=sessionProvider(s);const pid=sessionProjectId(s);if(pid)currentProject=allProjects.find(p=>projectId(p)===pid)||currentProject;$('headTitle').textContent=recentTitle(s);setComposerEnabled(false);hideProviderGate();lastSeq.set(sessionId(s),0);closeDrawer();await Promise.all([loadHistory(),loadProviderControls(),loadCodexAccounts()]);await checkCurrentProviderAuth({showGuide:true});subscribeCurrent();renderProjectTree()}
+function disableControls(){
+  ['input','sendBtn','modelSelect','effortSelect','permissionSelect'].forEach(id=>$(id).disabled=true)
+}
+function isToolHistory(m){return ['tool_use','tool_result','tool'].includes(m.kind??m.type)||m.isToolUse}
+function isVisibleHistory(m){return m.kind!=='tool_result'&&(showToolDetails||!isToolHistory(m))}
+function updateHistoryMore(){
+  let button=$('historyMore');
+  if(!button){button=document.createElement('button');button.id='historyMore';button.className='historyMore';button.onclick=()=>loadOlderHistory();$('chat').prepend(button)}
+  button.disabled=!!historyState?.loading;
+  button.classList.toggle('hidden',!historyState?.hasMore&&!historyState?.loading);
+  button.textContent=historyState?.loading?'加载中…':'在顶部下拉或点击，加载更早的 10 条消息';
+}
+async function fetchHistoryBatch(state){
+  let messages=[],visible=0;
+  while(visible<10&&state.hasMore){
+    const limit=10-visible;
+    const page=unwrap(await api(`/api/providers/sessions/${encodeURIComponent(state.sid)}/messages?limit=${limit}&offset=${state.offset}`));
+    if(state!==historyState)return null;
+    const rows=Array.isArray(page)?page:(page?.messages||page?.history||[]);
+    const count=rows.length;
+    state.offset+=count;
+    state.hasMore=!!page?.hasMore&&count>0;
+    messages.unshift(...rows);visible+=rows.filter(isVisibleHistory).length;
+  }
+  return messages;
+}
+function renderHistoryBatch(messages){
+  const fragment=document.createDocumentFragment();historyRenderTarget=fragment;
+  try{messages.forEach(renderHistoryMessage)}finally{historyRenderTarget=null}
+  return fragment;
+}
+async function loadHistory(){
+  const state={sid:sessionId(currentSession),offset:0,hasMore:true,loading:true};historyState=state;
+  followLatest=true;clearChat('正在加载最近消息…');
+  try{
+    const messages=await fetchHistoryBatch(state);if(!messages||state!==historyState)return;
+    clearChat();$('chat').appendChild(renderHistoryBatch(messages));
+    if(!messages.length)clearChat('该 Session 暂无历史消息。');
+    state.loading=false;updateHistoryMore();$('chat').scrollTop=$('chat').scrollHeight;
+  }catch(e){if(state===historyState){state.loading=false;clearChat();addError('历史消息读取失败：'+e.message)}}
+}
+async function loadOlderHistory(){
+  const state=historyState;if(!state||state.loading||!state.hasMore)return;
+  state.loading=true;followLatest=false;updateHistoryMore();
+  const chat=$('chat'),anchor=Array.from(chat.children).find(n=>n.id!=='historyMore'&&n.getBoundingClientRect().height>0),top=anchor?.getBoundingClientRect().top;
+  try{
+    const messages=await fetchHistoryBatch(state);if(!messages||state!==historyState)return;
+    chat.insertBefore(renderHistoryBatch(messages),$('historyMore').nextSibling);
+    state.loading=false;updateHistoryMore();
+    if(anchor)chat.scrollTop+=anchor.getBoundingClientRect().top-top;
+  }catch(e){if(state===historyState){state.loading=false;updateHistoryMore();toast('读取更早消息失败：'+e.message)}}
+}
+let historyPullStart=null;
+$('chat').addEventListener('scroll',()=>{followLatest=$('chat').scrollHeight-$('chat').scrollTop-$('chat').clientHeight<48},{passive:true});
+$('chat').addEventListener('touchstart',e=>{historyPullStart=$('chat').scrollTop<=1?e.touches[0].clientY:null},{passive:true});
+$('chat').addEventListener('touchend',e=>{if(historyPullStart!==null&&e.changedTouches[0].clientY-historyPullStart>45)loadOlderHistory();historyPullStart=null},{passive:true});
+$('chat').addEventListener('wheel',e=>{if($('chat').scrollTop<=1&&e.deltaY<0)loadOlderHistory()},{passive:true});
+function renderHistoryMessage(m){
+  const kind=m.kind??m.type??'',content=m.content??m.text??m.message??'',timestamp=m.timestamp??null;
+  if(kind==='user'||m.role==='user'||m.type==='user')return addUser(content);
+  if(kind==='thinking'||m.isThinking||m.reasoning)return addThinking(content||m.reasoning,timestamp);
+  if(kind==='tool_use'||m.isToolUse||m.type==='tool')return addTool(m.toolName??m.name??'Tool',m.input??m.toolInput??content,m.toolResult,m.toolId,timestamp);
+  if(kind==='tool_result')return;
+  if(kind==='error'||m.type==='error')return addError(content,timestamp);
+  if(kind==='text'||m.role==='assistant'||m.type==='assistant'||content)return addAssistant(content,'',timestamp,m.phase);
+}
+
+/* 模型 / 思考深度 / 权限：直接复用 CloudCLI 后端的 catalog 与 capabilities */
+async function loadProviderControls(){
+  const sid=sessionId(currentSession),p=currentProvider;
+  try{
+    const [modelsResp,capsResp,activeResp]=await Promise.all([
+      api(`/api/providers/${encodeURIComponent(p)}/models`),
+      api('/api/providers/capabilities'),
+      api(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`)
+    ]);
+    providerModels=unwrap(modelsResp)?.models||null;
+    const caps=unwrap(capsResp)?.providers||[];
+    providerCapabilities=Array.isArray(caps)?caps.find(x=>x.provider===p):null;
+    const active=unwrap(activeResp)||{};
+    currentModel=(active.source!=='default'&&active.model)||providerModels?.DEFAULT||providerModels?.OPTIONS?.[0]?.value||'';
+    currentEffort=active.effort||localStorage.getItem(`${p}-effort`)||'default';
+    const validPerms=providerCapabilities?.permissionModes||(['codex'].includes(p)?['default','acceptEdits','bypassPermissions']:['default']);
+    currentPermission=localStorage.getItem(`permissionMode-${sid}`)||localStorage.getItem(`permissionMode-last-${p}`)||providerCapabilities?.defaultPermissionMode||validPerms[0]||'default';
+    fillModelSelect();fillPermissionSelect();fillEffortSelect();
+    ['modelSelect','permissionSelect'].forEach(id=>$(id).disabled=false);
+  }catch(e){setStatus('模型/权限配置读取失败：'+e.message,'bad')}
+}
+function fillModelSelect(){
+  const s=$('modelSelect'),opts=providerModels?.OPTIONS||[];s.innerHTML='';
+  opts.forEach(o=>{const el=document.createElement('option');el.value=o.value;el.textContent=o.label||o.name||o.value;s.appendChild(el)});
+  if(currentModel&&!opts.some(o=>o.value===currentModel)){const el=document.createElement('option');el.value=currentModel;el.textContent=currentModel+'（当前对话）';s.appendChild(el)}
+  if(currentModel && [...s.options].some(o=>o.value===currentModel))s.value=currentModel;
+}
+function modelOption(){return (providerModels?.OPTIONS||[]).find(o=>o.value===currentModel)}
+function fillEffortSelect(){
+  const s=$('effortSelect'),vals=modelOption()?.effort?.values||[];s.innerHTML='';
+  if(!vals.length){s.innerHTML='<option value="default">默认思考深度</option>';s.value='default';s.disabled=true;return}
+  const def=document.createElement('option');def.value='default';def.textContent='默认';s.appendChild(def);
+  vals.forEach(v=>{const o=document.createElement('option');o.value=typeof v==='string'?v:v.value;o.textContent=typeof v==='string'?v:(v.label||v.value);s.appendChild(o)});
+  if([...s.options].some(o=>o.value===currentEffort))s.value=currentEffort;else{s.value='default';currentEffort='default'}
+  s.disabled=false
+}
+function fillPermissionSelect(){
+  const s=$('permissionSelect'),vals=providerCapabilities?.permissionModes||['default','acceptEdits','bypassPermissions'];s.innerHTML='';
+  const labels={default:'默认权限',acceptEdits:'自动接受编辑',bypassPermissions:'跳过权限确认',plan:'Plan',auto:'Auto'};
+  vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=labels[v]||v;s.appendChild(o)});
+  if(vals.includes(currentPermission))s.value=currentPermission;else{s.value=vals[0];currentPermission=vals[0]}
+}
+async function changeModel(){
+  if(!currentSession)return;const next=$('modelSelect').value,sid=sessionId(currentSession);
+  try{
+    await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-model`,{method:'POST',body:JSON.stringify({model:next})});
+    currentModel=next;localStorage.setItem(`${currentProvider}-model`,next);currentEffort='default';fillEffortSelect();setStatus('模型已切换','ok')
+  }catch(e){fillModelSelect();toast('切换模型失败：'+e.message);setStatus('切换模型失败：'+e.message,'bad')}
+}
+async function changeEffort(){
+  if(!currentSession)return;const next=$('effortSelect').value,sid=sessionId(currentSession);
+  try{
+    await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-effort`,{method:'POST',body:JSON.stringify({effort:next})});
+    currentEffort=next;localStorage.setItem(`${currentProvider}-effort`,next);setStatus('思考深度已切换','ok')
+  }catch(e){setStatus('切换思考深度失败：'+e.message,'bad')}
+}
+function changePermission(){
+  currentPermission=$('permissionSelect').value;const sid=sessionId(currentSession);
+  localStorage.setItem(`permissionMode-${sid}`,currentPermission);localStorage.setItem(`permissionMode-last-${currentProvider}`,currentPermission);
+  setStatus('权限模式已切换','ok')
+}
+
+function wsUrl(){const u=new URL(base());return `${u.protocol==='https:'?'wss:':'ws:'}//${u.host}/ws?token=${encodeURIComponent(token())}`}
+function connectWs(){
+  if(!token()||ws&&(ws.readyState===0||ws.readyState===1))return;
+  try{
+    ws=new WebSocket(wsUrl());
+    ws.onopen=()=>{setStatus('');subscribeCurrent()};
+    ws.onmessage=e=>{try{handleEvent(JSON.parse(e.data))}catch(err){console.error(err)}};
+    ws.onerror=()=>{};
+    ws.onclose=()=>{setStatus('');if(currentSession&&processing){setProcessing(false)}setTimeout(()=>{ws=null;connectWs()},3000)}
+  }catch(e){setStatus('')}
+}
+function sendWs(obj){if(!ws||ws.readyState!==1){return false}ws.send(JSON.stringify(obj));return true}
+function subscribeCurrent(){if(currentSession&&ws?.readyState===1){const sid=sessionId(currentSession);sendWs({type:'chat.subscribe',sessions:[{sessionId:sid,lastSeq:lastSeq.get(sid)||0}]})}}
+function setProcessing(on,text='Thinking'){
+  processing=on;if(on){
+    if(!activityStartedAt)activityStartedAt=Date.now();$('activityText').textContent=(text||'Thinking').replace(/\.+$/,'')+'…';$('activity').style.display='block';
+    if(!elapsedTimer)elapsedTimer=setInterval(()=>$('elapsed').textContent=Math.floor((Date.now()-activityStartedAt)/1000)+'s',1000)
+  }else{
+    $('activity').style.display='none';activityStartedAt=0;$('elapsed').textContent='0s';if(elapsedTimer){clearInterval(elapsedTimer);elapsedTimer=null}
+  }
+  renderCodexAccounts();
+}
+function permissionNode(id){return document.querySelector(`[data-permission="${CSS.escape(id)}"]`)}
+function showPermission(m){
+  if(!m.requestId||permissionNode(m.requestId))return;
+  const d=document.createElement('div');d.className='permission';d.dataset.permission=m.requestId;
+  d.innerHTML=`<strong>权限请求：${esc(m.toolName||'Tool')}</strong><pre>${esc(pretty(m.input??m.context??''))}</pre><div class="actions"><button data-a="1" class="primary">允许</button><button data-a="0" class="danger">拒绝</button></div>`;
+  d.querySelector('[data-a="1"]').onclick=()=>permissionDecision(m.requestId,true);d.querySelector('[data-a="0"]').onclick=()=>permissionDecision(m.requestId,false);$('permissionArea').appendChild(d)
+}
+function permissionDecision(requestId,allow){sendWs({type:'chat.permission-response',requestId,allow});permissionNode(requestId)?.remove()}
+function handleEvent(m){
+  const sid=typeof m.sessionId==='string'&&m.sessionId||null;if(sid&&typeof m.seq==='number')lastSeq.set(sid,Math.max(lastSeq.get(sid)||0,m.seq));
+  if(currentSession&&sid&&sid!==sessionId(currentSession))return;
+  const eventKind=m.kind??m.type??m.event??'';
+  switch(eventKind){
+    case'chat_subscribed':setProcessing(!!m.isProcessing,m.statusText||'Working');(m.pendingPermissions||[]).forEach(showPermission);return;
+    case'status':if(m.text&&m.text!=='token_budget')setProcessing(true,m.text);return;
+    case'thinking':setProcessing(true,'Thinking');addThinking(m.content??m.text??'',m.timestamp);return;
+    case'text':setProcessing(true,'Working');addAssistant(m.content??m.text??'','',m.timestamp,m.phase);return;
+    case'stream_delta':setProcessing(true,m.messageKind==='thinking'?'思考中':'正在回复');renderMessageStream(m);return;
+    case'stream_end':renderMessageStream(m,true);streamingEl=null;return;
+    case'tool_use':setProcessing(true,'Working');addTool(m.toolName??m.name??'Tool',m.input??m.toolInput??m.content,undefined,m.toolId,m.timestamp);return;
+    case'tool_result':appendToolResult(m);return;
+    case'account_limit':pendingAccountLimit={accountId:m.accountId||currentSessionAccountConfig.currentAccountId};return;
+    case'error':surfaceRuntimeError(m);checkCurrentProviderAuth({showGuide:true});return;
+    case'permission_request':showPermission(m);setProcessing(true,'Waiting for permission');return;
+    case'permission_cancelled':if(m.requestId)permissionNode(m.requestId)?.remove();return;
+    case'protocol_error':surfaceRuntimeError(m,'Protocol error');return;
+    case'complete':
+      if(pendingAccountLimit){setProcessing(false);streamingEl=null;setStatus('Codex 额度已耗尽','bad');const limit=pendingAccountLimit;pendingAccountLimit=null;setTimeout(()=>recoverFromAccountLimit(limit),80);return}
+      if(m.error||m.message&&m.success===false){surfaceRuntimeError(m);return}
+      if(typeof m.exitCode==='number'&&m.exitCode!==0&&!m.aborted){setProcessing(false);streamingEl=null;setStatus('执行失败','bad');return}
+      setProcessing(false);streamingEl=null;setStatus(m.aborted?'已停止':'本轮完成','ok');setTimeout(()=>{if(followLatest)loadHistory()},500);loadRecent();return;
+  }
+  if(m?.error||(typeof m?.message==='string'&&/error|failed|unauthor/i.test(m.message))){
+    surfaceRuntimeError(m);
+  }
+}
+function toolsSettings(){
+  try{return JSON.parse(localStorage.getItem(currentProvider==='codex'?'codex-settings':`${currentProvider}-settings`)||'{}')}catch{return{}}
+}
+function sendOptions(){
+  const ts=toolsSettings();
+  return {model:currentModel,effort:currentEffort,permissionMode:currentPermission,toolsSettings:ts,skipPermissions:!!ts.skipPermissions}
+}
+let pendingFiles=[],sendingMessage=false;
+function resizeComposerInput(){
+  const input=$('input');
+  input.style.height='0px';
+  input.style.height=Math.min(input.scrollHeight,parseFloat(getComputedStyle(input).maxHeight))+'px';
+}
+const attachmentUrls=new Map();
+let previewTrigger=null;
+function hideImagePreview(){
+  $('imagePreview').classList.add('hidden');$('previewImage').removeAttribute('src');
+  previewTrigger?.focus({preventScroll:true});previewTrigger=null;
+}
+function closeImagePreview(){
+  if($('imagePreview').classList.contains('hidden'))return;
+  hideImagePreview();
+  if(history.state?.codexliteImagePreview)history.back();
+}
+function openImagePreview(file,trigger){
+  previewTrigger=trigger;
+  $('input').blur();
+  $('previewImage').src=attachmentUrls.get(file);$('previewImage').alt=file.name;
+  if($('imagePreview').classList.contains('hidden'))history.pushState({...history.state,codexliteImagePreview:true},'');
+  $('imagePreview').classList.remove('hidden');$('closeImagePreview').focus({preventScroll:true});
+}
+$('closeImagePreview').onclick=closeImagePreview;
+$('imagePreview').onclick=e=>{if(e.target===$('imagePreview'))closeImagePreview()};
+window.addEventListener('popstate',hideImagePreview);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!$('imagePreview').classList.contains('hidden')){closeImagePreview();e.stopImmediatePropagation()}
+},true);
+function renderPendingFiles(){
+  const list=$('attachmentList');list.replaceChildren();list.classList.toggle('hidden',!pendingFiles.length);
+  for(const [file,url] of attachmentUrls){if(!pendingFiles.includes(file)){URL.revokeObjectURL(url);attachmentUrls.delete(file)}}
+  pendingFiles.forEach((file,index)=>{
+    const chip=document.createElement('div');chip.className='attachmentChip';
+    if(file.type.startsWith('image/')){
+      if(!attachmentUrls.has(file))attachmentUrls.set(file,URL.createObjectURL(file));
+      chip.classList.add('imageChip');
+      const thumbnail=document.createElement('button');thumbnail.className='thumbnailButton';thumbnail.setAttribute('aria-label','预览 '+file.name);
+      const img=document.createElement('img');img.src=attachmentUrls.get(file);img.alt=file.name;thumbnail.appendChild(img);
+      thumbnail.onclick=()=>openImagePreview(file,thumbnail);chip.appendChild(thumbnail);
+    }else{
+      const name=document.createElement('span');name.textContent=file.name;name.title=file.name;chip.appendChild(name);
+    }
+    const remove=document.createElement('button');remove.className='removeAttachment';remove.textContent='×';remove.setAttribute('aria-label','移除 '+file.name);remove.disabled=sendingMessage;
+    remove.onclick=()=>{pendingFiles.splice(index,1);renderPendingFiles()};
+    chip.appendChild(remove);list.appendChild(chip);
+  });
+}
+$('attachmentBtn').onclick=()=>{if(!sendingMessage)$('attachmentInput').click()};
+$('attachmentInput').onchange=()=>{
+  const files=Array.from($('attachmentInput').files||[]);$('attachmentInput').value='';
+  if(pendingFiles.length+files.length>10)return toast('每条消息最多添加 10 个附件');
+  if(files.some(f=>f.size>10*1024*1024))return toast('单个附件不能超过 10MB');
+  pendingFiles.push(...files);renderPendingFiles();
+};
+$('input').addEventListener('input',resizeComposerInput);
+async function sendChat(){
+  const c=$('input').value.trim();if(sendingMessage||(!c&&!pendingFiles.length)||!currentSession)return;
+  const sid=sessionId(currentSession),files=[...pendingFiles];
+  sendingMessage=true;$('attachmentBtn').disabled=true;renderPendingFiles();setComposerEnabled(false);
+  try{
+    const ready=await checkCurrentProviderAuth({showGuide:true});if(!ready)return;
+    if(ws?.readyState!==1){connectWs();return toast('消息尚未发送，请稍后重试')}
+    setComposerEnabled(false);
+    let attachments=[];
+    if(files.length){
+      const form=new FormData();files.forEach(file=>form.append('files',file));
+      const uploaded=unwrap(await api('/api/assets/files',{method:'POST',body:form}));
+      attachments=uploaded.attachments;
+      if(!Array.isArray(attachments)||attachments.length!==files.length)throw new Error('附件上传未完成，请重试');
+    }
+    if(sessionId(currentSession)!==sid)return toast('对话已切换，消息尚未发送');
+    const ok=sendWs({type:'chat.send',sessionId:sid,content:c,options:{...sendOptions(),...(attachments.length?{attachments}:{})}});
+    if(!ok)return toast('消息尚未发送，请稍后重试');
+    recoveryTriedAccounts.delete(sid);pendingAccountLimit=null;followLatest=true;addUser(c||'发送附件');
+    if(attachments.length){
+      const list=document.createElement('div');list.className='sentAttachments';
+      attachments.forEach(file=>{const a=document.createElement('a');a.href='#';a.className='file-link';a.dataset.file=file.path;a.dataset.name=file.name;a.textContent='📎 '+file.name;list.appendChild(a)});
+      $('chat').lastElementChild.querySelector('.bubble').appendChild(list);
+    }
+    $('input').value='';pendingFiles=[];resizeComposerInput();streamingEl=null;setProcessing(true,'Thinking');scrollBottom();
+  }catch(e){toast('发送失败：'+e.message)}
+  finally{sendingMessage=false;$('attachmentBtn').disabled=false;renderPendingFiles();setComposerEnabled(providerReadyState.ready)}
+}
+async function loadServerVersion(){try{const r=await fetch('/health',{cache:'no-store'});const j=await r.json();$('serverVersion').textContent='S '+(j.serverVersion||'v?')}catch{$('serverVersion').textContent='S v?'}}
+function stopChat(){if(currentSession)sendWs({type:'chat.abort',sessionId:sessionId(currentSession)})}
+async function reloadAll(){if(token())await loadProjects();connectWs()}
+
+function openDrawer(){$('drawer').classList.remove('hidden');$('scrim').classList.remove('hidden')}function closeDrawer(){$('drawer').classList.add('hidden');$('scrim').classList.add('hidden');$('settingsPane').classList.add('hidden')}
+function dismissAuthPopup(){
+  authPopupDismissed=true;
+  $('deviceAuthBox').classList.add('hidden');
+}
+$('usageBtn').onclick=openUsagePopup;
+$('usageRefresh').onclick=loadUsageData;
+$('usageClose').onclick=closeUsagePopup;
+$('usageDone').onclick=closeUsagePopup;
+$('usageBox').onclick=e=>{if(e.target===$('usageBox'))closeUsagePopup()};
+$('authModalClose').onclick=dismissAuthPopup;
+$('authModalDone').onclick=dismissAuthPopup;
+$('deviceAuthBox').onclick=e=>{if(e.target===$('deviceAuthBox'))dismissAuthPopup()};
+$('providerGateLogin').onclick=openProviderLoginGuide;$('menuBtn').onclick=openDrawer;$('closeDrawer').onclick=closeDrawer;$('scrim').onclick=closeDrawer;$('settingsBtn').onclick=()=>{$('settingsPane').classList.remove('hidden');if(token()){refreshCodexAuth();loadCodexAccounts()}};$('backSettings').onclick=()=>{$('settingsPane').classList.add('hidden');$('drawerMain').classList.remove('hidden')};
+$('loginBtn').onclick=login;$('registerBtn').onclick=registerCloudCli;$('refreshCodexAuth').onclick=()=>{refreshCodexAuth();loadCodexAccounts()};$('codexAddAccount').onclick=addCodexAccount;$('codexDeleteAccount').onclick=deleteSelectedCodexAccount;$('codexSelectAccount').onclick=()=>selectCodexAccountForSession();$('codexAccountMode').onchange=changeCodexAccountMode;$('codexCancelBtn').onclick=cancelDeviceAuth;$('openDeviceAuth').onclick=()=>{const u=$('deviceAuthUrl').href;if(u)window.open(u,'_blank','noopener')};$('testBtn').onclick=async()=>{try{await api('/api/projects?skipSync=1&sessionsLimit=1');$('settingsStatus').textContent='连接正常';refreshCodexAuth()}catch(e){$('settingsStatus').textContent='连接失败：'+e.message}};
+$('modelSelect').onchange=changeModel;$('effortSelect').onchange=changeEffort;$('permissionSelect').onchange=changePermission;$('sendBtn').onclick=sendChat;$('stopBtn').onclick=stopChat;$('reloadBtn').onclick=async()=>{if(token()){await loadProjects();await loadRecent()}connectWs()};$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
+function selectSettingsTab(tab){
+  ['accounts','reply'].forEach(name=>{$(name+'Panel').classList.toggle('hidden',name!==tab);$(name+'Tab').setAttribute('aria-selected',String(name===tab))});
+}
+$('accountsTab').onclick=()=>selectSettingsTab('accounts');
+$('replyTab').onclick=()=>selectSettingsTab('reply');
+$('showToolDetails').checked=showToolDetails;
+$('showToolDetails').onchange=()=>{
+  showToolDetails=$('showToolDetails').checked;
+  localStorage.setItem('codexlite-show-tool-details',String(showToolDetails));
+  document.body.classList.toggle('hideToolDetails',!showToolDetails);
+  if(currentSession&&!processing)loadHistory();
+};
+// 输入区只展示原有选择器的状态，继续使用原有 change / send 处理器。
+const composerPickers=[$('modelPicker'),$('permissionPicker')];
+function closeComposerPickers(){composerPickers.forEach(p=>p.open=false)}
+composerPickers.forEach(p=>p.addEventListener('toggle',()=>{if(p.open)composerPickers.forEach(other=>{if(other!==p)other.open=false})}));
+document.addEventListener('click',e=>{if(!composerPickers.some(p=>p.contains(e.target)))closeComposerPickers()});
+function syncComposerLabels(){
+  const model=$('modelSelect'),effort=$('effortSelect'),permission=$('permissionSelect');
+  $('composerModelLabel').textContent=model.selectedOptions[0]?.textContent||'模型 / 思考';
+  $('modelPicker').querySelector('summary').title='模型：'+$('composerModelLabel').textContent+' · 思考：'+(effort.selectedOptions[0]?.textContent||'默认');
+  $('permissionPicker').querySelector('summary').title='权限：'+(permission.selectedOptions[0]?.textContent||'未选择');
+}
+const composerSelectObserver=new MutationObserver(syncComposerLabels);
+['modelSelect','effortSelect','permissionSelect'].forEach(id=>{
+  composerSelectObserver.observe($(id),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','selected']});
+  $(id).addEventListener('change',syncComposerLabels);
+});
+syncComposerLabels();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&composerPickers.some(p=>p.open)){closeComposerPickers();e.stopImmediatePropagation()}});
+// 新布局的视口高度与底部面板交互，不改变请求或账号状态。
+function updateAppHeight(){document.documentElement.style.setProperty('--app-height',(window.visualViewport?.height||window.innerHeight)+'px')}
+window.addEventListener('resize',updateAppHeight);
+window.visualViewport?.addEventListener('resize',updateAppHeight);
+updateAppHeight();
+resizeComposerInput();
+window.addEventListener('resize',resizeComposerInput);
+window.visualViewport?.addEventListener('resize',resizeComposerInput);
+$('connectionSettings').open=!token();
+$('settingsPane').addEventListener('click',e=>{if(e.target===$('settingsPane'))$('backSettings').click()});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(!$('usageBox').classList.contains('hidden'))closeUsagePopup();
+  else if(!$('deviceAuthBox').classList.contains('hidden'))dismissAuthPopup();
+  else if(!$('settingsPane').classList.contains('hidden'))$('backSettings').click();
+  else closeDrawer();
+});
+loadServerVersion();
+if(token()){loadProjects().then(loadRecent).then(connectWs)}else{openDrawer();$('settingsPane').classList.remove('hidden')}
+</script>
+</body>
+</html>
