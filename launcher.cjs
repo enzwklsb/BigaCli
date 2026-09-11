@@ -39,9 +39,11 @@ async function downloadComponent(m,k){
  const hash=createHash('sha256'),stream=Readable.fromWeb(r.body);stream.on('data',b=>hash.update(b));
  await pipeline(stream,fs.createWriteStream(zip));
  if(hash.digest('hex')!==c.sha256)throw Error('下载校验失败，请重试');
- const temp=target+'.'+randomUUID()+'.tmp';fs.mkdirSync(path.dirname(target),{recursive:true});
- const quote=s=>"'"+s.replaceAll("'","''")+"'";
- await command('powershell.exe',['-NoProfile','-NonInteractive','-Command',`Expand-Archive -LiteralPath ${quote(zip)} -DestinationPath ${quote(temp)} -Force`]);
+ // Windows' archive cmdlet can silently skip long dependency paths. tar.exe ships with supported Windows versions.
+ const temp=path.join(downloads,'unpack-'+randomUUID());fs.mkdirSync(temp,{recursive:true});fs.mkdirSync(path.dirname(target),{recursive:true});
+ await command('tar.exe',['-xf',zip,'-C',temp]);
+ const entry={app:'cloudcli/dist-server/server/index.js',deps:'node_modules/@openai/codex-sdk/package.json',node:'node.exe'}[k];
+ if(!fs.existsSync(path.join(temp,entry)))throw Error('更新包缺少运行文件：'+entry);
  fs.renameSync(temp,target);fs.unlinkSync(zip);
 }
 function start(m){
