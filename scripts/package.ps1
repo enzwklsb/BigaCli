@@ -45,7 +45,8 @@ $full=Join-Path $stage 'BigaCli'
 if(Test-Path -LiteralPath $full){
  $resolved=(Resolve-Path -LiteralPath $full).Path
  if($resolved -ne [IO.Path]::GetFullPath((Join-Path $repo ('build/'+$release.version+'/BigaCli')))){throw 'Unexpected build output path'}
- Remove-Item -LiteralPath $resolved -Recurse -Force
+ # PowerShell 5 Remove-Item fails on deep node_modules paths.
+ [IO.Directory]::Delete(('\\?\'+$resolved),$true)
 }
 New-Item -ItemType Directory -Force $full | Out-Null
 foreach($name in @('app','deps','node')){
@@ -55,11 +56,14 @@ foreach($name in @('app','deps','node')){
  $manifest.components[$name]=[ordered]@{id=$hash;sha256=$hash;size=(Get-Item $zip).Length;url=('https://github.com/'+$release.repository+'/releases/download/v'+$release.version+'/'+$name+'-win-x64.zip')}
  $dest=Join-Path $full ('store/'+$name+'/'+$hash)
  New-Item -ItemType Directory -Force $dest | Out-Null
- Copy-Item -Path ((Join-Path $components $name)+'/*') -Destination $dest -Recurse -Force
+ & tar.exe -xf $zip -C $dest
+ if($LASTEXITCODE){throw ('Could not assemble '+$name+' component')}
 }
 $json=$manifest | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText((Join-Path $assets 'release.json'),$json)
 [IO.File]::WriteAllText((Join-Path $full 'active.json'),$json)
 Copy-Item start.cmd,launcher.cjs,LICENSE,README.md -Destination $full
-Write-Zip $full (Join-Path $assets 'BigaCli-win-x64.zip')
+$fullZip=Join-Path $assets 'BigaCli-win-x64.zip'
+& tar.exe -a -cf $fullZip -C $full .
+if($LASTEXITCODE){throw 'Could not create full package'}
 Get-ChildItem $assets -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize
