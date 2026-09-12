@@ -1,9 +1,9 @@
-param([string]$Version='0.1.0')
+param([string]$Version='0.1.0', [string[]]$Components=@('app','deps','node'))
 $ErrorActionPreference='Stop'
 $repo=Split-Path $PSScriptRoot -Parent
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $count=0
-foreach($name in @('app','deps','node')){
+foreach($name in $Components){
  $source=Join-Path $repo "build/$Version/components/$name"
  $zip=[IO.Compression.ZipFile]::OpenRead((Join-Path $repo "build/$Version/assets/$name-win-x64.zip"))
  try{

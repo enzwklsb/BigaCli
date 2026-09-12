@@ -81,14 +81,14 @@ export async function* streamCodexTurn(input, options, signal) {
     signal?.addEventListener('abort', abort, { once: true });
     try {
         if (signal?.aborted) { const error = new Error('Codex turn aborted'); error.name = 'AbortError'; throw error; }
-        await request('initialize', { clientInfo: { name: 'codexlite', title: 'CodexLite', version: '21' }, capabilities: null });
+        await request('initialize', { clientInfo: { name: 'bigacli', title: 'BigaCli', version: '0.2.0' }, capabilities: { experimentalApi: true } });
         send({ method: 'initialized' });
         const params = { cwd: options.workingDirectory, model: options.model, sandbox: options.sandboxMode, approvalPolicy: options.approvalPolicy };
         const result = await request(threadId ? 'thread/resume' : 'thread/start', { ...params, ...(threadId ? { threadId } : {}) });
         threadId = result.thread.id;
         yield { type: 'thread.started', thread_id: threadId };
         const userInput = typeof input === 'string' ? [{ type: 'text', text: input }] : input.map(item => item.type === 'local_image' ? { type: 'localImage', path: item.path } : { type: 'text', text: item.text });
-        await request('turn/start', { threadId, input: userInput, ...(options.modelReasoningEffort ? { effort: options.modelReasoningEffort } : {}), summary: 'auto' });
+        await request('turn/start', { threadId, input: userInput, serviceTierForTurn: options.serviceTier || 'default', ...(options.modelReasoningEffort ? { effort: options.modelReasoningEffort } : {}), summary: 'auto' });
         while (true) {
             if (failure) throw failure;
             if (queue.length) { yield queue.shift(); continue; }
@@ -100,6 +100,12 @@ export async function* streamCodexTurn(input, options, signal) {
         for (const id of ownedApprovals) approvals.delete(id);
         for (const p of pending.values()) p.reject(new Error('Codex transport closed'));
         pending.clear(); lines.close();
-        if (!closed) proc.kill();
+        if (!closed && finished) {
+            await new Promise(resolve => {
+                const timer = setTimeout(() => { proc.kill(); resolve(); }, 2000);
+                proc.once('close', () => { clearTimeout(timer); resolve(); });
+                proc.stdin.end();
+            });
+        } else if (!closed) proc.kill();
     }
 }

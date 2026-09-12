@@ -13,6 +13,7 @@
  * - getActiveCodexSessions() - List all active sessions
  */
 import { streamCodexTurn, codexStreamPermissions } from '../../services/codex-stream.service.js';
+import { readCodexModelCatalog } from '../../services/codex-models.service.js';
 import { buildCodexEnv, getSessionCodexAccountConfig } from '../../services/codex-account.service.js';
 import { appendFilesInputTag, buildCodexInputItems, normalizeImageDescriptors } from '../../../../shared/image-attachments.js';
 import { notifyRunFailed, notifyRunStopped } from '../../../../modules/notifications/index.js';
@@ -212,12 +213,6 @@ export async function queryCodex(command, options = {}, ws, context) {
     const resolvedModel = await context.resolveResumeModel(sessionId, model);
     const workingDirectory = cwd || projectPath || process.cwd();
     const { sandboxMode, approvalPolicy } = mapPermissionModeToCodexOptions(permissionMode);
-    const catalog = await context.getProviderModels();
-    const selectedModel = catalog.OPTIONS.find((option) => option.value === resolvedModel) || null;
-    const allowedEfforts = selectedModel?.effort?.values?.map((value) => value.value) || [];
-    const resolvedEffort = typeof effort === 'string' && effort !== 'default' && allowedEfforts.includes(effort)
-        ? effort
-        : undefined;
     let codex;
     let thread;
     // Provider-native thread id (starts as the resume id, or is captured from
@@ -230,6 +225,13 @@ export async function queryCodex(command, options = {}, ws, context) {
     // the provider-native thread id once captured (legacy/direct API callers).
     const sessionKey = () => sessionId || capturedSessionId || null;
     try {
+        const catalog = await readCodexModelCatalog(accountId);
+        const selectedModel = catalog.OPTIONS.find((option) => option.value === resolvedModel) || null;
+        const allowedEfforts = selectedModel?.effort?.values?.map((value) => value.value) || [];
+        const resolvedEffort = typeof effort === 'string' && effort !== 'default' && allowedEfforts.includes(effort) ? effort : undefined;
+        if (options.serviceTier && options.serviceTier !== 'default' && !selectedModel?.serviceTiers?.some(tier => tier.id === options.serviceTier)) {
+            throw new Error('当前账号的该模型不支持所选速度，请重新选择。');
+        }
         // Keep CloudCLI's native Codex SDK executable resolution. Multi-account
         // routing only changes CODEX_HOME through env; it does not locate Codex.
         codex = { env: buildCodexEnv(accountId) };
@@ -240,6 +242,7 @@ export async function queryCodex(command, options = {}, ws, context) {
             approvalPolicy,
             model: resolvedModel,
             modelReasoningEffort: resolvedEffort,
+            serviceTier: options.serviceTier,
         };
         thread = { id: providerSessionId };
         const registerSession = (id) => {

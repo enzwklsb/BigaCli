@@ -4,15 +4,16 @@ import { buildCodexEnv } from './codex-account.service.js';
 function send(proc, payload) { proc.stdin.write(`${JSON.stringify(payload)}\n`); }
 export function readCodexRateLimits(timeoutMs = 8000, accountId = 'default') {
   return new Promise((resolve, reject) => {
-    const proc = spawnCodex(spawn, ['app-server'], { stdio: ['pipe', 'pipe', 'pipe'], env: buildCodexEnv(accountId) });
-    let buffer = '', stderr = '', settled = false;
+    const proc = spawnCodex(spawn, ['app-server'], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env: buildCodexEnv(accountId) });
+    let buffer = '', stderr = '', settled = false, result;
     const finish = (error, value) => {
-      if (settled) return; settled = true; clearTimeout(timer);
-      try { proc.kill(); } catch {}
-      error ? reject(error) : resolve(value);
+      if (settled) return;
+      if (error) { settled = true; clearTimeout(timer); try { proc.kill(); } catch {} reject(error); }
+      else { result = value; proc.stdin.end(); }
     };
     const timer = setTimeout(() => finish(new Error('Codex rate-limit request timed out')), timeoutMs);
     proc.on('error', (error) => finish(error));
+    proc.stdin.on('error', (error) => finish(error));
     proc.stderr.on('data', (chunk) => { stderr = (stderr + String(chunk)).slice(-4000); });
     proc.stdout.on('data', (chunk) => {
       buffer += String(chunk);
@@ -31,7 +32,11 @@ export function readCodexRateLimits(timeoutMs = 8000, accountId = 'default') {
         }
       }
     });
-    proc.on('close', (code) => { if (!settled) finish(new Error(stderr.trim() || `codex app-server exited with code ${code}`)); });
+    proc.on('close', (code) => {
+      if (settled) return;
+      if (code === 0 && result !== undefined) { settled = true; clearTimeout(timer); resolve(result); }
+      else finish(new Error(stderr.trim() || `codex app-server exited with code ${code}`));
+    });
     send(proc, { id: 1, method: 'initialize', params: { clientInfo: { name: 'codex-shell', title: 'Codex Shell', version: '1' }, capabilities: null } });
   });
 }

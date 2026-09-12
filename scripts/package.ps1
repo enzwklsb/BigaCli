@@ -19,7 +19,17 @@ if(!$ReuseDependencies){
   if($LASTEXITCODE){throw 'Native dependency installation failed'}
  } finally {Pop-Location}
 }
-if($NodeDirectory){
+if($release.nodeArchive){
+ $nodeZip=Join-Path $assets 'node-win-x64.zip'
+ if(!(Test-Path -LiteralPath $nodeZip) -or (Get-FileHash -LiteralPath $nodeZip).Hash.ToLowerInvariant() -ne $release.nodeArchive.sha256){
+  & curl.exe --fail --location --retry 3 --output $nodeZip $release.nodeArchive.url
+  if($LASTEXITCODE){throw 'Node component download failed'}
+ }
+ if((Get-FileHash -LiteralPath $nodeZip).Hash.ToLowerInvariant() -ne $release.nodeArchive.sha256){throw 'Node component checksum mismatch'}
+ New-Item -ItemType Directory -Force (Join-Path $components 'node') | Out-Null
+ & tar.exe -xf $nodeZip -C (Join-Path $components 'node')
+ if($LASTEXITCODE){throw 'Node component extraction failed'}
+}elseif($NodeDirectory){
  New-Item -ItemType Directory -Force (Join-Path $components 'node') | Out-Null
  Copy-Item -LiteralPath (Join-Path $NodeDirectory 'node.exe') -Destination (Join-Path $components 'node/node.exe')
  if(Test-Path (Join-Path $NodeDirectory 'LICENSE')){Copy-Item (Join-Path $NodeDirectory 'LICENSE') (Join-Path $components 'node/LICENSE')}
@@ -46,12 +56,14 @@ if(Test-Path -LiteralPath $full){
  $resolved=(Resolve-Path -LiteralPath $full).Path
  if($resolved -ne [IO.Path]::GetFullPath((Join-Path $repo ('build/'+$release.version+'/BigaCli')))){throw 'Unexpected build output path'}
  # PowerShell 5 Remove-Item fails on deep node_modules paths.
+ & attrib.exe -R ($resolved+'\*') /S /D
+ & attrib.exe -R $resolved
  [IO.Directory]::Delete(('\\?\'+$resolved),$true)
 }
 New-Item -ItemType Directory -Force $full | Out-Null
 foreach($name in @('app','deps','node')){
  $zip=Join-Path $assets ($name+'-win-x64.zip')
- if($name -eq 'app' -or !$ReuseDependencies -or !(Test-Path -LiteralPath $zip)){Write-Zip (Join-Path $components $name) $zip}
+ if(!($name -eq 'node' -and $release.nodeArchive) -and ($name -eq 'app' -or !$ReuseDependencies -or !(Test-Path -LiteralPath $zip))){Write-Zip (Join-Path $components $name) $zip}
  $hash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
  $manifest.components[$name]=[ordered]@{id=$hash;sha256=$hash;size=(Get-Item $zip).Length;url=('https://github.com/'+$release.repository+'/releases/download/v'+$release.version+'/'+$name+'-win-x64.zip')}
  $dest=Join-Path $full ('store/'+$name+'/'+$hash)

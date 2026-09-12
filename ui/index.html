@@ -87,6 +87,10 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .markdown pre, .toolbox pre { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px; overflow-x: auto; font: 13px/1.6 var(--font-mono); }
 .markdown pre code { padding: 0; background: transparent; font: inherit; }
 .markdown a { color: var(--blue); text-underline-offset: 3px; }
+.markdown .tableScroll { max-width: 100%; overflow-x: auto; margin: 1em 0; }
+.markdown table { border-collapse: collapse; min-width: 100%; font-size: inherit; }
+.markdown th, .markdown td { border-bottom: 1px solid var(--border-subtle); padding: 8px 12px; text-align: left; min-width: 100px; vertical-align: top; }
+.markdown th { background: var(--bg); font-weight: 700; }
 
 /* 沿用真实工具输出和 details 折叠交互。 */
 .reasoning, .toolbox { margin: 0 0 12px; }
@@ -292,6 +296,8 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
           <div class="pickerPanel">
             <label for="modelSelect">模型</label><select id="modelSelect" disabled><option>模型</option></select>
             <label for="effortSelect">思考深度</label><select id="effortSelect" disabled><option>思考深度</option></select>
+            <label for="speedSelect">速度</label><select id="speedSelect" disabled><option value="default">普通</option><option value="priority">快速</option></select>
+            <p class="small">快速模式会消耗更多额度。设置从下一次发送生效。</p>
           </div>
         </details>
         <details id="permissionPicker" class="picker">
@@ -478,7 +484,7 @@ async function downloadLocalFile(path,label){
 document.addEventListener('click',e=>{const a=e.target.closest?.('.file-link');if(a){e.preventDefault();downloadLocalFile(a.dataset.file,a.dataset.name)}});
 
 /* 轻量 Markdown：支持本地文件链接 */
-function md(src){src=String(src??'');const links=[];src=src.replace(/\[([^\]]+)\]\(\s*(?:<([^>]+)>|([^)]+))\s*\)/g,(m,label,a,b)=>{const href=(a||b||'').trim(),id=links.length,ext=/^(https?:|mailto:|tel:|data:|#)/i.test(href);links.push(ext?`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:`<a href="#" class="file-link" data-file="${esc(href)}" data-name="${esc(label)}">⬇ ${esc(label)}</a>`);return `@@LINK${id}@@`});let s=esc(src).replace(/\r\n?/g,'\n');const blocks=[];s=s.replace(/```([^\n]*)\n([\s\S]*?)```/g,(_,lang,code)=>{const id=blocks.length;blocks.push(`<pre><code>${code}</code></pre>`);return `@@BLOCK${id}@@`});s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*\n]+)\*/g,'<em>$1</em>');const lines=s.split('\n');let out=[],inUl=false,inOl=false;const close=()=>{if(inUl){out.push('</ul>');inUl=false}if(inOl){out.push('</ol>');inOl=false}};for(const line of lines){let m;if((m=line.match(/^###\s+(.+)/))){close();out.push(`<h3>${m[1]}</h3>`)}else if((m=line.match(/^##\s+(.+)/))){close();out.push(`<h2>${m[1]}</h2>`)}else if((m=line.match(/^#\s+(.+)/))){close();out.push(`<h1>${m[1]}</h1>`)}else if((m=line.match(/^\s*[-*]\s+(.+)/))){if(inOl){out.push('</ol>');inOl=false}if(!inUl){out.push('<ul>');inUl=true}out.push(`<li>${m[1]}</li>`)}else if((m=line.match(/^\s*\d+\.\s+(.+)/))){if(inUl){out.push('</ul>');inUl=false}if(!inOl){out.push('<ol>');inOl=true}out.push(`<li>${m[1]}</li>`)}else if(!line.trim()){close()}else{close();out.push(`<p>${line}</p>`)}}close();let h=out.join('');blocks.forEach((b,i)=>h=h.replaceAll(`@@BLOCK${i}@@`,b));links.forEach((b,i)=>h=h.replaceAll(`@@LINK${i}@@`,b));return h;}
+function md(src){return BigaMarkdown.render(String(src??''))}
 const messageStreams=new Map();
 let historyRenderTarget=null,followLatest=true,historyState=null;
 let showToolDetails=localStorage.getItem('codexlite-show-tool-details')==='true';
@@ -673,7 +679,7 @@ async function deleteSelectedCodexAccount(){
 }
 async function selectCodexAccountForSession(accountId=selectedCodexAccountId){
   if(!currentSession||currentProvider!=='codex')return false;if(processing){toast('任务运行中，停止后才能切换账号');return false}
-  try{currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}`,{method:'POST',body:JSON.stringify({accountId,mode:$('codexAccountMode')?.value||currentSessionAccountConfig.mode||'manual'})}));selectedCodexAccountId=accountId;await loadCodexAccounts();toast('当前对话 Codex 账号已切换');return true}catch(e){toast('切换失败：'+e.message);return false}
+try{currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}`,{method:'POST',body:JSON.stringify({accountId,mode:$('codexAccountMode')?.value||currentSessionAccountConfig.mode||'manual'})}));selectedCodexAccountId=accountId;await loadCodexAccounts();await loadProviderControls();toast('当前对话 Codex 账号已切换');return true}catch(e){toast('切换失败：'+e.message);return false}
 }
 async function changeCodexAccountMode(){
   if(!currentSession||processing)return renderCodexAccounts();
@@ -1106,7 +1112,7 @@ async function loadProviderControls(){
   const sid=sessionId(currentSession),p=currentProvider;
   try{
     const [modelsResp,capsResp,activeResp]=await Promise.all([
-      api(`/api/providers/${encodeURIComponent(p)}/models`),
+      api(`/api/providers/${encodeURIComponent(p)}/models?sessionId=${encodeURIComponent(sid)}`),
       api('/api/providers/capabilities'),
       api(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`)
     ]);
@@ -1118,7 +1124,7 @@ async function loadProviderControls(){
     currentEffort=active.effort||localStorage.getItem(`${p}-effort`)||'default';
     const validPerms=providerCapabilities?.permissionModes||(['codex'].includes(p)?['default','acceptEdits','bypassPermissions']:['default']);
     currentPermission=localStorage.getItem(`permissionMode-${sid}`)||localStorage.getItem(`permissionMode-last-${p}`)||providerCapabilities?.defaultPermissionMode||validPerms[0]||'default';
-    fillModelSelect();fillPermissionSelect();fillEffortSelect();
+    fillModelSelect();fillPermissionSelect();fillEffortSelect();fillSpeedSelect();
     ['modelSelect','permissionSelect'].forEach(id=>$(id).disabled=false);
   }catch(e){setStatus('模型/权限配置读取失败：'+e.message,'bad')}
 }
@@ -1129,6 +1135,13 @@ function fillModelSelect(){
   if(currentModel && [...s.options].some(o=>o.value===currentModel))s.value=currentModel;
 }
 function modelOption(){return (providerModels?.OPTIONS||[]).find(o=>o.value===currentModel)}
+function fillSpeedSelect(){
+  const select=$('speedSelect'),saved=localStorage.getItem('speed-'+sessionId(currentSession))||'default';
+  const fast=modelOption()?.serviceTiers?.some(tier=>tier.id==='priority');
+  select.options[1].disabled=!fast;select.disabled=currentProvider!=='codex';
+  select.value=fast&&saved==='priority'?'priority':'default';syncComposerLabels();
+}
+$('speedSelect').onchange=()=>{localStorage.setItem('speed-'+sessionId(currentSession),$('speedSelect').value);syncComposerLabels()};
 function fillEffortSelect(){
   const s=$('effortSelect'),vals=modelOption()?.effort?.values||[];s.innerHTML='';
   if(!vals.length){s.innerHTML='<option value="default">默认思考深度</option>';s.value='default';s.disabled=true;return}
@@ -1147,7 +1160,7 @@ async function changeModel(){
   if(!currentSession)return;const next=$('modelSelect').value,sid=sessionId(currentSession);
   try{
     await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-model`,{method:'POST',body:JSON.stringify({model:next})});
-    currentModel=next;localStorage.setItem(`${currentProvider}-model`,next);currentEffort='default';fillEffortSelect();setStatus('模型已切换','ok')
+    currentModel=next;localStorage.setItem(`${currentProvider}-model`,next);currentEffort='default';fillEffortSelect();fillSpeedSelect();setStatus('模型已切换','ok')
   }catch(e){fillModelSelect();toast('切换模型失败：'+e.message);setStatus('切换模型失败：'+e.message,'bad')}
 }
 async function changeEffort(){
@@ -1226,7 +1239,7 @@ function toolsSettings(){
 }
 function sendOptions(){
   const ts=toolsSettings();
-  return {model:currentModel,effort:currentEffort,permissionMode:currentPermission,toolsSettings:ts,skipPermissions:!!ts.skipPermissions}
+  return {model:currentModel,effort:currentEffort,serviceTier:$('speedSelect').value||'default',permissionMode:currentPermission,toolsSettings:ts,skipPermissions:!!ts.skipPermissions}
 }
 let pendingFiles=[],sendingMessage=false;
 function resizeComposerInput(){
@@ -1352,7 +1365,7 @@ composerPickers.forEach(p=>p.addEventListener('toggle',()=>{if(p.open)composerPi
 document.addEventListener('click',e=>{if(!composerPickers.some(p=>p.contains(e.target)))closeComposerPickers()});
 function syncComposerLabels(){
   const model=$('modelSelect'),effort=$('effortSelect'),permission=$('permissionSelect');
-  $('composerModelLabel').textContent=model.selectedOptions[0]?.textContent||'模型 / 思考';
+  $('composerModelLabel').textContent=(model.selectedOptions[0]?.textContent||'模型 / 思考')+($('speedSelect').value==='priority'?' · 快速':' · 普通');
   $('modelPicker').querySelector('summary').title='模型：'+$('composerModelLabel').textContent+' · 思考：'+(effort.selectedOptions[0]?.textContent||'默认');
   $('permissionPicker').querySelector('summary').title='权限：'+(permission.selectedOptions[0]?.textContent||'未选择');
 }

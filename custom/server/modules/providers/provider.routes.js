@@ -2,7 +2,7 @@ import express from 'express';
 import { providerAuthService } from '../../modules/providers/services/provider-auth.service.js';
 import { readCodexRateLimits } from './services/codex-rate-limits.service.js';
 import { readCodexAccountInfo } from './services/codex-account-info.service.js';
-import { readCodexModels } from './services/codex-models.service.js';
+import { readCodexModels, readCodexModelCatalog } from './services/codex-models.service.js';
 import { listCodexAccounts, createCodexAccount, deleteCodexAccount, getSessionCodexAccountConfig, setSessionCodexAccountConfig, setSessionCodexMode } from './services/codex-account.service.js';
 import { chatRunRegistry } from '../websocket/services/chat-run-registry.service.js';
 import { sessionsDb } from '../database/index.js';
@@ -472,7 +472,11 @@ router.get('/:provider/auth/status', asyncHandler(async (req, res) => {
 }));
 router.get('/:provider/models', asyncHandler(async (req, res) => {
     const provider = parseProvider(req.params.provider);
-    const models = await providerModelsService.getProviderModels(provider);
+    const sessionId = readOptionalQueryString(req.query.sessionId);
+    const accountId = provider === 'codex' && sessionId ? getSessionCodexAccountConfig(sessionId).currentAccountId : 'default';
+    const models = provider === 'codex'
+        ? await readCodexModelCatalog(accountId)
+        : await providerModelsService.getProviderModels(provider);
     res.json(createApiSuccessResponse({ provider, models }));
 }));
 router.post('/:provider/models', asyncHandler(async (req, res) => {
