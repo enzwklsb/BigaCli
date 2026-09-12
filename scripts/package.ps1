@@ -1,4 +1,4 @@
-param([string]$NodeDirectory, [switch]$ReuseDependencies)
+param([string]$NodeDirectory, [switch]$ReuseDependencies, [switch]$ComponentsOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $repo
@@ -52,7 +52,7 @@ function Write-Zip([string]$source,[string]$target){
 }
 $manifest=[ordered]@{version=$release.version;cloudcli=$release.cloudcli;codex=$release.codex;components=[ordered]@{}}
 $full=Join-Path $stage 'BigaCli'
-if(Test-Path -LiteralPath $full){
+if(!$ComponentsOnly -and (Test-Path -LiteralPath $full)){
  $resolved=(Resolve-Path -LiteralPath $full).Path
  if($resolved -ne [IO.Path]::GetFullPath((Join-Path $repo ('build/'+$release.version+'/BigaCli')))){throw 'Unexpected build output path'}
  # PowerShell 5 Remove-Item fails on deep node_modules paths.
@@ -60,12 +60,13 @@ if(Test-Path -LiteralPath $full){
  & attrib.exe -R $resolved
  [IO.Directory]::Delete(('\\?\'+$resolved),$true)
 }
-New-Item -ItemType Directory -Force $full | Out-Null
+if(!$ComponentsOnly){New-Item -ItemType Directory -Force $full | Out-Null}
 foreach($name in @('app','deps','node')){
  $zip=Join-Path $assets ($name+'-win-x64.zip')
  if(!($name -eq 'node' -and $release.nodeArchive) -and ($name -eq 'app' -or !$ReuseDependencies -or !(Test-Path -LiteralPath $zip))){Write-Zip (Join-Path $components $name) $zip}
  $hash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
  $manifest.components[$name]=[ordered]@{id=$hash;sha256=$hash;size=(Get-Item $zip).Length;url=('https://github.com/'+$release.repository+'/releases/download/v'+$release.version+'/'+$name+'-win-x64.zip')}
+ if($ComponentsOnly){continue}
  $dest=Join-Path $full ('store/'+$name+'/'+$hash)
  New-Item -ItemType Directory -Force $dest | Out-Null
  & tar.exe -xf $zip -C $dest
@@ -73,6 +74,7 @@ foreach($name in @('app','deps','node')){
 }
 $json=$manifest | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText((Join-Path $assets 'release.json'),$json)
+if($ComponentsOnly){Get-ChildItem $assets -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize; return}
 [IO.File]::WriteAllText((Join-Path $full 'active.json'),$json)
 Copy-Item start.cmd,launcher.cjs,LICENSE,README.md -Destination $full
 $fullZip=Join-Path $assets 'BigaCli-win-x64.zip'

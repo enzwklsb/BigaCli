@@ -8,12 +8,12 @@ const url='http://127.0.0.1:'+port;
 try{
  let health;for(let i=0;i<60;i++){try{health=await(await fetch(url+'/health')).json();if(health.bigaVersion===m.version)break}catch{}await new Promise(r=>setTimeout(r,500))}
  assert.equal(health?.bigaVersion,m.version,errors||'Server did not start');
- const auth=await(await fetch(url+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'release-smoke',password:crypto.randomUUID()})})).json();
- assert.ok(auth.token,'New user registration failed');
- const status=await(await fetch(url+'/api/bigacli/update/status',{headers:{Authorization:'Bearer '+auth.token}})).json();assert.equal(status.version,m.version);
+ const user=await(await fetch(url+'/api/auth/user')).json();
+ assert.equal(user.user.username,'bigacli','Internal user was not initialized');
+ const status=await(await fetch(url+'/api/bigacli/update/status')).json();assert.equal(status.version,m.version);
  const html=await(await fetch(url)).text();assert.ok(html.includes('bigaStatus'));assert.ok(html.includes('BigaCli '+m.version));
- assert.equal((await fetch(url+'/api/bigacli/update/install',{method:'POST'})).status,401);
- console.log('PASS: packaged startup, isolated new-user registration, authenticated update status, page update entry, unauthenticated install rejected');
+ assert.ok(!html.includes('id="loginBtn"'));
+ console.log('PASS: packaged startup, automatic internal user, no-token update status, page update entry, no web login form');
 }finally{
  // Tell the supervisor to terminate its child through a dedicated shutdown signal.
  if(p.connected)p.send({type:'shutdown'});

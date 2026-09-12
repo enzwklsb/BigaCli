@@ -33,7 +33,7 @@ import { fileTreeRoutes } from './modules/file-tree/index.js';
 import { worktreesRoutes } from './modules/worktrees/index.js';
 import browserUseMcpRoutes from './modules/browser-use/browser-use-mcp.routes.js';
 import { browserUseService } from './modules/browser-use/browser-use.service.js';
-import { initializeDatabase, sessionsDb } from './modules/database/index.js';
+import { initializeDatabase, sessionsDb, userDb } from './modules/database/index.js';
 import { configureWebPush } from './modules/notifications/index.js';
 const __dirname = getModuleDirectory(import.meta.url);
 // The server source runs from /server, while the compiled output runs from /dist-server/server.
@@ -277,6 +277,7 @@ async function startServer() {
     try {
         // Initialize authentication database
         await initializeDatabase();
+        if (!userDb.hasUsers()) userDb.createUser('bigacli', '!');
         // Configure Web Push (VAPID keys)
         configureWebPush();
         // Check if running in production mode (dist folder exists)

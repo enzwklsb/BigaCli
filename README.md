@@ -4,7 +4,9 @@ A CloudCLI-based, self-contained Windows client for Codex. Includes a mobile-fri
 
 ## Install
 
-Download `BigaCli-win-x64.zip` from [Releases](https://github.com/enzwklsb/BigaCli/releases/latest), extract to a writable directory, and double-click `start.cmd`. Open port **3101**. No global Node, npm or Codex installation is needed.
+Download `BigaCli-win-x64.zip` from the [0.2.0 full release](https://github.com/enzwklsb/BigaCli/releases/tag/v0.2.0), extract to a writable directory, and double-click `start.cmd`. Open port **3101** and use the page's update button for newer component releases. No global Node, npm or Codex installation is needed.
+
+Starting with 0.2.1, the web page needs no CloudCLI username, password or browser token. Existing internal user records and settings are retained; new installations create an internal user automatically. Codex account authentication remains unchanged. All devices able to reach the service can use it.
 
 The page checks for published updates automatically. Click **下载并更新** once; unchanged components are not downloaded. Chat remains available during download, then the app waits for running tasks, restarts and reconnects. A failed startup returns to the previous application version. Account data and conversations are outside the program directory.
 
@@ -19,6 +21,8 @@ Windows x64 and Node 24.19.0 are used for release builds. In `cloudcli/`, run `n
 `nodeArchive` pins an already published Node component by URL and SHA-256. Reuse that archive while Node stays unchanged, so differences between compression tools cannot force a redundant client download. When changing Node, build and publish the new component and update this pin. For local rebuilds, `-ReuseDependencies` may reuse the dependency archive only when the lockfile has not changed.
 
 The release workflow produces a **draft** release. Review it and publish it to make the update visible to installed users. Application, production dependencies and Node are separate complete component ZIPs. One release manifest selects the tested combination. This supports skipping releases without sequential patch installation.
+
+For application-only updates, `-ComponentsOnly -ReuseDependencies` packages the app and reuses the unchanged component archives placed in the new version's assets directory. It does not rebuild a full installation ZIP. Downloads happen in the desktop launcher under `<install>/downloads`; successfully extracted components live under `<install>/store`, and temporary ZIPs are removed.
 
 ## Data and licensing
 

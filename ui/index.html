@@ -188,8 +188,6 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .settingsHeader strong { font-size: 17px; font-weight: 900; }
 .settingsContent { overflow-y: auto; min-height: 0; }
 .settingsContent input:not([type=radio]) { margin-bottom: 10px; }
-.connectionSettings { margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px; }
-.connectionSettings summary { cursor: pointer; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
 .settingActions { display: flex; gap: 8px; }
 .settingActions button { flex: 1; }
 .accountSummary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border: 1.5px solid var(--border); border-radius: var(--radius); }
@@ -335,14 +333,6 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 <label class="small">额度耗尽后的处理</label><select id="codexAccountMode" style="width:100%;margin-top:5px"><option value="manual">手动选择其他账号</option><option value="auto">自动选择并继续</option></select>
 <div class="accountHelp">任务运行中不能切换账号。只有明确检测到 Codex 额度耗尽时，自动模式才会切换账号并继续任务。</div>
 
-      <details id="connectionSettings" class="connectionSettings" open><summary>连接设置</summary>
-<input id="baseUrl" type="hidden" value="">
-<input id="username" placeholder="账号" autocomplete="username">
-<input id="password" type="password" placeholder="密码" autocomplete="current-password">
-<div class="settingActions"><button id="loginBtn" class="primary">登录</button><button id="registerBtn">首次注册</button><button id="testBtn">测试</button></div>
-<div id="settingsStatus" class="small" style="margin-top:10px"></div>
-
-      </details>
 </div>
 <div id="replyPanel" class="hidden" role="tabpanel" aria-labelledby="replyTab"><label class="replyPreference"><input id="showToolDetails" type="checkbox"><span>显示工具调用与处理详情</span></label><p class="small">默认隐藏 exec、命令、补丁及工具输出。只改变页面显示，不影响任务执行、正文回复和权限确认。</p><div class="replyLegend">进度说明：弱化显示，便于快速略过。<br>思考摘要：默认折叠，点击查看。<br>最终答复：白底正文，优先阅读。<br>普通回复：历史记录未提供明确阶段时保留原样。</div></div>
     </div>
@@ -406,7 +396,6 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 <script>
 /* 保留业务逻辑；界面滚动与面板交互适配新布局。 */
 const $=id=>document.getElementById(id);
-const TOKEN_KEY='cloudcli_token_v2',BASE_KEY='cloudcli_base_v2';
 let ws=null,currentProject=null,currentSession=null,currentProvider='codex',allProjects=[],allRecent=[];
 let lastSeq=new Map(),processing=false,activityStartedAt=0,elapsedTimer=null,streamingEl=null;
 let providerModels=null,providerCapabilities=null,currentModel='',currentEffort='default',currentPermission='default';
@@ -415,15 +404,12 @@ let codexAccounts=[],selectedCodexAccountId='default',currentSessionAccountConfi
 const recoveryTriedAccounts=new Map();
 
 function base(){return location.origin}
-function token(){return localStorage.getItem(TOKEN_KEY)||''}
 function setStatus(t,s='bad'){if(s==='bad'&&t)toast(t)}
-function headers(extra={}){const h=new Headers(extra);if(token())h.set('Authorization','Bearer '+token());return h}
+function headers(extra={}){return new Headers(extra)}
 async function api(path,opts={}){
-  localStorage.setItem(BASE_KEY,base());
   const h=headers(opts.headers||{});
   if(opts.body && !(opts.body instanceof FormData) && !h.has('Content-Type'))h.set('Content-Type','application/json');
   const r=await fetch(base()+path,{...opts,headers:h});
-  const rt=r.headers.get('X-Refreshed-Token');if(rt)localStorage.setItem(TOKEN_KEY,rt);
   const text=await r.text();let data;try{data=JSON.parse(text)}catch{data=text}
   if(!r.ok)throw new Error(`HTTP ${r.status}\n${typeof data==='string'?data:JSON.stringify(data,null,2)}`);
   return data;
@@ -564,28 +550,6 @@ function appendToolResult(msg){
 }
 function addError(c,timestamp){addAssistant(c,'error',timestamp)}
 
-async function login(){
-  const username=$('username').value.trim(),password=$('password').value;if(!username||!password)return $('settingsStatus').textContent='请输入账号密码';
-  try{
-    const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username,password})});
-    if(!d?.token)throw new Error('登录成功但没有 token');localStorage.setItem(TOKEN_KEY,d.token);
-    $('settingsStatus').textContent='登录成功';await loadProjects();await loadRecent();connectWs();$('settingsPane').classList.add('hidden');$('drawerMain').classList.remove('hidden')
-  }catch(e){$('settingsStatus').textContent='登录失败：'+e.message}
-}
-
-async function registerCloudCli(){
-  const username=$('username').value.trim(),password=$('password').value;
-  if(!username||!password)return $('settingsStatus').textContent='请输入账号密码';
-  try{
-    const d=await api('/api/auth/register',{method:'POST',body:JSON.stringify({username,password})});
-    const t=d?.token||d?.data?.token||'';
-    if(!t)throw new Error('注册成功但没有 token');
-    localStorage.setItem(TOKEN_KEY,t);
-    $('settingsStatus').textContent='注册成功，已自动登录';
-    await loadProjects();await loadRecent();connectWs();
-  }catch(e){$('settingsStatus').textContent='注册失败：'+e.message}
-}
-
 let deviceAuthPollTimer=null;
 let authPopupDismissed=false;
 let lastAutoCopiedDeviceCode='';
@@ -631,7 +595,6 @@ async function autoCopyDeviceCode(code){
 
 function accountLabel(a){return a?.label||a?.email||a?.id||'Codex账号'}
 async function loadCodexAccounts(){
-  if(!token())return;
   try{
     codexAccounts=unwrap(await api('/api/providers/codex/accounts'))||[];
     if(currentSession&&currentProvider==='codex')currentSessionAccountConfig=unwrap(await api(`/api/providers/codex/accounts/session/${encodeURIComponent(sessionId(currentSession))}`))||currentSessionAccountConfig;
@@ -707,7 +670,7 @@ async function recoverFromAccountLimit(limit){
   const n=addSystemNote('<strong>当前 Codex 账号额度已耗尽。</strong><br>请选择账号后继续：');const list=document.createElement('div');list.className='recoveryAccounts';choices.forEach((a,i)=>{const l=document.createElement('label');l.innerHTML=`<input type="radio" name="recoveryAccount" value="${esc(a.id)}" ${i===0?'checked':''}><span>${esc(accountLabel(a))}${a.usedPercent!==null?` · 5h 已用 ${Math.round(a.usedPercent)}%`:''}${a.weeklyUsedPercent!==null?` · 7d 已用 ${Math.round(a.weeklyUsedPercent)}%`:''}</span>`;list.appendChild(l)});const b=document.createElement('button');b.className='primary';b.textContent='切换并继续';b.onclick=async()=>{const id=list.querySelector('input:checked')?.value;if(!id)return;const pick=choices.find(a=>a.id===id);if(await selectCodexAccountForSession(id)){b.disabled=true;list.querySelectorAll('input').forEach(x=>x.disabled=true);n.insertAdjacentHTML('beforeend',`<div class="small" style="margin-top:7px">已切换到 ${esc(accountLabel(pick))}，正在继续。</div>`);setTimeout(sendRecoveryContinuation,150)}};n.appendChild(list);n.appendChild(b)
 }
 
-function bridgeHeaders(){const h={'Content-Type':'application/json'};if(token())h.Authorization=`Bearer ${token()}`;return h}
+function bridgeHeaders(){return {'Content-Type':'application/json'}}
 async function bridgeApi(path,options={}){
   const r=await fetch(path,{...options,headers:{...bridgeHeaders(),...(options.headers||{})}});
   let d=null;try{d=await r.json()}catch{}
@@ -808,7 +771,6 @@ async function pollDeviceAuth(){
   catch(e){$('deviceAuthState').textContent='状态检查失败：'+e.message}
 }
 async function startDeviceAuth(profileId=selectedCodexAccountId||'default'){
-  if(!token())return $('codexAuthStatus').textContent='请先登录';
   // 收起设置抽屉，让认证流程独立显示在 popup 中。
   authPopupDismissed=false;
   closeDrawer();
@@ -994,7 +956,7 @@ function openProviderLoginGuide(){
     refreshCodexAuth();
     setTimeout(()=>document.getElementById('codexAccountList')?.scrollIntoView({behavior:'smooth',block:'center'}),60);
   }else{
-    $('settingsStatus').textContent=`请先完成 ${providerDisplayName(currentProvider)} 登录，然后刷新状态。`;
+    toast(`请先完成 ${providerDisplayName(currentProvider)} 登录，然后刷新状态。`);
   }
 }
 function errorText(m){
@@ -1034,6 +996,7 @@ async function loadProjects(){
     renderProjectTree();
     setStatus(`项目 ${allProjects.length} 个`,'ok');
   }catch(e){
+    $('projectTree').textContent='读取工作区失败，请点击刷新重试。';
     setStatus('读取项目失败：'+e.message,'bad');
   }
 }
@@ -1176,9 +1139,9 @@ function changePermission(){
   setStatus('权限模式已切换','ok')
 }
 
-function wsUrl(){const u=new URL(base());return `${u.protocol==='https:'?'wss:':'ws:'}//${u.host}/ws?token=${encodeURIComponent(token())}`}
+function wsUrl(){const u=new URL(base());return `${u.protocol==='https:'?'wss:':'ws:'}//${u.host}/ws`}
 function connectWs(){
-  if(!token()||ws&&(ws.readyState===0||ws.readyState===1))return;
+  if(ws&&(ws.readyState===0||ws.readyState===1))return;
   try{
     ws=new WebSocket(wsUrl());
     ws.onopen=()=>{setStatus('');subscribeCurrent()};
@@ -1328,7 +1291,7 @@ async function sendChat(){
 }
 async function loadServerVersion(){try{const r=await fetch('/health',{cache:'no-store'});const j=await r.json();$('serverVersion').textContent='S '+(j.serverVersion||'v?')}catch{$('serverVersion').textContent='S v?'}}
 function stopChat(){if(currentSession)sendWs({type:'chat.abort',sessionId:sessionId(currentSession)})}
-async function reloadAll(){if(token())await loadProjects();connectWs()}
+async function reloadAll(){await loadProjects();connectWs()}
 
 function openDrawer(){$('drawer').classList.remove('hidden');$('scrim').classList.remove('hidden')}function closeDrawer(){$('drawer').classList.add('hidden');$('scrim').classList.add('hidden');$('settingsPane').classList.add('hidden')}
 function dismissAuthPopup(){
@@ -1343,9 +1306,9 @@ $('usageBox').onclick=e=>{if(e.target===$('usageBox'))closeUsagePopup()};
 $('authModalClose').onclick=dismissAuthPopup;
 $('authModalDone').onclick=dismissAuthPopup;
 $('deviceAuthBox').onclick=e=>{if(e.target===$('deviceAuthBox'))dismissAuthPopup()};
-$('providerGateLogin').onclick=openProviderLoginGuide;$('menuBtn').onclick=openDrawer;$('closeDrawer').onclick=closeDrawer;$('scrim').onclick=closeDrawer;$('settingsBtn').onclick=()=>{$('settingsPane').classList.remove('hidden');if(token()){refreshCodexAuth();loadCodexAccounts()}};$('backSettings').onclick=()=>{$('settingsPane').classList.add('hidden');$('drawerMain').classList.remove('hidden')};
-$('loginBtn').onclick=login;$('registerBtn').onclick=registerCloudCli;$('refreshCodexAuth').onclick=()=>{refreshCodexAuth();loadCodexAccounts()};$('codexAddAccount').onclick=addCodexAccount;$('codexDeleteAccount').onclick=deleteSelectedCodexAccount;$('codexSelectAccount').onclick=()=>selectCodexAccountForSession();$('codexAccountMode').onchange=changeCodexAccountMode;$('codexCancelBtn').onclick=cancelDeviceAuth;$('openDeviceAuth').onclick=()=>{const u=$('deviceAuthUrl').href;if(u)window.open(u,'_blank','noopener')};$('testBtn').onclick=async()=>{try{await api('/api/projects?skipSync=1&sessionsLimit=1');$('settingsStatus').textContent='连接正常';refreshCodexAuth()}catch(e){$('settingsStatus').textContent='连接失败：'+e.message}};
-$('modelSelect').onchange=changeModel;$('effortSelect').onchange=changeEffort;$('permissionSelect').onchange=changePermission;$('sendBtn').onclick=sendChat;$('stopBtn').onclick=stopChat;$('reloadBtn').onclick=async()=>{if(token()){await loadProjects();await loadRecent()}connectWs()};$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
+$('providerGateLogin').onclick=openProviderLoginGuide;$('menuBtn').onclick=openDrawer;$('closeDrawer').onclick=closeDrawer;$('scrim').onclick=closeDrawer;$('settingsBtn').onclick=()=>{$('settingsPane').classList.remove('hidden');refreshCodexAuth();loadCodexAccounts()};$('backSettings').onclick=()=>{$('settingsPane').classList.add('hidden');$('drawerMain').classList.remove('hidden')};
+$('refreshCodexAuth').onclick=()=>{refreshCodexAuth();loadCodexAccounts()};$('codexAddAccount').onclick=addCodexAccount;$('codexDeleteAccount').onclick=deleteSelectedCodexAccount;$('codexSelectAccount').onclick=()=>selectCodexAccountForSession();$('codexAccountMode').onchange=changeCodexAccountMode;$('codexCancelBtn').onclick=cancelDeviceAuth;$('openDeviceAuth').onclick=()=>{const u=$('deviceAuthUrl').href;if(u)window.open(u,'_blank','noopener')};
+$('modelSelect').onchange=changeModel;$('effortSelect').onchange=changeEffort;$('permissionSelect').onchange=changePermission;$('sendBtn').onclick=sendChat;$('stopBtn').onclick=stopChat;$('reloadBtn').onclick=async()=>{await loadProjects();await loadRecent();connectWs()};$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
 function selectSettingsTab(tab){
   ['accounts','reply'].forEach(name=>{$(name+'Panel').classList.toggle('hidden',name!==tab);$(name+'Tab').setAttribute('aria-selected',String(name===tab))});
 }
@@ -1384,7 +1347,6 @@ updateAppHeight();
 resizeComposerInput();
 window.addEventListener('resize',resizeComposerInput);
 window.visualViewport?.addEventListener('resize',resizeComposerInput);
-$('connectionSettings').open=!token();
 $('settingsPane').addEventListener('click',e=>{if(e.target===$('settingsPane'))$('backSettings').click()});
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -1394,7 +1356,7 @@ document.addEventListener('keydown',e=>{
   else closeDrawer();
 });
 loadServerVersion();
-if(token()){loadProjects().then(loadRecent).then(connectWs)}else{openDrawer();$('settingsPane').classList.remove('hidden')}
+loadProjects().then(loadRecent).then(connectWs);
 </script>
 </body>
 </html>

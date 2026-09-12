@@ -5,6 +5,16 @@ const root=path.resolve(`build/${version}/components/app/cloudcli/dist`);
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'biga-ui-'));
 const fixture=`<script>
 (async()=>{let count=0;const check=(ok,name)=>{if(!ok)throw Error(name);count++};try{
+check(!localStorage.getItem('cloudcli_token_v2'),'fresh browser without token');
+check(!$('loginBtn')&&!$('registerBtn'),'no web account forms');
+check(window.bigaRequests.some(p=>new URL(p,location.origin).pathname==='/api/projects'),'projects requested automatically without login: '+JSON.stringify(window.bigaErrors));
+check(!wsUrl().includes('token='),'WebSocket needs no token');
+const savedApi=api;
+api=async()=>({phase:'idle',version:'0.2.1',available:null,error:'test network failure'});
+await bigaStatus('check');check($('toast').textContent.includes('检查更新失败'),'check failure shown distinctly');
+api=async()=>({phase:'idle',version:'0.2.1',available:null,error:null});
+await bigaStatus('check');check($('toast').textContent==='已是最新版本','latest shown only after successful check');
+api=savedApi;
 clearChat();closeDrawer();
 const table='| 问题 | 结论 |\\n|---|---|\\n| **模型** | Astra |\\n| 速度 | 普通 |';
 addAssistant(table);check($('chat').querySelectorAll('tbody tr').length===2,'GFM table');check(!!$('chat').querySelector('td strong'),'inline formatting');
@@ -23,7 +33,8 @@ check(document.documentElement.scrollWidth<=innerWidth,'no page horizontal overf
 document.body.dataset.testResult='PASS '+count;document.body.dataset.testError='';
 }catch(e){document.body.dataset.testResult='FAIL';document.body.dataset.testError=e.message}fetch('/result',{method:'POST',body:JSON.stringify({result:document.body.dataset.testResult,error:document.body.dataset.testError})})})();
 </script>`;
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace('</body>',fixture+'</body>');
+const capture='<script>localStorage.clear();window.bigaErrors=[];window.addEventListener("error",e=>window.bigaErrors.push(e.message));window.bigaRequests=[];const originalFetch=window.fetch;window.fetch=(url,options)=>{window.bigaRequests.push(String(url));return originalFetch(url,options)};</script>';
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace('<head>','<head>'+capture).replace('</body>',fixture+'</body>');
 let completed=false;
 const watchdog=setTimeout(()=>{if(!completed){console.error('Browser checks timed out');process.exitCode=1;server.close()}},30000);
 const server=http.createServer((req,res)=>{if(req.url==='/result'){let body='';req.on('data',b=>body+=b);req.on('end',()=>{const result=JSON.parse(body);completed=true;clearTimeout(watchdog);console.log(result);if(!result.result.startsWith('PASS'))process.exitCode=1;res.end('ok');setTimeout(()=>server.close(),3000)});return}if(req.url==='/biga-markdown.js'){res.setHeader('Content-Type','application/javascript');res.end(fs.readFileSync(path.join(root,'biga-markdown.js')))}else{res.setHeader('Content-Type','text/html');res.end(html)}});
