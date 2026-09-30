@@ -1,5 +1,39 @@
 # BigaCli
 
+### Switch accounts. Continue the same task.
+
+**切换账号，接续同一个任务。** 在手机上操作 Codex，额度用尽后切到有额度的账号，留在原对话继续工作。
+
+A mobile-friendly Codex workspace. Keep the conversation and continue your task with another signed-in account that has available quota.
+
+[![Windows x64](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows)](https://github.com/enzwklsb/BigaCli/releases/latest)
+[![npm](https://img.shields.io/npm/v/bigacli?color=cb3837&logo=npm)](https://www.npmjs.com/package/bigacli)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL--3.0-blue)](LICENSE)
+
+**[下载 Windows 版](https://github.com/enzwklsb/BigaCli/releases/latest) · [观看演示](https://enzwklsb.github.io/BigaCli/) · [快速开始](#启动与手机连接)**
+
+[![13 秒演示：额度耗尽 → 切换账号 → 原任务继续](docs/media/bigacli-brief.gif)](https://enzwklsb.github.io/BigaCli/#brief)
+
+*使用原版界面的模拟演示，不消耗真实额度。切换需要另一个已登录、有可用额度且支持当前模型的账号。*
+
+| 自动接续 · 17 秒 | 手动选择 · 23 秒 |
+| --- | --- |
+| [![观看自动换号演示](docs/media/auto-poster.png)](https://enzwklsb.github.io/BigaCli/#auto) | [![观看手动换号演示](docs/media/manual-poster.png)](https://enzwklsb.github.io/BigaCli/#manual) |
+| 额度耗尽后，自动选择可用账号并继续原任务。 | 看清选择账号、确认切换，再接续任务的完整过程。 |
+
+```powershell
+npm i -g bigacli
+bigacli start
+```
+
+需要 Windows x64 和 Node.js 22+。也可直接下载内置运行环境的 ZIP，解压运行 `start.cmd`。
+
+## 为什么使用 BigaCli？
+
+| 原任务继续 | 手机完成工作流 | 等待期间也能工作 |
+| --- | --- | --- |
+| 多账号接续，保留同一对话上下文。 | 查看额度、切号、文件预览与下载。 | 排队、编辑补充消息，预约额度恢复后继续。 |
+
 BigaCli 是基于 [CloudCLI](https://github.com/siteboon/claudecodeui) 的 Codex Web 客户端，面向在手机与电脑之间持续作业的用户。任务在自己的电脑上执行，手机通过浏览器操作，重点是多账号接续、手机端完整工作流和更专注业务的沟通。
 
 以下功能说明对应本仓库当前实现；下载的旧发行版可能尚未包含全部功能。
@@ -22,14 +56,16 @@ BigaCli 是基于 [CloudCLI](https://github.com/siteboon/claudecodeui) 的 Codex
 
 **ZIP 安装：** 从 [最新发行版](https://github.com/enzwklsb/BigaCli/releases/latest) 下载 **BigaCli-win-x64.zip**，解压到可写目录，运行 `start.cmd`。安装包内置运行环境，无需额外安装 Node.js。
 
-**npm 安装（入口已实现，尚未发布到 npm；目前请使用 ZIP）：** npm 包发布后，先安装 Node.js 22 或更高版本（含 npm），然后执行：
+**npm 安装：** 先安装 Node.js 22 或更高版本（含 npm），然后执行：
 
 ```powershell
 npm i -g bigacli
-bigacli
+bigacli start
 ```
 
-首次运行 `bigacli` 会从 GitHub 下载对应版本的完整安装包，校验 SHA-256 后安装到 `%LOCALAPPDATA%\BigaCli`。因此首次启动仍需要能够访问 GitHub，并下载完整程序；之后运行 `bigacli` 直接启动已安装的程序。npm 包仅提供命令入口，不包含用户认证数据，也不在 npm 安装阶段运行下载脚本。
+首次运行 `bigacli start` 会从 GitHub 下载对应版本的完整安装包，校验 SHA-256 后安装到 `%LOCALAPPDATA%\BigaCli`。因此首次启动仍需要能够访问 GitHub，并下载完整程序；之后运行 `bigacli start` 直接启动已安装的程序。npm 包仅提供命令入口，不包含用户认证数据，也不在 npm 安装阶段运行下载脚本。
+
+命令：`bigacli start` 启动，`bigacli --help`（`-h`）查看帮助，`bigacli --version`（`-v`）查看 npm 启动器版本。直接运行 `bigacli` 也可启动。
 
 启动后在电脑浏览器打开 `http://localhost:3101`，添加自己的 Codex 账号并选择项目、对话。首次使用需要自己的 Codex 账号；安装包不包含任何登录信息。
 
