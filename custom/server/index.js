@@ -126,6 +126,18 @@ app.use('/api', validateApiKey);
 app.use('/api/auth', authRoutes);
 app.use('/bridge/codex/auth', authenticateToken, createCodexAuthBridgeRouter());
 // File Tree API Routes (protected)
+app.get('/api/file-tree/local-file/content', authenticateToken, (req, res, next) => {
+    const filePath = req.query.path;
+    if (typeof filePath !== 'string' || !path.isAbsolute(filePath)) {
+        res.status(400).json({ error: '需要文件的绝对路径。' });
+        return;
+    }
+    res.download(filePath, path.basename(filePath), error => {
+        if (!error) return;
+        if (res.headersSent) { next(error); return; }
+        res.status(error.statusCode || 500).json({ error: error.code === 'ENOENT' ? '文件不存在。' : '无法下载文件。' });
+    });
+});
 app.use('/api/file-tree', authenticateToken, fileTreeRoutes);
 // Projects API Routes (protected)
 app.use('/api/projects', authenticateToken, projectModuleRoutes);
@@ -164,7 +176,7 @@ app.use(express.static(path.join(APP_ROOT, 'public')));
 // Add cache control: HTML files should not be cached, but assets can be cached
 app.use(express.static(path.join(APP_ROOT, 'dist'), {
     setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
+        if (filePath.endsWith('.html') || path.basename(filePath) === 'preview-ui.js') {
             // Prevent HTML caching to avoid service worker issues after builds
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.setHeader('Pragma', 'no-cache');

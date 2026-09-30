@@ -1,6 +1,9 @@
 import path from 'node:path';
+import { prepareQueueSend } from '../../scheduled-messages/services/queued-message.service.js';
+import { recoveryState, cancelRecovery, isRecoverySwitching } from '../../providers/services/codex-recovery.service.js';
+import { getSessionCodexAccountConfig } from '../../providers/services/codex-account.service.js';
 import { updateSwitchPending } from '../../bigacli/update.routes.js';
-import { sessionsDb } from '../../../modules/database/index.js';
+import { sessionsDb, sessionDraftsDb } from '../../../modules/database/index.js';
 import { providerModelsService, sessionsService } from '../../../modules/providers/index.js';
 import { chatRunRegistry } from '../../../modules/websocket/services/chat-run-registry.service.js';
 import { connectedClients, WS_OPEN_STATE } from '../../../modules/websocket/services/websocket-state.service.js';
@@ -120,11 +123,30 @@ function resolveSendTarget(ws, data, dependencies, frameName) {
  * partway instead of continuing from the tip; a normal send passes nothing.
  */
 async function dispatchRun(ws, userId, sessionId, session, data, dependencies, extraRuntimeOptions = {}, beforeRun) {
+    if(chatRunRegistry.getRun(sessionId)?.providerSettled===false){
+        if(ws)sendProtocolError(ws,'RUN_IN_PROGRESS','Previous run is still stopping.',sessionId);
+        return {started:false,error:'A run is already in progress for this session.'};
+    }
+    const recovery = recoveryState();
+    if (recovery.appointment && recovery.sessionIds.includes(sessionId)) {
+        if (ws) sendProtocolError(ws, 'RECOVERY_SCHEDULED', '已预约恢复，请先取消预约后再发送消息。', sessionId);
+        return { started:false, error:'Recovery is scheduled.' };
+    }
+    if (session.provider === 'codex' && isRecoverySwitching()) {
+        if (ws) sendProtocolError(ws, 'ACCOUNT_RECOVERY', 'Account recovery is in progress. Please try again shortly.', sessionId);
+        return { started: false, error: 'Account recovery is in progress.' };
+    }
     if (updateSwitchPending) {
         if (ws) sendProtocolError(ws, 'UPDATE_RESTARTING', '更新正在重启，请稍后发送。', sessionId);
         return { started: false, error: 'Update restarting' };
     }
     const provider = session.provider;
+    let completeQueueSend;
+    try { completeQueueSend = prepareQueueSend(sessionDraftsDb, userId, sessionId, data.queueItem); }
+    catch (error) {
+        if (ws) sendProtocolError(ws, error.code || 'QUEUE_CHANGED', error.message, sessionId);
+        return {started:false,error:error.message};
+    }
     const run = chatRunRegistry.startRun({
         appSessionId: sessionId,
         provider,
@@ -138,15 +160,21 @@ async function dispatchRun(ws, userId, sessionId, session, data, dependencies, e
         }
         return { started: false, error: 'A run is already in progress for this session.' };
     }
+    run.providerSettled=false;
+    let resolveSettled;
+    run.settled=new Promise(resolve=>{resolveSettled=resolve});
+    const originalSend=run.writer.send.bind(run.writer);
+    run.writer.send=message=>originalSend(message.kind==='complete'&&run.abortRequested?{...message,exitCode:0,aborted:true}:message);
+    if (session.provider === 'codex') cancelRecovery(sessionId);
     const clientOptions = (data.options ?? {});
     const command = typeof data.content === 'string' ? data.content : '';
     // Record what this turn runs with so reopening the session later restores the
     // same model and reasoning effort, and so the resume path has a
     // session-scoped model answer to use.
-    if (typeof clientOptions.model === 'string' && clientOptions.model.trim()) {
+    if (!clientOptions.bigaQueued && typeof clientOptions.model === 'string' && clientOptions.model.trim()) {
         providerModelsService.setSessionModel(provider, sessionId, clientOptions.model);
     }
-    if (typeof clientOptions.effort === 'string' && clientOptions.effort.trim()) {
+    if (!clientOptions.bigaQueued && typeof clientOptions.effort === 'string' && clientOptions.effort.trim()) {
         providerModelsService.setSessionEffort(provider, sessionId, clientOptions.effort);
     }
     const attachmentCandidates = [
@@ -156,6 +184,15 @@ async function dispatchRun(ws, userId, sessionId, session, data, dependencies, e
     ];
     const verifiedAttachments = filterAttachmentsToUploadStore(attachmentCandidates);
     const uniqueAttachments = verifiedAttachments.filter((descriptor, index, all) => all.findIndex((candidate) => candidate.path === descriptor.path) === index);
+    for (const client of connectedClients) {
+        if (client !== ws && client.bigaUserId === userId && client.bigaSessions?.has(sessionId)) chatRunRegistry.attachConnection(sessionId, client);
+        if (client === ws || client.bigaUserId === userId && client.bigaSessions?.has(sessionId)) sendJson(client, { kind: 'chat_run_started', sessionId, runStartedAt: run.startedAt });
+    }
+    if (!beforeRun) {
+        completeQueueSend();
+        run.writer.send({ kind: 'text', role: 'user', content: command || '发送附件', attachments: uniqueAttachments, sentQueueIds: data.queueItem ? [data.queueItem.itemId] : data.sentQueueIds, timestamp: new Date().toISOString() });
+        if (ws) sendJson(ws, { kind: 'chat_send_accepted', sessionId });
+    }
     // The provider runtimes receive the stable app session id. When their
     // CLI/SDK needs the provider-native id for resume, they resolve it from the
     // session row themselves (sessionsService.resolveProviderSessionId).
@@ -176,6 +213,7 @@ async function dispatchRun(ws, userId, sessionId, session, data, dependencies, e
     };
     let failure = null;
     try {
+        if (provider === 'codex') runtimeOptions.codexAccountId = getSessionCodexAccountConfig(sessionId).currentAccountId;
         // Runs only now that the session is reserved, because an edit rewinds the
         // conversation here and a rewind for a run that was never admitted cannot
         // be taken back. Inside the try so a rewind that throws still releases the
@@ -194,6 +232,13 @@ async function dispatchRun(ws, userId, sessionId, session, data, dependencies, e
         // a queued message can start the session's next run before this promise
         // settles, and the session-keyed completeRun would kill that new run.
         chatRunRegistry.completeRunIfCurrent(run, { exitCode: 1 });
+        run.providerSettled=true;
+        resolveSettled();
+        const terminal=run.events?.findLast(e=>e.kind==='complete');
+        const succeeded=!failure&&(terminal?.exitCode===0||terminal?.aborted);
+        const draft=sessionDraftsDb.getDrafts(userId).find(d=>d.scope===sessionId);
+        if(draft?.queuedMessage)sessionDraftsDb.saveDraft(userId,sessionId,{text:draft.text,queuedMessage:{...draft.queuedMessage,paused:!succeeded&&!run.abortRequested}});
+        setImmediate(async()=>{try{const {dispatchQueuedMessages}=await import('../../scheduled-messages/services/scheduled-message-dispatcher.service.js');await dispatchQueuedMessages(dependencies.runtime)}catch(error){console.error('[Queue]',error.message)}});
     }
     return { started: true, error: failure };
 }
@@ -291,15 +336,19 @@ async function handleChatAbort(ws, data, dependencies) {
         sendProtocolError(ws, 'SESSION_ID_REQUIRED', 'chat.abort requires a sessionId.');
         return;
     }
+    const cancelledRecovery = cancelRecovery(sessionId);
     const run = chatRunRegistry.getRun(sessionId);
     if (!run || run.status !== 'running') {
+        if (cancelledRecovery) return;
         sendProtocolError(ws, 'NO_ACTIVE_RUN', `Session "${sessionId}" has no active run.`, sessionId);
         return;
     }
+    run.abortRequested=true;
     const success = await dependencies.runtime.abort(run.provider, sessionId);
-    chatRunRegistry.completeRun(sessionId, {
+    if(!success)run.abortRequested=false;
+    chatRunRegistry.completeRunIfCurrent(run, {
         exitCode: success ? 0 : 1,
-        aborted: true,
+        aborted: success,
     });
 }
 /**
@@ -311,7 +360,9 @@ async function handleChatAbort(ws, data, dependencies) {
  * `get-pending-permissions`, and Claude-only writer reconnect flows.
  */
 function handleChatSubscribe(ws, data, dependencies) {
+    sendJson(ws, { kind: 'account_recovery', recovery: recoveryState() });
     const targets = Array.isArray(data.sessions) ? data.sessions : [];
+    ws.bigaSessions = new Set(targets.map(target => target?.sessionId).filter(id => typeof id === 'string'));
     for (const target of targets) {
         if (!target || typeof target !== 'object') {
             continue;
@@ -327,6 +378,9 @@ function handleChatSubscribe(ws, data, dependencies) {
             ? Math.max(0, Math.floor(lastSeqRaw))
             : 0;
         const run = chatRunRegistry.getRun(sessionId);
+        // Sequence numbers restart for each turn. Preserve the cursor only for
+        // the same run; a detached queued turn must replay from its own start.
+        const replayAfter = typeof target.runStartedAt === 'number' && target.runStartedAt !== run?.startedAt ? 0 : lastSeq;
         const isProcessing = chatRunRegistry.isProcessing(sessionId);
         // Future live events for this run should land on the socket that asked —
         // this is what makes mid-stream page refreshes work for all providers.
@@ -341,6 +395,8 @@ function handleChatSubscribe(ws, data, dependencies) {
             sessionId,
             isProcessing,
             lastSeq: run?.lastSeq ?? 0,
+            runStartedAt: run?.startedAt ?? null,
+            replayFromStart: isProcessing && replayAfter === 0 && run?.events[0]?.seq === 1,
             pendingPermissions,
             timestamp: new Date().toISOString(),
         });
@@ -349,8 +405,8 @@ function handleChatSubscribe(ws, data, dependencies) {
         // replaying them (e.g. after a page reload where the client's lastSeq is
         // 0) would duplicate messages the history fetch already returned.
         if (isProcessing) {
-            for (const event of chatRunRegistry.replayEvents(sessionId, lastSeq)) {
-                sendJson(ws, event);
+            for (const event of chatRunRegistry.replayEvents(sessionId, replayAfter)) {
+                sendJson(ws, { ...event, replayed: true, runStartedAt: run.startedAt });
             }
         }
     }
@@ -417,18 +473,22 @@ export async function runDetachedChatTurn(input, dependencies) {
         // interrupted run end before this turn's stream begins. The interrupted
         // run's own dispatch settles later through completeRunIfCurrent, which is
         // scoped to that run and cannot touch the one started here.
+        activeRun.abortRequested=true;
         const aborted = await dependencies.runtime.abort(activeRun.provider, input.sessionId);
+        if(!aborted){activeRun.abortRequested=false;return {started:false,error:'Could not stop the active run.'}}
         chatRunRegistry.completeRun(input.sessionId, {
             exitCode: aborted ? 0 : 1,
             aborted: true,
         });
+        await activeRun.settled;
     }
-    return dispatchRun(null, input.userId, input.sessionId, session, { sessionId: input.sessionId, content: input.content, options: input.options ?? {} }, dependencies);
+    return dispatchRun(null, input.userId, input.sessionId, session, { sessionId: input.sessionId, content: input.content, options: input.options ?? {}, sentQueueIds: input.sentQueueIds }, dependencies);
 }
 export function handleChatConnection(ws, request, dependencies) {
     console.log('[INFO] Chat WebSocket connected');
     connectedClients.add(ws);
     const userId = readRequestUserId(request);
+    ws.bigaUserId = userId;
     ws.on('message', async (rawMessage) => {
         try {
             const parsed = parseIncomingJsonObject(rawMessage);

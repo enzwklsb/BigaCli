@@ -58,7 +58,7 @@ function start(m){
  child.on('message',async msg=>{
   if(msg?.type!=='bigacli-update')return;
   const reply=value=>{if(child?.connected)child.send({type:'bigacli-update-result',id:msg.id,value})};
-  if(msg.action==='status')reply(state);
+  if(msg.action==='status')reply({...state,appId:active.components.app.id});
   else if(msg.action==='check')reply(await check());
   else if(msg.action==='install'){
    if(busy){reply(state);return}if(!state.available){reply({...state,error:'没有可安装的更新'});return}

@@ -26,6 +26,7 @@ try{
  await api('/api/projects?skipSync=1&sessionsLimit=1');
  const created=await api('/api/providers/sessions',{provider:'codex',projectPath:cwd,initialMessage:'BigaCli release validation'});
  const sid=created.sessionId??created.session?.id??created.id;assert.ok(sid,JSON.stringify(created));
+ if(process.env.BIGA_TEST_ACCOUNT)await api('/api/providers/codex/accounts/session/'+sid,{accountId:process.env.BIGA_TEST_ACCOUNT,mode:'manual'});
  const catalog=(await api('/api/providers/codex/models?sessionId='+sid)).models;
  assert.ok(catalog.OPTIONS.some(m=>m.value==='gpt-6-astra'));assert.ok(catalog.OPTIONS.find(m=>m.value==='gpt-6-astra').serviceTiers.some(t=>t.id==='priority'));
  console.log('PASS: empty database opens without login, stale browser token ignored, projects and Astra catalog accessible');
@@ -37,11 +38,17 @@ try{
  const collected=[];
  async function turn(tier){return new Promise((resolve,reject)=>{
   const rows=[];const timer=setTimeout(()=>finish(new Error('Turn timed out')),150000);
-  function finish(error){clearTimeout(timer);ws.off('message',receive);error?reject(error):resolve(rows)}
+  function finish(error){clearTimeout(timer);ws.off('message',receive);if(error)console.error(rows.map(m=>({kind:m.kind,content:m.content})));error?reject(error):resolve(rows)}
   function receive(raw){const m=JSON.parse(raw);if(m.sessionId&&m.sessionId!==sid)return;rows.push(m);collected.push(m);if(m.kind==='error'||m.type==='protocol_error')finish(new Error(JSON.stringify(m)));if(m.kind==='complete'){if(m.exitCode!==0)return finish(new Error(JSON.stringify(m)));assert.ok(rows.some(r=>r.kind==='stream_delta'));finish()}}
   ws.on('message',receive);ws.send(JSON.stringify({type:'chat.send',sessionId:sid,content:'仅回复 BigaCli_OK，不要调用工具，不要读取文件。',options:{model:'gpt-6-astra',effort:'low',serviceTier:tier,permissionMode:'default'}}));
  })}
  await turn('default');console.log('PASS: no-token WebSocket and real Astra streamed turn');
  const history=await api('/api/providers/sessions/'+sid+'/messages?limit=10');assert.ok(JSON.stringify(history).includes('BigaCli_OK'));
+ const rows=history.messages??history;
+ assert.equal(rows.filter(m=>m.role==='user'&&m.content.includes('仅回复 BigaCli_OK')).length,1,'User prompt must survive history load exactly once');
+ assert.ok(!rows.some(m=>m.role==='user'&&m.content.includes('<environment_context>')),'Injected context must not become a user message');
+ const firstText=collected.find(m=>m.kind==='stream_delta'&&m.messageKind==='text');
+ assert.ok(firstText?.phase,'Native phase must be available on the first text delta');
+ console.log('PASS: user prompt retained exactly once, injected context excluded, first delta carries native phase');
  console.log('PASS: persisted history readable without web login');
-}finally{ws?.close();server.kill();}
+}catch(error){console.error(logs.slice(-5000));throw error}finally{ws?.close();server.kill();}

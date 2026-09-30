@@ -1,0 +1,1661 @@
+{
+  "正在提交反馈…": ["Submitting feedback…", "報告を送信中…"],
+  "反馈已提交，谢谢。": ["Feedback submitted. Thank you.", "報告を送信しました。ありがとうございます。"],
+  "提交失败，内容已保留，请重试。": ["Submission failed. Your text is preserved. Please try again.", "送信できませんでした。内容は保持されています。もう一度お試しください。"],
+  "提交过于频繁，请稍后重试。": ["Too many submissions. Please try again later.", "送信回数が多すぎます。しばらくしてからお試しください。"],
+  "额度在 {0} 后恢复": ["Quota resets in {0}", "利用枠は {0} 後に回復"],
+  "取消自动继续": ["Cancel auto-resume", "自動再開を解除"],
+  "编辑排队任务 #{0}": ["Edit queued task #{0}", "送信待ちタスク #{0} を編集"],
+  "修改即自动保存": ["Changes save automatically", "変更は自動保存"],
+  "点击外部关闭": ["Click outside to close", "外側を押して閉じる"],
+  "正在保存…": ["Saving…", "保存中…"],
+  "已保存": ["Saved", "保存済み"],
+  "保存失败": ["Save failed", "保存失敗"],
+  "额度尚未恢复，继续等待。": ["Quota has not reset yet. Still waiting.", "利用枠はまだ回復していません。引き続き待機します。"],
+  "排队消息已发送或已删除。": ["This queued message has already been sent or deleted.", "この送信待ちメッセージは送信済み、または削除済みです。"],
+  "这条队列正在其他页面编辑。": ["This queue is being edited in another page.", "この送信待ちメッセージは別のページで編集中です。"],
+  "编辑状态已变化，请重新打开。": ["The editing state has changed. Please reopen the editor.", "編集状態が変わりました。もう一度開いてください。"],
+  "编辑排队消息": ["Edit queued message", "送信待ちメッセージを編集"],
+  "空消息": ["Empty message", "空のメッセージ"],
+  "保存失败，内容仍保留在编辑框中。": ["Save failed. Your text is still in the editor.", "保存できませんでした。内容は編集欄に残っています。"],
+  "恢复时间未知": ["Reset time unknown", "回復時刻は不明"],
+  "正在确认额度": ["Checking quota", "利用枠を確認中"],
+  "等待运行中的任务结束": ["Waiting for running tasks to finish", "実行中のタスクの終了待ち"],
+  "等待 {0} · {1} · 自动继续 {2} 个对话": ["Waiting for {0} · {1} · Auto-resume {2} conversations", "{0} を待機 · {1} · {2} 件の会話を自動再開"],
+  "任务已暂停": ["Task paused", "タスク中断中"],
+  "预约": ["Schedule resume", "再開を予約"],
+  "额度恢复：{0}": ["Quota resets: {0}", "利用枠の回復：{0}"],
+  "重置机会：{0}": ["Resets remaining: {0}", "リセット残り回数：{0}"],
+  "最近到期：{0}": ["Next reset credit expiry: {0}", "リセット権の最短有効期限：{0}"],
+  "等待当前账号恢复": ["Wait for this account", "このアカウントの回復を待つ"],
+  "预约当前账号恢复后继续全部中断任务？": ["Resume all interrupted tasks when this account's quota recovers?", "このアカウントの利用枠回復後、すべての中断タスクを再開しますか？"],
+  "报告问题": ["Report a problem", "問題を報告"],
+  "发生了什么？": ["What happened?", "どのような問題ですか？"],
+  "请告诉我们你遇到的问题...": ["Tell us about the problem you encountered...", "発生した問題を教えてください..."],
+  "反馈通道尚未配置": ["Feedback channel is not configured yet", "報告先はまだ設定されていません"],
+  "未知": ["Unknown", "不明"],
+  "无限制": ["Unlimited", "制限なし"],
+  "最早恢复": ["Earliest reset", "最短回復"],
+  "预约 {0} 恢复 {1} 个对话？": ["Schedule {0} to resume {1} conversations?", "{0} で {1} 件の会話の再開を予約しますか？"],
+  "取消全部预约": ["Cancel all reservations", "すべての予約を取り消す"],
+  "已预约恢复 {0} 个对话，等待 {1} 额度恢复，预计 {2} 自动继续。": ["Resume scheduled for {0} conversations. Waiting for {1}'s quota; expected to continue at {2}.", "{0} 件の会話の再開を予約しました。{1} の利用枠回復を待ち、{2} に自動再開する予定です。"],
+  "任务因额度耗尽暂停": ["Task paused: quota exhausted", "利用上限によりタスクを中断"],
+  "暂无可恢复任务的账号": ["No account available to resume", "再開できるアカウントがありません"],
+  "已预约恢复任务": ["Task resume scheduled", "タスク再開を予約済み"],
+  "正在切换账号": ["Switching accounts", "アカウント切り替え中"],
+  "任务已暂停，排队消息已保留。请选择账号，查看是否可以预约恢复。": ["Tasks are paused and queued messages are retained. Select an account to check resume scheduling.", "タスクを中断し、待機中のメッセージを保持しました。アカウントを選んで再開を予約できるか確認してください。"],
+  "切换账号恢复": ["Switch and resume", "切り替えて再開"],
+  "重置额度": ["Reset quota", "利用枠リセット"],
+  "(剩 {0} 次)": ["({0} left)", "(残り{0}回)"],
+  "重置额度（剩余 {0} 次）": ["Reset quota ({0} remaining)", "利用枠をリセット（残り {0} 回）"],
+  "消耗 1 次重置机会并继续任务？": ["Use 1 reset credit and resume tasks?", "リセット権を1回使ってタスクを再開しますか？"],
+  "预约已到期，但额度暂不可用；任务保持暂停，请重新选择。": ["The reservation is due, but quota is unavailable. Tasks remain paused; select again.", "予約時刻になりましたが利用枠を確認できません。タスクは中断したままです。再選択してください。"],
+  "额度未知，可尝试继续": ["Quota unknown; you can try resuming", "利用枠は不明ですが、再開を試せます"],
+  "恢复状态已变化，请重新选择。": ["Recovery state changed. Select again.", "再開状態が変わりました。再選択してください。"],
+  "请选择账号。": ["Select an account.", "アカウントを選択してください。"],
+  "正在恢复任务，请稍后再试。": ["Tasks are being resumed. Please wait.", "タスクを再開中です。しばらくお待ちください。"],
+  "正在切换账号，请稍后再试。": ["Account switching is in progress. Please wait.", "アカウントを切り替え中です。しばらくお待ちください。"],
+  "无法确定该账号的额度恢复时间。": ["This account's quota reset time is unavailable.", "このアカウントの利用枠回復時刻を確認できません。"],
+  "该账号额度不足、尚未登录或不支持待恢复任务的模型设置。": ["This account has insufficient quota, is not signed in, or does not support the pending tasks' model settings.", "利用枠不足、未ログイン、または中断したタスクのモデル設定が非対応です。"],
+  "请等待正在运行的 Codex 任务结束后再切换。": ["Wait for running Codex tasks to finish before switching.", "実行中の Codex タスクが終了してから切り替えてください。"],
+  "任务运行中，结束后才能切换账号。": ["Wait for running tasks to finish before switching accounts.", "タスクが終了してからアカウントを切り替えてください。"],
+  "已预约恢复，请先取消预约后再发送消息。": ["Resume is scheduled. Cancel the reservation before sending a message.", "再開を予約済みです。送信するには予約を取り消してください。"],
+  "取消预约": ["Cancel reservation", "予約を取り消す"],
+  "预约继续": ["Schedule resume", "再開を予約"],
+  "等待 {0} 额度恢复，预计 {1} 自动继续。": ["Waiting for {0} quota. Resume scheduled for {1}.", "{0} の利用枠回復を待っています。{1} に再開予定です。"],
+  "恢复 {0} 个中断对话": ["Resume {0} paused conversations", "中断した {0} 件の会話を再開"],
+  "正在读取账号额度…": ["Checking account quotas…", "アカウントの利用枠を確認中…"],
+  "选择账号后继续中断任务。": ["Select an account to resume paused tasks.", "アカウントを選択して中断したタスクを再開します。"],
+  "暂无可用额度。选择账号，额度恢复后自动继续。": ["No quota is available. Select an account to resume automatically after its quota resets.", "利用枠がありません。アカウントを選択すると、利用枠回復後に自動で再開します。"],
+  "可立即继续": ["Ready to resume", "今すぐ再開可能"],
+  "预计 {0} 恢复": ["Expected reset: {0}", "回復予定：{0}"],
+  "恢复时间未知": ["Reset time unknown", "回復時刻は不明"],
+  "正在切换账号，排队消息已保留。": ["Switching accounts. Queued messages are retained.", "アカウントを切り替えています。待機中のメッセージは保持されています。"],
+  "等待运行中的任务结束后统一切换账号。": ["Waiting for running tasks to finish before switching accounts.", "実行中のタスクが終了してからアカウントを切り替えます。"],
+  "暂无可恢复全部对话的账号，请选择其他账号。": ["No account can currently resume all pending conversations. Select another account.", "すべての会話を再開できるアカウントがありません。別のアカウントを選択してください。"],
+  "因额度耗尽暂停了 {0} 个对话，排队消息已保留。": ["{0} conversations paused due to usage limits. Queued messages are retained.", "利用上限により {0} 件の会話が中断しました。待機中のメッセージは保持されています。"],
+  "切换账号并恢复": ["Switch account and resume", "アカウントを切り替えて再開"],
+  "当前任务尚未就绪或已经结束，请稍后发送。": ["The task is not ready or has ended. Please try again shortly.", "タスクの準備ができていないか、すでに終了しています。しばらくしてから送信してください。"],
+  "当前任务已经结束，请重新发送。": ["The task has ended. Send your message again.", "タスクは終了しています。メッセージを再送信してください。"],
+  "无法恢复：原对话记录不存在": ["Cannot resume: the original conversation was not found.", "再開できません：元の会話履歴が見つかりません。"],
+  "原对话包含回滚记录，无法完整恢复；已保留原对话": ["Cannot fully restore a conversation containing rollbacks. The original was kept.", "ロールバックを含む会話は完全に復元できません。元の会話は保持されています。"],
+  "原对话没有可恢复的原生上下文；已保留原对话": ["No native context is available to restore. The original conversation was kept.", "復元可能なコンテキストがありません。元の会話は保持されています。"],
+  "账号不存在": ["Account not found", "アカウントが見つかりません"],
+  "已完成切换账号后的基础设置，正在等待回复…": ["Account setup complete. Waiting for a response…", "アカウント切替の準備が完了しました。応答を待っています…"],
+  "正在完成切换账号后的基础设置…": ["Preparing the switched account…", "アカウント切替の準備中…"],
+  "当前账号的该模型不支持所选思考深度，请重新选择。": ["This account’s model does not support that reasoning level. Select another level.", "このアカウントのモデルは選択した思考レベルに対応していません。選び直してください。"],
+  "当前账号的该模型不支持所选速度，请重新选择。": ["This account’s model does not support that speed. Select another speed.", "このアカウントのモデルは選択した速度に対応していません。選び直してください。"],
+  "账号切换已取消": ["Account switch cancelled", "アカウント切替をキャンセルしました"],
+  "切换失败：新对话记录尚未就绪": ["Switch failed: the new conversation is not ready.", "切替に失敗しました：新しい会話の準備ができていません。"],
+  "请输入有效的文件夹名称。": ["Enter a valid folder name.", "有効なフォルダ名を入力してください。"],
+  "同名文件夹已存在，请换一个名称或从历史项目中纳入。": ["A folder with that name already exists. Choose another name or add it from existing projects.", "同名のフォルダが存在します。別の名前を選ぶか、既存のプロジェクトから追加してください。"],
+  "项目不存在。": ["Project not found.", "プロジェクトが見つかりません。"],
+  "请先选择 Codex 对话。": ["Select a Codex conversation first.", "先に Codex の会話を選択してください。"],
+  "回复长度无效。": ["Invalid reply length.", "返信の長さが無効です。"],
+  "切换账号记录无效。": ["Invalid account switch record.", "アカウント切替履歴が無効です。"],
+  "Codex 对话不存在。": ["Codex conversation not found.", "Codex の会話が見つかりません。"],
+  "当前对话的账号不存在。": ["The account for this conversation was not found.", "この会話のアカウントが見つかりません。"],
+  "Codex 登录失败": ["Codex sign-in failed", "Codex のログインに失敗しました"],
+  "启动 Codex 失败：": ["Could not start Codex: ", "Codex の起動に失敗しました："],
+  "请使用 BigaCli 启动入口": ["Please use the BigaCli launcher.", "BigaCli の起動プログラムを使用してください。"],
+  "更新服务响应超时": ["Update service timed out.", "更新サービスがタイムアウトしました。"],
+  "附件路径无效，请重新上传。": ["Invalid attachment path. Upload the file again.", "添付ファイルのパスが無効です。再度アップロードしてください。"],
+  "请输入引导消息。": ["Enter a steering message.", "追加の指示を入力してください。"],
+  "当前任务已经结束，请正常发送消息。": ["The task has ended. Send a regular message.", "タスクは終了しています。通常のメッセージを送信してください。"],
+  "Codex 额度读取失败": ["Could not read Codex usage.", "Codex の利用枠を取得できません。"],
+  "账号和重置请求编号不能为空。": ["Account and reset request ID are required.", "アカウントとリセット要求 ID が必要です。"],
+  "任务运行中，停止后才能切换 Codex 账号。": ["Stop the task before switching Codex accounts.", "タスクを停止してから Codex アカウントを切り替えてください。"],
+  "任务运行中，停止后才能修改账号模式。": ["Stop the task before changing account mode.", "タスクを停止してからアカウントモードを変更してください。"],
+  "正在读取文件…": [
+    "Reading file…",
+    "ファイルを読み込み中…"
+  ],
+  "尚未选择项目，无法解析相对路径": [
+    "Select a project to resolve relative paths.",
+    "相対パスを解決するにはプロジェクトを選択してください。"
+  ],
+  "文件读取失败：": [
+    "Could not read file: ",
+    "ファイルの読み込みに失敗しました："
+  ],
+  "没有匹配的文件": [
+    "No matching files",
+    "一致するファイルはありません"
+  ],
+  "本对话暂无文件": [
+    "No files in this conversation",
+    "この会話にはファイルがありません"
+  ],
+  "我": [
+    "You",
+    "自分"
+  ],
+  "请先选择对话": [
+    "Select a conversation first",
+    "先に会話を選択してください"
+  ],
+  "正在读取对话文件…": [
+    "Loading conversation files…",
+    "会話のファイルを読み込み中…"
+  ],
+  "读取失败：": [
+    "Could not load: ",
+    "読み込みに失敗しました："
+  ],
+  "耗时未记录": [
+    "Duration unavailable",
+    "所要時間の記録なし"
+  ],
+  "已完成思考过程{0}": [
+    "Reasoning complete{0}",
+    "思考完了{0}"
+  ],
+  "已完成思考过程 · {0} 步{1}": [
+    "Reasoning complete · {0} steps{1}",
+    "思考完了 · {0} ステップ{1}"
+  ],
+  "正在处理中…": [
+    "Processing…",
+    "処理中…"
+  ],
+  "已完成思考过程 · {0} 步": [
+    "Reasoning complete · {0} steps",
+    "思考完了 · {0} ステップ"
+  ],
+  "思考中… · {0}": [
+    "Thinking… · {0}",
+    "思考中… · {0}"
+  ],
+  "未记录时间": [
+    "Time unavailable",
+    "時刻の記録なし"
+  ],
+  "接收时间": [
+    "Received",
+    "受信時刻"
+  ],
+  "消息时间": [
+    "Message time",
+    "メッセージ時刻"
+  ],
+  "展开完整提问": [
+    "Expand message",
+    "メッセージを展開"
+  ],
+  "收起提问": [
+    "Collapse message",
+    "メッセージを折りたたむ"
+  ],
+  "复制失败，请手动选择文字复制": [
+    "Could not copy. Select the text and copy it manually.",
+    "コピーできませんでした。テキストを選択してコピーしてください。"
+  ],
+  "正在整理…": [
+    "Preparing…",
+    "整理中…"
+  ],
+  "思考摘要": [
+    "Reasoning summary",
+    "思考の要約"
+  ],
+  "Codex账号": [
+    "Codex account",
+    "Codex アカウント"
+  ],
+  "账号读取失败：{0}": [
+    "Could not load accounts: {0}",
+    "アカウントの読み込みに失敗しました：{0}"
+  ],
+  "已绑定": [
+    "Connected",
+    "連携済み"
+  ],
+  "删除账号": [
+    "Delete account",
+    "アカウントを削除"
+  ],
+  "未登录": [
+    "Not signed in",
+    "未ログイン"
+  ],
+  "5h 额度": [
+    "5h usage",
+    "5時間の利用枠"
+  ],
+  "7d 额度": [
+    "7d usage",
+    "7日間の利用枠"
+  ],
+  "暂无已绑定的 Codex 账号": [
+    "No connected Codex accounts",
+    "連携済みの Codex アカウントはありません"
+  ],
+  "未绑定账号": [
+    "No connected account",
+    "未連携のアカウント"
+  ],
+  "自动": [
+    "Automatic",
+    "自動"
+  ],
+  "手动": [
+    "Manual",
+    "手動"
+  ],
+  "删除：": [
+    "Delete: ",
+    "削除："
+  ],
+  "确认切换至 ": [
+    "Switch to ",
+    "切り替え先："
+  ],
+  "取消": [
+    "Cancel",
+    "キャンセル"
+  ],
+  "删除": [
+    "Delete",
+    "削除"
+  ],
+  "确认": [
+    "Confirm",
+    "確認"
+  ],
+  "添加账号失败：": [
+    "Could not add account: ",
+    "アカウントの追加に失敗しました："
+  ],
+  "任务运行中不能删除账号": [
+    "Accounts cannot be deleted while a task is running.",
+    "タスク実行中はアカウントを削除できません。"
+  ],
+  "默认账号不能删除": [
+    "The default account cannot be deleted.",
+    "デフォルトアカウントは削除できません。"
+  ],
+  "删除失败：": [
+    "Could not delete: ",
+    "削除に失敗しました："
+  ],
+  "任务运行中，停止后才能切换账号": [
+    "Stop the running task before switching accounts.",
+    "実行中のタスクを停止してからアカウントを切り替えてください。"
+  ],
+  "全局 Codex 账号已切换": [
+    "Codex account switched",
+    "Codex アカウントを切り替えました"
+  ],
+  "切换失败：": [
+    "Could not switch: ",
+    "切り替えに失敗しました："
+  ],
+  "模式修改失败：": [
+    "Could not change mode: ",
+    "モードの変更に失敗しました："
+  ],
+  "切换账号记录保存失败：": [
+    "Could not save account switch record: ",
+    "アカウント切替履歴の保存に失敗しました："
+  ],
+  "继续": [
+    "Continue",
+    "続けて"
+  ],
+  "账号已切换，但连接已断开，未能发送“继续”。请连接恢复后发送。": [
+    "Account switched, but the connection was lost. Send “Continue” after reconnecting.",
+    "アカウントは切り替わりましたが、接続が切れたため再開できませんでした。再接続後に「続けて」と送信してください。"
+  ],
+  "额度耗尽": [
+    "Usage limit reached",
+    "利用上限に達しました"
+  ],
+  "备用账号读取失败：{0}": [
+    "Could not load alternative accounts: {0}",
+    "切替先アカウントの読み込みに失敗しました：{0}"
+  ],
+  "没有可自动切换的兼容账号，自动恢复已停止。": [
+    "No compatible account is available. Automatic recovery stopped.",
+    "切替可能な対応アカウントがないため、自動再開を停止しました。"
+  ],
+  "自动切换账号失败，任务仍处于中断状态。请在账号设置中检查后继续。": [
+    "Automatic switching failed. Check account settings before continuing the interrupted task.",
+    "自動切替に失敗しました。アカウント設定を確認してからタスクを再開してください。"
+  ],
+  "当前账号额度已耗尽。已自动切换到": [
+    "Usage limit reached. Automatically switched to",
+    "利用上限に達したため、自動で切り替えました："
+  ],
+  "，正在继续任务。": [
+    ". Resuming the task.",
+    "。タスクを再開します。"
+  ],
+  "当前 Codex 账号额度已耗尽。": [
+    "The current Codex account has reached its usage limit.",
+    "現在の Codex アカウントは利用上限に達しました。"
+  ],
+  "没有可切换的兼容账号。": [
+    "No compatible account is available.",
+    "切替可能な対応アカウントがありません。"
+  ],
+  "请选择账号后继续：": [
+    "Select an account to continue:",
+    "アカウントを選択して再開してください："
+  ],
+  " · 5h 已用 {0}%": [
+    " · 5h used {0}%",
+    " · 5時間 使用済み {0}%"
+  ],
+  " · 7d 已用 {0}%": [
+    " · 7d used {0}%",
+    " · 7日間 使用済み {0}%"
+  ],
+  "切换并继续": [
+    "Switch and continue",
+    "切り替えて再開"
+  ],
+  "已切换到 {0}，正在继续。": [
+    "Switched to {0}. Resuming.",
+    "{0} に切り替えました。再開します。"
+  ],
+  "本机 PC 模式 · 使用浏览器 OAuth，无需设备代码授权": [
+    "Local PC · Browser OAuth, no device code needed",
+    "この PC · ブラウザで認証（デバイスコード不要）"
+  ],
+  "远程 / 手机模式 · 使用 Device Code 授权": [
+    "Remote / mobile · Device code authorization",
+    "リモート・モバイル · デバイスコードで認証"
+  ],
+  "Codex 设备授权": [
+    "Codex device authorization",
+    "Codex デバイス認証"
+  ],
+  "Codex 登录": [
+    "Sign in to Codex",
+    "Codex にログイン"
+  ],
+  "请在这台 PC 的浏览器中完成 Codex 授权。": [
+    "Complete Codex authorization in this PC’s browser.",
+    "この PC のブラウザで Codex の認証を完了してください。"
+  ],
+  "点击复制验证码": [
+    "Copy verification code",
+    "認証コードをコピー"
+  ],
+  "正在获取验证码": [
+    "Getting verification code",
+    "認証コードを取得中"
+  ],
+  "打开验证页面 ↗": [
+    "Open verification page ↗",
+    "認証ページを開く ↗"
+  ],
+  "打开授权页面 ↗": [
+    "Open authorization page ↗",
+    "認可ページを開く ↗"
+  ],
+  "正在启动电脑浏览器登录…": [
+    "Starting browser sign-in…",
+    "ブラウザでのログインを開始中…"
+  ],
+  "正在申请设备验证码…": [
+    "Requesting device code…",
+    "デバイスコードを取得中…"
+  ],
+  "绑定成功": [
+    "Account connected",
+    "アカウントを連携しました"
+  ],
+  "绑定失败：{0}": [
+    "Connection failed: {0}",
+    "連携に失敗しました：{0}"
+  ],
+  "未知错误": [
+    "Unknown error",
+    "不明なエラー"
+  ],
+  "已取消": [
+    "Cancelled",
+    "キャンセル済み"
+  ],
+  "登录已超时，请重新开始": [
+    "Sign-in timed out. Please try again.",
+    "ログインがタイムアウトしました。やり直してください。"
+  ],
+  "未绑定": [
+    "Not connected",
+    "未連携"
+  ],
+  "暂无 Codex 账号": [
+    "No Codex accounts",
+    "Codex アカウントがありません"
+  ],
+  "检查失败：": [
+    "Check failed: ",
+    "確認に失敗しました："
+  ],
+  "状态检查失败：": [
+    "Status check failed: ",
+    "状態の確認に失敗しました："
+  ],
+  "启动失败：": [
+    "Could not start: ",
+    "開始に失敗しました："
+  ],
+  "取消登录失败：": [
+    "Could not cancel sign-in: ",
+    "ログインのキャンセルに失敗しました："
+  ],
+  "重置时间未返回": [
+    "Reset time unavailable",
+    "リセット時刻を取得できません"
+  ],
+  "重置：{0}": [
+    "Resets: {0}",
+    "リセット：{0}"
+  ],
+  "Codex 未返回这个额度窗口": [
+    "Codex did not return this usage window.",
+    "Codex からこの利用枠の情報が返されませんでした。"
+  ],
+  "剩余 {0}% · {1} 分钟窗口 · {2}": [
+    "{0}% remaining · {1}-minute window · {2}",
+    "残り {0}% · {1}分間の枠 · {2}"
+  ],
+  "无额外推理": [
+    "None",
+    "なし"
+  ],
+  "最少": [
+    "Minimal",
+    "最小"
+  ],
+  "低": [
+    "Low",
+    "低"
+  ],
+  "中": [
+    "Med",
+    "中"
+  ],
+  "高": [
+    "High",
+    "高"
+  ],
+  "超高": [
+    "X-high",
+    "超高"
+  ],
+  "最高": [
+    "Max",
+    "最大"
+  ],
+  "极高": [
+    "Ultra",
+    "極高"
+  ],
+  "未返回": [
+    "Unavailable",
+    "取得できません"
+  ],
+  "尚无上下文用量记录": [
+    "No context usage recorded",
+    "コンテキスト使用量の記録がありません"
+  ],
+  "{0} / {1} · 剩余约 {2}%": [
+    "{0} / {1} · About {2}% remaining",
+    "{0} / {1} · 残り約 {2}%"
+  ],
+  "只读文件": [
+    "Read-only files",
+    "ファイルの読み取りのみ"
+  ],
+  "可修改工作目录": [
+    "Can edit the working directory",
+    "作業ディレクトリの編集が可能"
+  ],
+  "可访问和修改本机文件": [
+    "Can access and edit local files",
+    "ローカルファイルへのアクセスと編集が可能"
+  ],
+  "由外部环境控制文件权限": [
+    "File permissions managed externally",
+    "ファイル権限は外部環境で管理"
+  ],
+  "文件权限未返回": [
+    "File permissions unavailable",
+    "ファイル権限を取得できません"
+  ],
+  "不弹出操作确认": [
+    "No approval prompts",
+    "操作の確認なし"
+  ],
+  "未经信任的命令需确认": [
+    "Approval required for untrusted commands",
+    "信頼されていないコマンドは確認が必要"
+  ],
+  "按需要请求确认": [
+    "Approval requested when needed",
+    "必要に応じて確認"
+  ],
+  "受限操作失败后请求确认": [
+    "Approval requested after restricted operations fail",
+    "制限された操作が失敗した後に確認"
+  ],
+  "确认策略未返回": [
+    "Approval policy unavailable",
+    "確認方針を取得できません"
+  ],
+  "时间未返回": [
+    "Time unavailable",
+    "時刻を取得できません"
+  ],
+  "邮箱未返回": [
+    "Email unavailable",
+    "メールアドレスを取得できません"
+  ],
+  "不限额": [
+    "Unlimited",
+    "無制限"
+  ],
+  " 重置": [
+    " reset",
+    " リセット"
+  ],
+  "重置机会未返回": [
+    "Reset credits unavailable",
+    "リセット回数を取得できません"
+  ],
+  "剩余 ": [
+    "Remaining: ",
+    "残り "
+  ],
+  " 次重置机会": [
+    " resets",
+    " 回リセット可能"
+  ],
+  "无到期限制": [
+    "No expiry",
+    "有効期限なし"
+  ],
+  "到期时间未返回": [
+    "Expiry unavailable",
+    "有効期限を取得できません"
+  ],
+  " 到期": [
+    " expires",
+    " まで有効"
+  ],
+  "暂无可用重置机会": [
+    "No resets available",
+    "利用可能なリセット回数がありません"
+  ],
+  "其余机会的到期时间未返回": [
+    "Expiry unavailable for other resets",
+    "その他のリセット回数の有効期限を取得できません"
+  ],
+  "读取中…": [
+    "Loading…",
+    "読み込み中…"
+  ],
+  "正在读取重置时间…": [
+    "Loading reset time…",
+    "リセット時刻を読み込み中…"
+  ],
+  "正在读取重置机会…": [
+    "Loading reset credits…",
+    "リセット回数を読み込み中…"
+  ],
+  "正在读取到期时间…": [
+    "Loading expiry…",
+    "有効期限を読み込み中…"
+  ],
+  "请先选择 Codex 对话": [
+    "Select a Codex conversation first.",
+    "先に Codex の会話を選択してください。"
+  ],
+  "对话已切换，请重新查询": [
+    "Conversation changed. Please check again.",
+    "会話が切り替わりました。再度確認してください。"
+  ],
+  "当前对话未返回账号": [
+    "Account unavailable for this conversation.",
+    "この会話のアカウントを取得できません。"
+  ],
+  "当前账号已变化，请重新查询": [
+    "Account changed. Please check again.",
+    "アカウントが変わりました。再度確認してください。"
+  ],
+  "额度已重置，消耗 1 次机会": [
+    "Usage reset. One reset credit used.",
+    "利用枠をリセットしました。リセット回数を1回消費しました。"
+  ],
+  "此次重置已完成": [
+    "Reset completed",
+    "リセットが完了しました"
+  ],
+  "当前没有可重置的额度窗口": [
+    "No usage window can be reset now.",
+    "現在リセット可能な利用枠がありません。"
+  ],
+  "当前账号没有重置机会": [
+    "This account has no reset credits.",
+    "このアカウントにはリセット回数がありません。"
+  ],
+  "未返回明确的重置结果，请重新查询": [
+    "Reset result unavailable. Please check again.",
+    "リセット結果を確認できません。再度確認してください。"
+  ],
+  "；额度刷新失败，请重新查询": [
+    "; could not refresh usage. Please check again.",
+    "。利用枠の更新に失敗しました。再度確認してください。"
+  ],
+  "重置未确认：": [
+    "Reset not confirmed: ",
+    "リセットを確認できません："
+  ],
+  "Provider 尚未就绪": [
+    "Provider is not ready",
+    "プロバイダーの準備ができていません"
+  ],
+  "{0} 未安装": [
+    "{0} is not installed",
+    "{0} がインストールされていません"
+  ],
+  "{0} 尚未登录": [
+    "Not signed in to {0}",
+    "{0} にログインしていません"
+  ],
+  "{0}。完成登录后才能发送消息。": [
+    "{0}. Sign in before sending messages.",
+    "{0}。ログインしてからメッセージを送信してください。"
+  ],
+  "无法确认 {0} 登录状态：{1}。为避免直接请求失败，当前已禁止发送。": [
+    "Could not verify {0} sign-in: {1}. Sending is disabled until sign-in is verified.",
+    "{0} のログイン状態を確認できません：{1}。確認できるまで送信は無効です。"
+  ],
+  "请先完成 {0} 登录，然后刷新状态。": [
+    "Sign in to {0}, then refresh the status.",
+    "{0} にログインしてから状態を更新してください。"
+  ],
+  "执行失败": [
+    "Execution failed",
+    "実行に失敗しました"
+  ],
+  "昨天": [
+    "Yesterday",
+    "昨日"
+  ],
+  "前天": [
+    "Two days ago",
+    "一昨日"
+  ],
+  "暂无最近对话": [
+    "No recent conversations",
+    "最近の会話はありません"
+  ],
+  "对话选项": [
+    "Conversation options",
+    "会話のオプション"
+  ],
+  "项目工作树": [
+    "Project workspaces",
+    "プロジェクト"
+  ],
+  "对话 · ": [
+    "Conversation · ",
+    "会話 · "
+  ],
+  "未命名项目": [
+    "Untitled project",
+    "無題のプロジェクト"
+  ],
+  "无法打开对话：": [
+    "Could not open conversation: ",
+    "会話を開けません："
+  ],
+  "搜索未完成，请修改关键词重试。": [
+    "Search incomplete. Try different keywords.",
+    "検索が完了しませんでした。キーワードを変えてお試しください。"
+  ],
+  "正在搜索历史正文…": [
+    "Searching message history…",
+    "メッセージ履歴を検索中…"
+  ],
+  "输入至少两个字符以搜索完整历史。": [
+    "Enter at least two characters to search history.",
+    "履歴を検索するには2文字以上入力してください。"
+  ],
+  "没有找到匹配的项目或对话。": [
+    "No matching projects or conversations.",
+    "一致するプロジェクトや会話がありません。"
+  ],
+  "已展示本次前 50 处正文匹配，可缩小关键词范围。": [
+    "Showing the first 50 matches. Refine your search for more precise results.",
+    "最初の50件を表示しています。キーワードを絞り込んでください。"
+  ],
+  "搜索完成": [
+    "Search complete",
+    "検索完了"
+  ],
+  "重命名": [
+    "Rename",
+    "名前を変更"
+  ],
+  "复制": [
+    "Copy",
+    "コピー"
+  ],
+  "归档": [
+    "Archive",
+    "アーカイブ"
+  ],
+  "新名称": [
+    "New name",
+    "新しい名前"
+  ],
+  "保存": [
+    "Save",
+    "保存"
+  ],
+  "重命名工作树": [
+    "Rename workspace",
+    "プロジェクト名を変更"
+  ],
+  "工作树已重命名": [
+    "Workspace renamed",
+    "プロジェクト名を変更しました"
+  ],
+  "复制工作树目录": [
+    "Copy workspace path",
+    "プロジェクトのパスをコピー"
+  ],
+  "复制失败": [
+    "Could not copy",
+    "コピーに失敗しました"
+  ],
+  "目录已复制": [
+    "Path copied",
+    "パスをコピーしました"
+  ],
+  "纳入工作树": [
+    "Add to workspaces",
+    "プロジェクトに追加"
+  ],
+  "目录、项目规则与 Skill": [
+    "Directory, project rules & skills",
+    "ディレクトリ・プロジェクトルール・スキル"
+  ],
+  "归档工作树": [
+    "Archive workspace",
+    "プロジェクトをアーカイブ"
+  ],
+  "确认归档该工作树？": [
+    "Archive this workspace?",
+    "このプロジェクトをアーカイブしますか？"
+  ],
+  "归档保留历史记录和项目文件。": [
+    "History and project files will be kept.",
+    "履歴とプロジェクトファイルは保持されます。"
+  ],
+  "删除工作树": [
+    "Delete workspace",
+    "プロジェクトを削除"
+  ],
+  "确认删除该工作树？": [
+    "Delete this workspace?",
+    "このプロジェクトを削除しますか？"
+  ],
+  "将清除工作树及全部对话记录，不可恢复；项目代码文件保留。": [
+    "Permanently deletes the workspace and all conversations. Project files are kept.",
+    "プロジェクトの登録と全会話履歴を完全に削除します。コードファイルは保持されます。"
+  ],
+  "该工作树中有任务正在运行，请结束后再操作。": [
+    "A task is running in this workspace. Wait for it to finish.",
+    "このプロジェクトでタスクを実行中です。終了後に操作してください。"
+  ],
+  "请选择工作树或新建对话。": [
+    "Select a workspace or start a conversation.",
+    "プロジェクトを選択するか、新しい会話を作成してください。"
+  ],
+  "工作树及对话记录已删除，项目文件保留": [
+    "Workspace and history deleted. Project files kept.",
+    "プロジェクトの登録と会話履歴を削除しました。ファイルは保持されています。"
+  ],
+  "工作树已归档": [
+    "Workspace archived",
+    "プロジェクトをアーカイブしました"
+  ],
+  "工作树选项": [
+    "Workspace options",
+    "プロジェクトのオプション"
+  ],
+  "新建对话": [
+    "New conversation",
+    "新しい会話"
+  ],
+  "新对话": [
+    "New conversation",
+    "新しい会話"
+  ],
+  "暂无项目工作树": [
+    "No project workspaces",
+    "プロジェクトはありません"
+  ],
+  "项目 {0} 个": [
+    "{0} projects",
+    "{0} プロジェクト"
+  ],
+  "读取工作区失败，请点击刷新重试。": [
+    "Could not load workspaces. Refresh to retry.",
+    "プロジェクトを読み込めませんでした。更新してお試しください。"
+  ],
+  "读取项目失败：": [
+    "Could not load projects: ",
+    "プロジェクトの読み込みに失敗しました："
+  ],
+  "项目规则 · AGENTS.md": [
+    "Project rules · AGENTS.md",
+    "プロジェクトルール · AGENTS.md"
+  ],
+  "项目 Skill": [
+    "Project skills",
+    "プロジェクトのスキル"
+  ],
+  "{2}/技能名称/SKILL.md": [
+    "{2}/skill-name/SKILL.md",
+    "{2}/skill-name/SKILL.md"
+  ],
+  "同一工作树下的对话共用项目文件与规则；全局规则和技能继续由 Codex 原生读取。": [
+    "Conversations in a workspace share project files and rules. Codex also loads global rules and skills.",
+    "同じプロジェクト内の会話はファイルとルールを共有します。全体のルールとスキルは Codex が読み込みます。"
+  ],
+  "尚未创建 AGENTS.md。可在项目根目录中添加。": [
+    "No AGENTS.md yet. Add one to the project root.",
+    "AGENTS.md は未作成です。プロジェクトのルートに追加できます。"
+  ],
+  "暂无项目技能": [
+    "No project skills",
+    "プロジェクトのスキルはありません"
+  ],
+  "回复偏好读取失败：": [
+    "Could not load reply preferences: ",
+    "返信設定の読み込みに失敗しました："
+  ],
+  "回复长度已保存，下次发送生效": [
+    "Reply length saved. Applies to your next message.",
+    "返信の長さを保存しました。次の送信から適用されます。"
+  ],
+  "复制 ": [
+    "Copy ",
+    "コピー："
+  ],
+  " 会话 ID": [
+    " session ID",
+    " セッション ID"
+  ],
+  "对话已重命名": [
+    "Conversation renamed",
+    "会話名を変更しました"
+  ],
+  "无法写入剪贴板": [
+    "Could not write to clipboard",
+    "クリップボードに書き込めません"
+  ],
+  "会话 ID 已复制": [
+    "Session ID copied",
+    "セッション ID をコピーしました"
+  ],
+  "复制失败：": [
+    "Could not copy: ",
+    "コピーに失敗しました："
+  ],
+  "已打开分叉对话，原对话保留": [
+    "Fork opened. Original conversation kept.",
+    "分岐した会話を開きました。元の会話は保持されています。"
+  ],
+  "分叉失败：": [
+    "Could not fork: ",
+    "会話の分岐に失敗しました："
+  ],
+  "暂无对话，请从项目旁的 ＋ 新建对话。": [
+    "No conversations. Use ＋ beside a project to start one.",
+    "会話がありません。プロジェクト横の ＋ から作成してください。"
+  ],
+  "对话已归档": [
+    "Conversation archived",
+    "会話をアーカイブしました"
+  ],
+  "对话已永久删除": [
+    "Conversation permanently deleted",
+    "会話を完全に削除しました"
+  ],
+  "归档失败：": [
+    "Could not archive: ",
+    "アーカイブに失敗しました："
+  ],
+  "确认归档该对话？": [
+    "Archive this conversation?",
+    "この会話をアーカイブしますか？"
+  ],
+  "保留对话历史，可在归档中找回。": [
+    "History is kept and can be found in the archive.",
+    "履歴は保持され、アーカイブから確認できます。"
+  ],
+  "确认删除该对话？": [
+    "Delete this conversation?",
+    "この会話を削除しますか？"
+  ],
+  "将永久删除对话记录，此操作不可撤销。": [
+    "This permanently deletes the conversation and cannot be undone.",
+    "会話履歴を完全に削除します。この操作は取り消せません。"
+  ],
+  "加载中…": [
+    "Loading…",
+    "読み込み中…"
+  ],
+  "在顶部下拉或点击，加载更早的 20 条消息": [
+    "Pull down at the top or click to load 20 earlier messages",
+    "上端で下に引くかクリックすると、以前の20件を読み込みます"
+  ],
+  "正在加载最近消息…": [
+    "Loading recent messages…",
+    "最近のメッセージを読み込み中…"
+  ],
+  "未找到对应的历史消息": [
+    "History message not found",
+    "該当する履歴メッセージが見つかりません"
+  ],
+  "该 Session 暂无历史消息。": [
+    "No history in this session.",
+    "このセッションには履歴がありません。"
+  ],
+  "历史消息读取失败：": [
+    "Could not load history: ",
+    "履歴の読み込みに失敗しました："
+  ],
+  "读取更早消息失败：": [
+    "Could not load earlier messages: ",
+    "以前のメッセージの読み込みに失敗しました："
+  ],
+  "模型/权限配置读取失败：": [
+    "Could not load model or permissions: ",
+    "モデル・権限設定の読み込みに失敗しました："
+  ],
+  "（当前对话）": [
+    " (current conversation)",
+    "（現在の会話）"
+  ],
+  "暂无可选深度": [
+    "No reasoning levels available",
+    "選択可能な思考レベルがありません"
+  ],
+  "默认权限": [
+    "Default permissions",
+    "デフォルト権限"
+  ],
+  "自动接受编辑": [
+    "Auto-approve edits",
+    "編集を自動承認"
+  ],
+  "跳过权限确认": [
+    "Skip approvals",
+    "権限の確認をスキップ"
+  ],
+  "模型与思考深度已保存": [
+    "Model and reasoning level saved",
+    "モデルと思考レベルを保存しました"
+  ],
+  "模型或深度保存失败：": [
+    "Could not save model or reasoning level: ",
+    "モデル・思考レベルの保存に失敗しました："
+  ],
+  "思考深度已切换": [
+    "Reasoning level changed",
+    "思考レベルを変更しました"
+  ],
+  "切换思考深度失败：": [
+    "Could not change reasoning level: ",
+    "思考レベルの変更に失敗しました："
+  ],
+  "权限模式已切换": [
+    "Permission mode changed",
+    "権限モードを変更しました"
+  ],
+  "正在重新连接": [
+    "Reconnecting",
+    "再接続中"
+  ],
+  "正在压缩上下文": [
+    "Compacting context",
+    "コンテキストを圧縮中"
+  ],
+  "正在处理": [
+    "Processing",
+    "処理中"
+  ],
+  "思考中": [
+    "Thinking",
+    "思考中"
+  ],
+  "正在回复": [
+    "Responding",
+    "返信中"
+  ],
+  "已停止响应": [
+    "Response stopped",
+    "応答を停止しました"
+  ],
+  "响应失败": [
+    "Response failed",
+    "応答に失敗しました"
+  ],
+  "权限请求：{0}": [
+    "Permission request: {0}",
+    "権限の要求：{0}"
+  ],
+  "允许": [
+    "Allow",
+    "許可"
+  ],
+  "拒绝": [
+    "Deny",
+    "拒否"
+  ],
+  "正在处理…": [
+    "Processing…",
+    "処理中…"
+  ],
+  "当前 Codex 账号额度已耗尽，任务已中断。": [
+    "Codex usage limit reached. The task was interrupted.",
+    "Codex の利用上限に達したため、タスクが中断されました。"
+  ],
+  "正在检查可切换账号…": [
+    "Checking available accounts…",
+    "切替可能なアカウントを確認中…"
+  ],
+  "Codex 额度已耗尽": [
+    "Codex usage limit reached",
+    "Codex の利用上限に達しました"
+  ],
+  "完成": [
+    "Complete",
+    "完了"
+  ],
+  "已停止": [
+    "Stopped",
+    "停止済み"
+  ],
+  "本轮完成": [
+    "Turn complete",
+    "今回の応答が完了しました"
+  ],
+  "预览组件加载失败": [
+    "Could not load the preview component",
+    "プレビューの読み込みに失敗しました"
+  ],
+  "正在加载预览…": [
+    "Loading preview…",
+    "プレビューを読み込み中…"
+  ],
+  "预览失败：": [
+    "Preview failed: ",
+    "プレビューに失敗しました："
+  ],
+  "下载失败：": [
+    "Download failed: ",
+    "ダウンロードに失敗しました："
+  ],
+  "上传失败": [
+    "Upload failed",
+    "アップロードに失敗しました"
+  ],
+  "上传中…": [
+    "Uploading…",
+    "アップロード中…"
+  ],
+  "移除 ": [
+    "Remove ",
+    "削除："
+  ],
+  "每条消息最多添加 10 个附件": [
+    "Up to 10 attachments per message",
+    "1件のメッセージに添付できるのは10個までです"
+  ],
+  "单个附件不能超过 10MB": [
+    "Each attachment must be 10 MB or smaller",
+    "添付ファイルは1個につき10 MB以下にしてください"
+  ],
+  "附件上传未完成": [
+    "Attachment upload is incomplete",
+    "添付ファイルのアップロードが完了していません"
+  ],
+  "模型设置正在读取或保存，请稍后发送。": [
+    "Model settings are loading or saving. Please wait before sending.",
+    "モデル設定を読み込み・保存中です。しばらくしてから送信してください。"
+  ],
+  "消息尚未发送，请稍后重试": [
+    "Message not sent. Please try again shortly.",
+    "メッセージは送信されていません。しばらくしてからお試しください。"
+  ],
+  "附件上传失败，请移除失败附件后重新选择": [
+    "Upload failed. Remove the failed attachments and select them again.",
+    "アップロードに失敗しました。失敗した添付ファイルを削除し、選び直してください。"
+  ],
+  "对话已切换，消息尚未发送": [
+    "Conversation changed. Message not sent.",
+    "会話が切り替わったため、メッセージは送信されていません。"
+  ],
+  "已排队，当前回复结束后自动发送": [
+    "Queued. Sends after the current response.",
+    "キューに追加しました。現在の応答が完了すると送信されます。"
+  ],
+  "发送附件": [
+    "Send attachments",
+    "添付ファイルを送信"
+  ],
+  "发送失败：": [
+    "Could not send: ",
+    "送信に失敗しました："
+  ],
+  "预览 ": [
+    "Preview ",
+    "プレビュー："
+  ],
+  "图片": [
+    "Image",
+    "画像"
+  ],
+  "读取失败": [
+    "Could not load",
+    "読み込みに失敗しました"
+  ],
+  "图片读取失败，点击重试": [
+    "Could not load image. Click to retry.",
+    "画像を読み込めませんでした。クリックして再試行してください。"
+  ],
+  "停止生成": [
+    "Stop generating",
+    "生成を停止"
+  ],
+  "发送消息": [
+    "Send message",
+    "メッセージを送信"
+  ],
+  "发送": [
+    "Send",
+    "送信"
+  ],
+  "待发送：": [
+    "Queued: ",
+    "送信待ち："
+  ],
+  "附件": [
+    "Attachment",
+    "添付ファイル"
+  ],
+  "读取排队消息失败": [
+    "Could not load queued messages",
+    "送信待ちメッセージの読み込みに失敗しました"
+  ],
+  "已取消排队": [
+    "Removed from queue",
+    "キューから削除しました"
+  ],
+  "已复制验证码": [
+    "Verification code copied",
+    "認証コードをコピーしました"
+  ],
+  "复制失败，请重试": [
+    "Could not copy. Try again.",
+    "コピーに失敗しました。再度お試しください。"
+  ],
+  "模型": [
+    "Model",
+    "モデル"
+  ],
+  " · 保存中…": [
+    " · Saving…",
+    " · 保存中…"
+  ],
+  "账号额度": [
+    "Account usage",
+    "アカウントの利用枠"
+  ],
+  "模型：": [
+    "Model: ",
+    "モデル："
+  ],
+  " · 思考：": [
+    " · Reasoning: ",
+    " · 思考："
+  ],
+  "权限：": [
+    "Permissions: ",
+    "権限："
+  ],
+  "未选择": [
+    "Not selected",
+    "未選択"
+  ],
+  "1.5 倍速，用量增加": [
+    "1.5× faster, higher usage",
+    "1.5倍速、使用量が増加"
+  ],
+  "默认速度，正常用量": [
+    "Default speed, standard usage",
+    "標準速度、通常の使用量"
+  ],
+  "默认模式": [
+    "Default mode",
+    "デフォルトモード"
+  ],
+  "编辑模式": [
+    "Edit mode",
+    "編集モード"
+  ],
+  "无限制模式": [
+    "Unrestricted mode",
+    "制限なしモード"
+  ],
+  "自动运行受信任命令，修改操作需人工确认。": [
+    "Trusted commands run automatically. Changes require approval.",
+    "信頼されたコマンドは自動実行し、変更時は確認します。"
+  ],
+  "工作区内指令全自动运行，具备沙盒隔离防护。": [
+    "Workspace commands run automatically within the sandbox.",
+    "作業領域内のコマンドをサンドボックスで自動実行します。"
+  ],
+  "全系统访问权限，跳过所有确认（请谨慎使用）。": [
+    "Full system access without approvals. Use with care.",
+    "システム全体にアクセスし、確認を省略します。慎重に使用してください。"
+  ],
+  "使用当前提供方的权限设置。": [
+    "Use the current provider’s permission settings.",
+    "現在のプロバイダーの権限設定を使用します。"
+  ],
+  "无法恢复当前对话：": [
+    "Could not restore conversation: ",
+    "会話の復元に失敗しました："
+  ],
+  "打开工作区": [
+    "Open workspaces",
+    "プロジェクトを開く"
+  ],
+  "当前对话文件": [
+    "Conversation files",
+    "この会話のファイル"
+  ],
+  "登录后选择项目和 Session。": [
+    "Sign in, then select a project and session.",
+    "ログイン後、プロジェクトとセッションを選択してください。"
+  ],
+  "去登录": [
+    "Sign in",
+    "ログイン"
+  ],
+  "取消排队": [
+    "Cancel queued message",
+    "送信待ちをキャンセル"
+  ],
+  "消息": [
+    "Message",
+    "メッセージ"
+  ],
+  "输入给 Codex 的消息…": [
+    "Message Codex…",
+    "Codex へのメッセージ…"
+  ],
+  "添加文件或图片": [
+    "Add files or images",
+    "ファイル・画像を追加"
+  ],
+  "查看账号额度": [
+    "View account usage",
+    "アカウントの利用枠を表示"
+  ],
+  "账号未返回": [
+    "Account unavailable",
+    "アカウントを取得できません"
+  ],
+  "切换账号": [
+    "Switch account",
+    "アカウントを切り替え"
+  ],
+  "购买余额：": [
+    "Credits: ",
+    "購入残高："
+  ],
+  "5小时剩余": [
+    "5h remaining",
+    "5時間の残り"
+  ],
+  "7天剩余": [
+    "7d remaining",
+    "7日間の残り"
+  ],
+  "重置": [
+    "Reset",
+    "リセット"
+  ],
+  "确认消耗重置机会": [
+    "Confirm reset credit usage",
+    "リセット回数の消費を確認"
+  ],
+  "确定消耗 1 次重置机会？": [
+    "Use one reset credit?",
+    "リセット回数を1回消費しますか？"
+  ],
+  "确定": [
+    "Confirm",
+    "確定"
+  ],
+  "选择模型与思考深度": [
+    "Select model and reasoning level",
+    "モデルと思考レベルを選択"
+  ],
+  "模型 / 思考": [
+    "Model / Reasoning",
+    "モデル・思考"
+  ],
+  "思考深度": [
+    "Reasoning level",
+    "思考レベル"
+  ],
+  "快速模式": [
+    "Fast mode",
+    "高速モード"
+  ],
+  "普通": [
+    "Normal",
+    "通常"
+  ],
+  "快速": [
+    "Fast",
+    "高速"
+  ],
+  "选择权限模式": [
+    "Select permission mode",
+    "権限モードを選択"
+  ],
+  "权限模式": [
+    "Permission mode",
+    "権限モード"
+  ],
+  "权限模式设置": [
+    "Permission settings",
+    "権限設定"
+  ],
+  "权限": [
+    "Permissions",
+    "権限"
+  ],
+  "搜索文件名或格式...": [
+    "Search file name or type…",
+    "ファイル名・形式を検索…"
+  ],
+  "搜索文件名或格式": [
+    "Search file name or type",
+    "ファイル名・形式を検索"
+  ],
+  "选择发送方式": [
+    "Choose how to send",
+    "送信方法を選択"
+  ],
+  "排队发送": [
+    "Queue message",
+    "キューに追加"
+  ],
+  "立即发送": [
+    "Send now",
+    "今すぐ送信"
+  ],
+  "跳到最新消息": [
+    "Jump to latest message",
+    "最新のメッセージへ"
+  ],
+  "工作区与对话": [
+    "Workspaces and conversations",
+    "プロジェクトと会話"
+  ],
+  "搜索项目、对话或正文": [
+    "Search projects, conversations or messages",
+    "プロジェクト・会話・本文を検索"
+  ],
+  "清空搜索": [
+    "Clear search",
+    "検索をクリア"
+  ],
+  "清空": [
+    "Clear",
+    "クリア"
+  ],
+  "搜索结果": [
+    "Search results",
+    "検索結果"
+  ],
+  "＋ 新建": [
+    "＋ New",
+    "＋ 新規"
+  ],
+  "最近对话": [
+    "Recent conversations",
+    "最近の会話"
+  ],
+  "账": [
+    "A",
+    "ア"
+  ],
+  "账号": [
+    "Account",
+    "アカウント"
+  ],
+  "账号与设置": [
+    "Account and settings",
+    "アカウントと設定"
+  ],
+  "设置": [
+    "Settings",
+    "設定"
+  ],
+  "新建工作树": [
+    "New workspace",
+    "新規プロジェクト"
+  ],
+  "工作树名称（也是文件夹名称）": [
+    "Workspace name (also the folder name)",
+    "プロジェクト名（フォルダ名にも使用）"
+  ],
+  "例如：网站开发": [
+    "For example: website",
+    "例：ウェブサイト開発"
+  ],
+  "创建工作树": [
+    "Create workspace",
+    "プロジェクトを作成"
+  ],
+  "对话操作": [
+    "Conversation actions",
+    "会話の操作"
+  ],
+  "重命名对话": [
+    "Rename conversation",
+    "会話名を変更"
+  ],
+  "复制 Codex 会话 ID": [
+    "Copy Codex session ID",
+    "Codex セッション ID をコピー"
+  ],
+  "分叉对话（在副本中继续）": [
+    "Fork conversation (continue a copy)",
+    "会話を分岐（コピーで続ける）"
+  ],
+  "归档会话": [
+    "Archive conversation",
+    "会話をアーカイブ"
+  ],
+  "永久删除": [
+    "Delete permanently",
+    "完全に削除"
+  ],
+  "简洁回复": [
+    "Concise replies",
+    "簡潔な返信"
+  ],
+  "简洁": [
+    "Concise",
+    "簡潔"
+  ],
+  "标准": [
+    "Standard",
+    "標準"
+  ],
+  "下次发送时生效，切换账号后仍沿用此选择。": [
+    "Applies to the next message and stays selected when switching accounts.",
+    "次の送信から適用され、アカウントを切り替えても維持されます。"
+  ],
+  "显示思考摘要": [
+    "Show reasoning summaries",
+    "思考の要約を表示"
+  ],
+  "显示工具调用与处理详情": [
+    "Show tool calls and processing details",
+    "ツール呼び出しと処理の詳細を表示"
+  ],
+  "思考摘要和工具详情默认隐藏。只改变页面显示，不影响任务执行、正文回复和权限确认。": [
+    "Reasoning summaries and tool details are hidden by default. This only changes the display, not tasks, replies or approvals.",
+    "思考の要約とツール詳細は初期状態で非表示です。表示のみを変更し、タスク・返信・権限確認には影響しません。"
+  ],
+  "深色模式": [
+    "Dark mode",
+    "ダークモード"
+  ],
+  "Codex 账号": [
+    "Codex accounts",
+    "Codex アカウント"
+  ],
+  "＋ 添加账号": [
+    "＋ Add account",
+    "＋ アカウントを追加"
+  ],
+  "刷新": [
+    "Refresh",
+    "更新"
+  ],
+  "当前对话使用": [
+    "Used by this conversation",
+    "この会話で使用中"
+  ],
+  "未选择对话": [
+    "No conversation selected",
+    "会話が選択されていません"
+  ],
+  "未检查": [
+    "Not checked",
+    "未確認"
+  ],
+  "选中": [
+    "Select",
+    "選択"
+  ],
+  "额度耗尽时自动切换": [
+    "Switch when usage runs out",
+    "利用上限に達したら自動切替"
+  ],
+  "自动使用下一个有额度的账号": [
+    "Use the next account with available usage",
+    "利用枠のある次のアカウントを使用"
+  ],
+  "手动选择其他账号": [
+    "Select another account manually",
+    "別のアカウントを手動で選択"
+  ],
+  "自动选择并继续": [
+    "Select automatically and continue",
+    "自動選択して再開"
+  ],
+  "任务运行中不能切换账号。只有明确检测到 Codex 额度耗尽时，自动模式才会切换账号并继续任务。": [
+    "Accounts cannot be switched during a task. Automatic mode switches and resumes only when Codex reports an exhausted usage limit.",
+    "タスク実行中は切り替えできません。自動モードは Codex の利用上限が確認された場合のみ切り替えて再開します。"
+  ],
+  "关闭": [
+    "Close",
+    "閉じる"
+  ],
+  "工作树操作": [
+    "Workspace actions",
+    "プロジェクトの操作"
+  ],
+  "归档保留历史；删除会清除该工作树及其中的对话记录。两者均保留项目文件。": [
+    "Archiving keeps history. Deleting removes the workspace and its conversations. Both keep project files.",
+    "アーカイブは履歴を保持し、削除はプロジェクトの登録と会話履歴を消去します。どちらもファイルは保持します。"
+  ],
+  "文件预览": [
+    "File preview",
+    "ファイルプレビュー"
+  ],
+  "下载": [
+    "Download",
+    "ダウンロード"
+  ],
+  "正在准备 Codex 登录…": [
+    "Preparing Codex sign-in…",
+    "Codex ログインを準備中…"
+  ],
+  "检查更新失败：": [
+    "Update check failed: ",
+    "更新の確認に失敗しました："
+  ],
+  "已是最新版本": [
+    "You’re up to date",
+    "最新版です"
+  ],
+  "正在下载更新，可继续聊天…": [
+    "Downloading update. You can keep chatting…",
+    "更新をダウンロード中です。会話は続けられます…"
+  ],
+  "更新已下载，等待当前任务完成…": [
+    "Update downloaded. Waiting for the current task…",
+    "更新をダウンロードしました。現在のタスクの終了を待っています…"
+  ],
+  "正在重启，稍后自动恢复…": [
+    "Restarting. Reconnecting shortly…",
+    "再起動中です。まもなく自動で再接続します…"
+  ],
+  " 可更新": [
+    " update available",
+    " に更新できます"
+  ],
+  "重试更新": [
+    "Retry update",
+    "更新を再試行"
+  ],
+  "下载并更新": [
+    "Download and update",
+    "ダウンロードして更新"
+  ],
+  "正在重启连接，稍后自动恢复…": [
+    "Reconnecting after restart…",
+    "再起動後に再接続中…"
+  ],
+  "检查更新": [
+    "Check for updates",
+    "更新を確認"
+  ],
+  "筛选文件路径 (如: src/components)...": [
+    "Filter paths (e.g. src/components)…",
+    "パスで絞り込む（例：src/components）…"
+  ],
+  "语言": [
+    "Language",
+    "言語"
+  ],
+  "默认回复语言跟随界面语言，也可在消息中另行指定。": [
+    "Replies use the interface language unless you request another language.",
+    "返信もこの言語を使用します。メッセージで別の言語を指定できます。"
+  ],
+  "当前账号额度已耗尽。已自动切换到 ": [
+    "Usage limit reached. Automatically switched to ",
+    "利用上限に達したため、自動で切り替えました： "
+  ]
+}

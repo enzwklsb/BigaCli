@@ -2,6 +2,7 @@ import fsSync from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import readline from 'node:readline';
+import { readCodexTranscriptLines } from '../../services/codex-transcript.service.js';
 import { sessionsDb } from '../../../../modules/database/index.js';
 import { codexAppServer } from '../../../../modules/providers/list/codex/codex-app-server.client.js';
 import { parseFilesInputTag, toImageAttachments } from '../../../../shared/image-attachments.js';
@@ -99,8 +100,7 @@ function createCodexTurnTracker() {
  */
 async function readCodexLiveTurnIds(filePath) {
     const turns = createCodexTurnTracker();
-    const stream = fsSync.createReadStream(filePath);
-    const lines = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    const lines = readCodexTranscriptLines(filePath);
     for await (const line of lines) {
         if (!line.trim()) {
             continue;
@@ -978,8 +978,7 @@ async function getCodexSessionMessages(sessionId) {
     const turns = createCodexTurnTracker();
     /** Turns whose prompt already carries the anchor, so only the first does. */
     const anchoredTurnIds = new Set();
-    const fileStream = fsSync.createReadStream(sessionFilePath);
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    const rl = readCodexTranscriptLines(sessionFilePath);
     /** Emits a tool_result row unless the call already produced one. */
     const pushToolResult = (callId, timestamp, output, isError) => {
         if (completedExecCalls.has(callId)) {
@@ -1106,6 +1105,20 @@ async function getCodexSessionMessages(sessionId) {
             continue;
         }
         // ── response_item ──────────────────────────────────────────────────────
+        if (payload.type === 'message' && payload.role === 'user') {
+            const metadata = payload.internal_chat_message_metadata_passthrough;
+            const kinds = metadata?.content_item_kinds;
+            // Modern rollouts store user input here, alongside injected context.
+            // Only user-authored parts belong in the visible conversation.
+            const content = Array.isArray(kinds) && Array.isArray(payload.content)
+                ? payload.content.filter((part, index) => kinds[index]?.startsWith('user.')) : [];
+            if (content.length) {
+                const turnId = metadata.turn_id || turns.getCurrentTurnId();
+                messages.push({ type: 'user', timestamp, message: { role: 'user', content },
+                    ...(turnId ? { turnId } : {}) });
+            }
+            continue;
+        }
         if (payload.type === 'message' && payload.role === 'assistant') {
             const cited = readCodexMemoryCitations(extractCodexTextContent(payload.content));
             const textContent = cited.text;

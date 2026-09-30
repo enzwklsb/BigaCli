@@ -76,7 +76,7 @@ $json=$manifest | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText((Join-Path $assets 'release.json'),$json)
 if($ComponentsOnly){Get-ChildItem $assets -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize; return}
 [IO.File]::WriteAllText((Join-Path $full 'active.json'),$json)
-Copy-Item start.cmd,launcher.cjs,LICENSE,README.md -Destination $full
+Copy-Item start.cmd,foreground.ps1,launcher.cjs,local-start.cjs,LICENSE,README.md -Destination $full
 $fullZip=Join-Path $assets 'BigaCli-win-x64.zip'
 & tar.exe -a -cf $fullZip -C $full .
 if($LASTEXITCODE){throw 'Could not create full package'}

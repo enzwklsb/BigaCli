@@ -3,6 +3,12 @@ import { spawnCodex } from './codex-command.service.js';
 import { buildCodexEnv } from './codex-account.service.js';
 function send(proc, payload) { proc.stdin.write(`${JSON.stringify(payload)}\n`); }
 export function readCodexRateLimits(timeoutMs = 8000, accountId = 'default') {
+  return requestRateLimits('account/rateLimits/read', undefined, timeoutMs, accountId);
+}
+export function consumeCodexRateLimitReset(accountId, idempotencyKey) {
+  return requestRateLimits('account/rateLimitResetCredit/consume', { idempotencyKey }, 15000, accountId);
+}
+function requestRateLimits(method, params, timeoutMs, accountId) {
   return new Promise((resolve, reject) => {
     const proc = spawnCodex(spawn, ['app-server'], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env: buildCodexEnv(accountId) });
     let buffer = '', stderr = '', settled = false, result;
@@ -25,7 +31,7 @@ export function readCodexRateLimits(timeoutMs = 8000, accountId = 'default') {
         if (message.id === 1) {
           if (message.error) return finish(new Error(message.error.message || 'Codex initialize failed'));
           send(proc, { method: 'initialized' });
-          send(proc, { id: 2, method: 'account/rateLimits/read' });
+          send(proc, { id: 2, method, ...(params ? { params } : {}) });
         } else if (message.id === 2) {
           if (message.error) return finish(new Error(message.error.message || 'Codex rate-limit read failed'));
           return finish(null, message.result ?? {});

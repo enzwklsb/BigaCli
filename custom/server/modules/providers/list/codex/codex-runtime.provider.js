@@ -13,8 +13,11 @@
  * - getActiveCodexSessions() - List all active sessions
  */
 import { streamCodexTurn, codexStreamPermissions } from '../../services/codex-stream.service.js';
+import { recordAccountLimit } from '../../services/codex-recovery.service.js';
 import { readCodexModelCatalog } from '../../services/codex-models.service.js';
-import { buildCodexEnv, getSessionCodexAccountConfig } from '../../services/codex-account.service.js';
+import { buildCodexEnv, getSessionCodexAccountConfig, recordCodexThreadAccount } from '../../services/codex-account.service.js';
+import { sessionsDb, getConnection } from '../../../database/index.js';
+import { stat } from 'node:fs/promises';
 import { appendFilesInputTag, buildCodexInputItems, normalizeImageDescriptors } from '../../../../shared/image-attachments.js';
 import { notifyRunFailed, notifyRunStopped } from '../../../../modules/notifications/index.js';
 import { createCompleteMessage, createNormalizedMessage } from '../../../../shared/utils.js';
@@ -206,7 +209,7 @@ function mapPermissionModeToCodexOptions(permissionMode) {
 export async function queryCodex(command, options = {}, ws, context) {
     const { sessionId, sessionSummary, cwd, projectPath, model, effort, images, files, permissionMode = 'default' } = options;
     const accountConfig = getSessionCodexAccountConfig(sessionId);
-    const accountId = accountConfig.currentAccountId || 'default';
+    const accountId = options.codexAccountId || accountConfig.currentAccountId;
     // Callers pass the stable app session id; the SDK resumes threads with the
     // provider-native id recorded on the session row.
     const providerSessionId = context.resolveProviderSessionId(sessionId);
@@ -224,11 +227,30 @@ export async function queryCodex(command, options = {}, ws, context) {
     // Session-map key: the app session id when the caller supplied one, else
     // the provider-native thread id once captured (legacy/direct API callers).
     const sessionKey = () => sessionId || capturedSessionId || null;
+    const handoff = Boolean(providerSessionId && accountConfig.threadAccountId !== accountId);
+    let handoffReady = false;
+    let handoffHintVisible = false;
+    const sendHandoffStatus = text => sendMessage(ws, createNormalizedMessage({ kind: 'account_handoff', text, provider: 'codex', sessionId }));
+    const handoffStatusText = () => handoffReady ? '已完成切换账号后的基础设置，正在等待回复…' : '正在完成切换账号后的基础设置…';
+    const handoffTimer = handoff && accountConfig.accountChangedAt > Date.now() - 30 * 60 * 1000 ? setTimeout(() => {
+        handoffHintVisible = true;
+        sendHandoffStatus(handoffStatusText());
+    }, 2500) : null;
+    const finishHandoffStatus = () => {
+        clearTimeout(handoffTimer);
+        if (handoffHintVisible) {
+            sendHandoffStatus('');
+            handoffHintVisible = false;
+        }
+    };
     try {
         const catalog = await readCodexModelCatalog(accountId);
         const selectedModel = catalog.OPTIONS.find((option) => option.value === resolvedModel) || null;
         const allowedEfforts = selectedModel?.effort?.values?.map((value) => value.value) || [];
-        const resolvedEffort = typeof effort === 'string' && effort !== 'default' && allowedEfforts.includes(effort) ? effort : undefined;
+        if (effort && effort !== 'default' && !allowedEfforts.includes(effort)) {
+            throw new Error('当前账号的该模型不支持所选思考深度，请重新选择。');
+        }
+        const resolvedEffort = effort && effort !== 'default' ? effort : selectedModel?.effort?.default;
         if (options.serviceTier && options.serviceTier !== 'default' && !selectedModel?.serviceTiers?.some(tier => tier.id === options.serviceTier)) {
             throw new Error('当前账号的该模型不支持所选速度，请重新选择。');
         }
@@ -266,8 +288,34 @@ export async function queryCodex(command, options = {}, ws, context) {
         const turnInput = normalizeImageDescriptors(images).length > 0
             ? buildCodexInputItems(promptWithFiles, images, workingDirectory)
             : promptWithFiles;
-        const events = streamCodexTurn(turnInput, { ...threadOptions, env: codex.env, threadId: providerSessionId, sessionId }, abortController.signal);
+        const events = streamCodexTurn(turnInput, {
+            ...threadOptions, env: codex.env, threadId: providerSessionId, sessionId,
+            handoff,
+            transcriptPath: handoff ? sessionsDb.getSessionById(sessionId)?.jsonl_path : undefined,
+            onThreadReady: async result => {
+                if (abortController.signal.aborted) throw new Error('账号切换已取消');
+                if (handoff) {
+                    if (!result.id || !result.path) throw new Error('切换失败：新对话记录尚未就绪');
+                    await stat(result.path);
+                    const previous = sessionsDb.getSessionById(sessionId);
+                    getConnection().transaction(() => {
+                        sessionsDb.markProviderSessionSuperseded({ providerSessionId, provider: 'codex', sessionId, jsonlPath: previous.jsonl_path });
+                        sessionsDb.repointSessionToProviderSession(sessionId, { providerSessionId: result.id, jsonlPath: result.path });
+                        recordCodexThreadAccount(sessionId, accountId);
+                    })();
+                    capturedSessionId = result.id;
+                    thread.id = result.id;
+                    ws.setSessionId?.(result.id);
+                    handoffReady = true;
+                    if (handoffHintVisible) sendHandoffStatus(handoffStatusText());
+                } else if (!providerSessionId) recordCodexThreadAccount(sessionId, accountId);
+            },
+        }, abortController.signal);
         for await (const event of events) {
+            if (event.type === 'turn.completed' || event.type === 'turn.failed' || event.type === 'item.completed' ||
+                event.type === 'normalized' && (event.message.content || ['activity_start', 'final_answer_start', 'permission_request'].includes(event.message.kind))) {
+                finishHandoffStatus();
+            }
             // Capture thread/session id lazily from the stream (Codex emits this asynchronously).
             if (event.type === 'thread.started') {
                 const discoveredSessionId = event.thread_id || event.id || null;
@@ -301,7 +349,8 @@ export async function queryCodex(command, options = {}, ws, context) {
                 continue;
             }
             const isLimitFailure = event.type === 'turn.failed' && isUsageLimitError(event.error);
-            if (isLimitFailure) {
+            if (isLimitFailure && !abortController.signal.aborted) {
+                recordAccountLimit(sessionId, ws?.userId, accountId, options);
                 sendMessage(ws, createNormalizedMessage({ kind: 'account_limit', content: '当前 Codex 账号额度已耗尽。', accountId, sessionId: capturedSessionId || sessionId || null, provider: 'codex' }));
             }
             else {
@@ -355,6 +404,7 @@ export async function queryCodex(command, options = {}, ws, context) {
         }
     }
     catch (error) {
+        finishHandoffStatus();
         const session = sessionKey() ? activeCodexSessions.get(sessionKey()) : null;
         const wasAborted = session?.status === 'aborted' ||
             error?.name === 'AbortError' ||
@@ -365,6 +415,7 @@ export async function queryCodex(command, options = {}, ws, context) {
             // Do not run a second "installed" gate here because it can mask the real failure.
             const errorContent = error instanceof Error ? error.message : String(error);
             if (isUsageLimitError(error)) {
+                recordAccountLimit(sessionId, ws?.userId, accountId, options);
                 sendMessage(ws, createNormalizedMessage({ kind: 'account_limit', content: '当前 Codex 账号额度已耗尽。', accountId, sessionId: capturedSessionId || sessionId || null, provider: 'codex' }));
             } else {
                 sendMessage(ws, createNormalizedMessage({ kind: 'error', content: errorContent, sessionId: capturedSessionId || sessionId || null, provider: 'codex' }));
@@ -386,6 +437,7 @@ export async function queryCodex(command, options = {}, ws, context) {
         }
     }
     finally {
+        finishHandoffStatus();
         // Update session status
         if (sessionKey()) {
             const session = activeCodexSessions.get(sessionKey());
@@ -393,6 +445,17 @@ export async function queryCodex(command, options = {}, ws, context) {
                 session.status = session.status === 'aborted' ? 'aborted' : 'completed';
             }
         }
+        // Wake CloudCLI's existing persistent queue after this run has released
+        // its runtime state. Its atomic claim still owns dispatch and retries.
+        setImmediate(async () => {
+            try {
+                const [{ dispatchQueuedMessages }, { providerRuntimeService }] = await Promise.all([
+                    import('../../../scheduled-messages/services/scheduled-message-dispatcher.service.js'),
+                    import('../../services/provider-runtime.service.js'),
+                ]);
+                await dispatchQueuedMessages(providerRuntimeService);
+            } catch (error) { console.error('[BigaCli] Queued dispatch failed:', error); }
+        });
     }
 }
 /**

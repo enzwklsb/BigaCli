@@ -13,7 +13,8 @@ execFileSync('tar.exe',['-xf',baseline,'-C',root],{windowsHide:true});
 const initial=JSON.parse(fs.readFileSync(path.join(root,'active.json')));
 assert.equal(initial.version,'0.2.0');assert.equal(initial.components.node.id,target.components.node.id);
 const downloads=path.join(root,'requested.txt');
-const p=spawn(path.join(root,'store/node',initial.components.node.id,'node.exe'),['--import',pathToFileURL(path.resolve('scripts/verify-upgrade-hook.mjs')).href,path.join(root,'launcher.cjs')],{cwd:root,env:{...process.env,BIGACLI_PORT:'3192',DATABASE_PATH:path.join(root,'test.db'),BIGA_TEST_ASSETS:assets,BIGA_TEST_DOWNLOAD_LOG:downloads},windowsHide:true,stdio:['ignore','ignore','pipe','ipc']});
+const home=path.join(root,'test-home');fs.mkdirSync(home);
+const p=spawn(path.join(root,'store/node',initial.components.node.id,'node.exe'),['--import',pathToFileURL(path.resolve('scripts/verify-upgrade-hook.mjs')).href,path.join(root,'launcher.cjs')],{cwd:root,env:{...process.env,HOME:home,USERPROFILE:home,CODEX_HOME:path.join(home,'.codex'),BIGACLI_PORT:'3192',DATABASE_PATH:path.join(root,'test.db'),BIGA_TEST_ASSETS:assets,BIGA_TEST_DOWNLOAD_LOG:downloads},windowsHide:true,stdio:['ignore','ignore','pipe','ipc']});
 p.stderr.on('data',b=>process.stderr.write(b));
 let token;
 async function api(url,body){const r=await fetch('http://127.0.0.1:3192'+url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();assert.ok(r.ok,JSON.stringify(data));return data.data??data}
@@ -38,9 +39,9 @@ try{
  assert.equal((await api('/api/auth/user')).user.id,user.id);
  assert.equal((await api('/api/auth/user')).user.username,user.username);
  const retained=await api('/api/providers/sessions/'+sid);assert.ok(JSON.stringify(retained).includes(sid));
- const models=(await api('/api/providers/codex/models?sessionId='+sid)).models;assert.ok(models.OPTIONS.some(m=>m.value==='gpt-6-astra'));
+ const accounts=await api('/api/providers/codex/accounts');assert.ok(!JSON.stringify(accounts).includes('@'),'isolated account store');
  assert.deepEqual(fs.readFileSync(downloads,'utf8').trim().split('\n'),['app']);
  assert.equal(fs.readdirSync(path.join(root,'store/node')).length,1);
  assert.equal(JSON.parse(fs.readFileSync(path.join(root,'previous.json'))).version,initial.version);
- console.log('PASS: 0.2.0 → '+version+', app-only download, original user/session retained, update status and models accessible without login');
+ console.log('PASS: 0.2.0 → '+version+', app-only download, original user/session retained, update status and accounts accessible without login');
 }finally{if(p.connected)p.send({type:'shutdown'})}

@@ -1,11 +1,19 @@
 import express from 'express';
+import { flattenAccountInfo, readQuotaUsage, readRecoveryAccounts, recoveryState, recoverPendingAccounts, isRecoverySwitching, pauseRecovery, scheduleRecovery, scheduleDefaultRecovery, checkRecoveryTicket } from './services/codex-recovery.service.js';
+import { steerCodexTurn } from './services/codex-stream.service.js';
+import { filterAttachmentsToUploadStore } from '../websocket/services/chat-websocket.service.js';
+import { appendFilesInputTag, buildCodexInputItems, isImageAttachmentDescriptor, normalizeAttachmentDescriptors } from '../../shared/image-attachments.js';
+import { readConversationStatus } from '../bigacli/conversation-status.service.js';
+import bigaWorkspaceRoutes from '../bigacli/workspaces.routes.js';
+import { getAccountNotes, mergeAccountNotes } from '../bigacli/preferences.service.js';
 import { providerAuthService } from '../../modules/providers/services/provider-auth.service.js';
-import { readCodexRateLimits } from './services/codex-rate-limits.service.js';
+import { readCodexRateLimits, consumeCodexRateLimitReset } from './services/codex-rate-limits.service.js';
 import { readCodexAccountInfo } from './services/codex-account-info.service.js';
-import { readCodexModels, readCodexModelCatalog } from './services/codex-models.service.js';
-import { listCodexAccounts, createCodexAccount, deleteCodexAccount, getSessionCodexAccountConfig, setSessionCodexAccountConfig, setSessionCodexMode } from './services/codex-account.service.js';
+import { readCodexModelCatalog } from './services/codex-models.service.js';
+import { listCodexAccounts, createCodexAccount, deleteCodexAccount, getSessionCodexAccountConfig, setSessionCodexAccountConfig, setSessionCodexMode, recordCodexThreadAccount } from './services/codex-account.service.js';
 import { chatRunRegistry } from '../websocket/services/chat-run-registry.service.js';
-import { sessionsDb } from '../database/index.js';
+import { sessionsDb, sessionDraftsDb } from '../database/index.js';
+import { prepareQueueSend } from '../scheduled-messages/services/queued-message.service.js';
 import { providerCapabilitiesService } from '../../modules/providers/services/provider-capabilities.service.js';
 import { providerMcpService } from '../../modules/providers/services/mcp.service.js';
 import { providerModelsService } from '../../modules/providers/services/provider-models.service.js';
@@ -15,11 +23,35 @@ import { sessionConversationsSearchService } from '../../modules/providers/servi
 import { sessionsService } from '../../modules/providers/services/sessions.service.js';
 import { AppError, asyncHandler, createApiSuccessResponse } from '../../shared/utils.js';
 const router = express.Router();
+router.post('/codex/sessions/:sessionId/steer', asyncHandler(async (req, res) => {
+    const sessionId = String(req.params.sessionId), session = sessionsDb.getSessionById(sessionId);
+    if (!session || session.provider !== 'codex') throw new AppError('Codex session not found.', { code: 'SESSION_NOT_FOUND', statusCode: 404 });
+    const text = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+    const supplied = normalizeAttachmentDescriptors(req.body?.attachments);
+    const attachments = filterAttachmentsToUploadStore(supplied);
+    if (attachments.length !== supplied.length) throw new AppError('附件路径无效，请重新上传。', { code: 'INVALID_ATTACHMENT', statusCode: 400 });
+    if (!text && !attachments.length) throw new AppError('请输入引导消息。', { code: 'CONTENT_REQUIRED', statusCode: 400 });
+    const run = chatRunRegistry.getRun(sessionId);
+    if (run?.status !== 'running') throw new AppError('当前任务已经结束，请正常发送消息。', { code: 'NO_ACTIVE_TURN', statusCode: 409 });
+    const completeQueueSend = prepareQueueSend(sessionDraftsDb, req.user?.id ?? req.user?.userId, sessionId, req.body?.queueItem);
+    const prompt = appendFilesInputTag(text, attachments.filter(a => !isImageAttachmentDescriptor(a)));
+    const input = buildCodexInputItems(prompt, attachments.filter(isImageAttachmentDescriptor), session.project_path)
+        .map(item => item.type === 'local_image' ? { type: 'localImage', path: item.path } : item);
+    const result = await steerCodexTurn(sessionId, input, () => chatRunRegistry.getRun(sessionId) === run && run.status === 'running');
+    completeQueueSend();
+    run.writer.send({ kind: 'text', role: 'user', content: text || '发送附件', attachments, steering: true, sentQueueIds: req.body?.queueItem ? [req.body.queueItem.itemId] : undefined, timestamp: new Date().toISOString() });
+    res.json(createApiSuccessResponse(result));
+}));
+router.get('/codex/sessions/:sessionId/status', asyncHandler(async (req, res) => {
+    res.json(createApiSuccessResponse(await readConversationStatus(String(req.params.sessionId))));
+}));
+router.use('/biga', bigaWorkspaceRoutes);
 
 router.get('/codex/rate-limits', asyncHandler(async (req, res) => {
   const accountId = typeof req.query.accountId === 'string' ? req.query.accountId : 'default';
   try {
-    res.json(createApiSuccessResponse(await readCodexRateLimits(8000, accountId)));
+    const data=await readCodexRateLimits(8000, accountId);
+    res.json(createApiSuccessResponse({...data,quotaState:readQuotaUsage(data)}));
   } catch (error) {
     throw new AppError(error instanceof Error ? error.message : 'Codex 额度读取失败', {
       code: 'CODEX_RATE_LIMITS_FAILED',
@@ -27,31 +59,17 @@ router.get('/codex/rate-limits', asyncHandler(async (req, res) => {
     });
   }
 }));
-function flattenAccountInfo(raw){
-    const account=raw?.account??raw?.data?.account??null;
-    return {email:account?.email||null,planType:account?.planType||account?.plan_type||null,authenticated:Boolean(account&&typeof account==='object')};
-}
-function supportsSessionCapability(models,modelId,effort){
-    const model=modelId?models.find(m=>m?.id===modelId||m?.model===modelId):models.find(m=>m?.isDefault===true);
-    if(!model||model.hidden===true)return false;
-    if(!effort||effort==='default')return true;
-    const normalizedEffort=['extra_high','extra-high'].includes(effort)?'xhigh':effort;
-    return (model.supportedReasoningEfforts||[]).some(e=>(typeof e==='string'?e:e?.reasoningEffort)===normalizedEffort);
-}
-function readQuotaUsage(raw){
-    const buckets=raw?.rateLimitsByLimitId||raw?.rate_limits_by_limit_id||{};
-    const candidates=[buckets.codex,...Object.values(buckets),raw?.rateLimits,raw?.rate_limits].filter(Boolean);
-    let usedPercent=null,weeklyUsedPercent=null;
-    for(const c of candidates){
-        for(const w of [c?.primary,c?.secondary,c]){
-            const mins=Number(w?.windowDurationMins??w?.window_duration_mins);
-            const used=Number(w?.usedPercent??w?.used_percent);
-            if(mins===300&&Number.isFinite(used))usedPercent=used;
-            if(mins===10080&&Number.isFinite(used))weeklyUsedPercent=used;
-        }
+router.post('/codex/rate-limits/reset', asyncHandler(async (req, res) => {
+    const { accountId, idempotencyKey } = req.body || {};
+    if (typeof accountId !== 'string' || !accountId.trim() || typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
+        throw new AppError('账号和重置请求编号不能为空。', { code: 'INVALID_RESET_REQUEST', statusCode: 400 });
     }
-    return {usedPercent,weeklyUsedPercent};
-}
+    if (req.body.recoveryTicket !== undefined) {
+        checkRecoveryTicket(req.body.recoveryTicket);
+        if (isRecoverySwitching() || getSessionCodexAccountConfig().currentAccountId !== accountId) throw new AppError('当前账号已变化，请重新查询', { statusCode:409 });
+    }
+    res.json(createApiSuccessResponse(await consumeCodexRateLimitReset(accountId, idempotencyKey)));
+}));
 router.get('/codex/accounts', asyncHandler(async (_req,res)=>{
     const accounts=listCodexAccounts();
     const enriched=await Promise.all(accounts.map(async a=>{
@@ -59,7 +77,15 @@ router.get('/codex/accounts', asyncHandler(async (_req,res)=>{
     }));
     res.json(createApiSuccessResponse(enriched));
 }));
-router.post('/codex/accounts', asyncHandler(async (_req,res)=>res.json(createApiSuccessResponse(createCodexAccount()))));
+router.post('/codex/accounts', asyncHandler(async (_req,res)=>res.json(createApiSuccessResponse(await createCodexAccount()))));
+router.get('/codex/accounts/current', asyncHandler(async (req,res)=>res.json(createApiSuccessResponse(getSessionCodexAccountConfig(readOptionalQueryString(req.query.sessionId))))));
+router.post('/codex/accounts/current', asyncHandler(async (req,res)=>{
+    if (isRecoverySwitching()) throw new AppError('Account recovery is in progress.', { statusCode:409 });
+    if (chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) throw new AppError('任务运行中，结束后才能切换账号。', {statusCode:409});
+    if (!listCodexAccounts().some(a => a.id === req.body?.accountId)) throw new AppError('账号不存在。', {statusCode:404});
+    if (!req.body?.modeOnly) pauseRecovery();
+    res.json(createApiSuccessResponse(setSessionCodexAccountConfig(undefined,{accountId:String(req.body?.accountId||''),mode:req.body?.mode})));
+}));
 router.delete('/codex/accounts/:accountId', asyncHandler(async (req,res)=>{deleteCodexAccount(String(req.params.accountId));res.json(createApiSuccessResponse({deleted:true}))}));
 router.get('/codex/accounts/session/:sessionId', asyncHandler(async (req,res)=>res.json(createApiSuccessResponse(getSessionCodexAccountConfig(String(req.params.sessionId))))));
 router.post('/codex/accounts/session/:sessionId', asyncHandler(async (req,res)=>{
@@ -67,6 +93,9 @@ router.post('/codex/accounts/session/:sessionId', asyncHandler(async (req,res)=>
     if(!session||session.provider!=='codex')throw new AppError('Codex session not found.',{code:'SESSION_NOT_FOUND',statusCode:404});
     if(chatRunRegistry.isProcessing(sessionId))throw new AppError('任务运行中，停止后才能切换 Codex 账号。',{code:'RUN_IN_PROGRESS',statusCode:409});
     const accountId=String(req.body?.accountId||''); const mode=req.body?.mode;
+    if (isRecoverySwitching() || chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) throw new AppError('任务运行中，结束后才能切换账号。', {statusCode:409});
+    if (!listCodexAccounts().some(a => a.id === accountId)) throw new AppError('账号不存在。', {statusCode:404});
+    pauseRecovery();
     res.json(createApiSuccessResponse(setSessionCodexAccountConfig(sessionId,{accountId,mode})));
 }));
 router.post('/codex/accounts/session/:sessionId/mode', asyncHandler(async (req,res)=>{
@@ -74,23 +103,20 @@ router.post('/codex/accounts/session/:sessionId/mode', asyncHandler(async (req,r
     res.json(createApiSuccessResponse(setSessionCodexMode(sessionId,String(req.body?.mode||'manual'))));
 }));
 router.get('/codex/accounts/session/:sessionId/recovery-options', asyncHandler(async (req,res)=>{
-    const sessionId=String(req.params.sessionId); const cfg=getSessionCodexAccountConfig(sessionId); const session=sessionsDb.getSessionById(sessionId);
-    const effort=String(session?.effort||'default').toLowerCase(); const modelId=String(session?.model||'');
-    const accounts=listCodexAccounts(); const out=[];
-    for(const a of accounts){
-        let info={email:null,planType:null,authenticated:false},usedPercent=null,weeklyUsedPercent=null,models=null;
-        try{info=flattenAccountInfo(await readCodexAccountInfo(a.id))}catch{}
-        const authenticated=info.authenticated;
-        if(!authenticated)continue;
-        await Promise.all([
-            readCodexRateLimits(8000,a.id).then(raw=>({usedPercent,weeklyUsedPercent}=readQuotaUsage(raw))).catch(()=>{}),
-            readCodexModels(a.id).then(value=>{models=value}).catch(()=>{}),
-        ]);
-        const compatible=Array.isArray(models)&&supportsSessionCapability(models,modelId,effort);
-        out.push({...a,...info,usedPercent,weeklyUsedPercent,compatible});
-    }
-    const recommended=out.filter(a=>a.id!==cfg.currentAccountId&&a.compatible&&a.usedPercent!==null&&a.weeklyUsedPercent!==null&&a.usedPercent<100&&a.weeklyUsedPercent<100).sort((a,b)=>Math.max(a.usedPercent,a.weeklyUsedPercent)-Math.max(b.usedPercent,b.weeklyUsedPercent))[0]||null;
-    res.json(createApiSuccessResponse({config:cfg,effort,accounts:out,recommendedAccountId:recommended?.id||null}));
+    const sessionId=String(req.params.sessionId), config=getSessionCodexAccountConfig(sessionId);
+    const pending=recoveryState().sessionIds;
+    const ticket = recoveryState().ticket;
+    res.json(createApiSuccessResponse({config,ticket,accounts:await readRecoveryAccounts(pending.length?pending:[sessionId])}));
+}));
+router.post('/codex/accounts/recovery', asyncHandler(async (req,res)=>{
+    const { action, accountId, ticket } = req.body || {};
+    checkRecoveryTicket(ticket);
+    if (action === 'schedule') await scheduleRecovery(String(accountId || ''), ticket);
+    else if (action === 'schedule-default') await scheduleDefaultRecovery(ticket);
+    else if (action === 'resume') await recoverPendingAccounts(String(accountId || ''), ticket);
+    else if (action === 'cancel') pauseRecovery();
+    else throw new AppError('无效操作。', {statusCode:400});
+    res.json(createApiSuccessResponse(recoveryState()));
 }));
 const readPathParam = (value, name) => {
     if (typeof value === 'string') {
@@ -473,7 +499,7 @@ router.get('/:provider/auth/status', asyncHandler(async (req, res) => {
 router.get('/:provider/models', asyncHandler(async (req, res) => {
     const provider = parseProvider(req.params.provider);
     const sessionId = readOptionalQueryString(req.query.sessionId);
-    const accountId = provider === 'codex' && sessionId ? getSessionCodexAccountConfig(sessionId).currentAccountId : 'default';
+    const accountId = provider === 'codex' && sessionId ? getSessionCodexAccountConfig(sessionId).currentAccountId : readOptionalQueryString(req.query.accountId) || 'default';
     const models = provider === 'codex'
         ? await readCodexModelCatalog(accountId)
         : await providerModelsService.getProviderModels(provider);
@@ -618,6 +644,10 @@ router.post('/sessions', asyncHandler(async (req, res) => {
     const projectPath = typeof body.projectPath === 'string' ? body.projectPath : '';
     const initialMessage = typeof body.initialMessage === 'string' ? body.initialMessage : '';
     const result = sessionsService.createAppSession(provider, projectPath, initialMessage);
+    if (initialMessage.trim()) {
+        result.sessionName = initialMessage.trim().slice(0, 500);
+        sessionsService.renameSessionById(result.sessionId, result.sessionName);
+    }
     res.status(201).json(createApiSuccessResponse(result));
 }));
 router.get('/sessions/running', asyncHandler(async (_req, res) => {
@@ -666,6 +696,15 @@ router.post('/sessions/:sessionId/restore', asyncHandler(async (req, res) => {
     const result = sessionsService.restoreSessionById(sessionId);
     res.json(createApiSuccessResponse(result));
 }));
+router.post('/sessions/:sessionId/fork', asyncHandler(async (req, res) => {
+    const sessionId = parseSessionId(req.params.sessionId);
+    const result = await sessionsService.forkSessionById(sessionId);
+    if (result.provider === 'codex') {
+        const config = getSessionCodexAccountConfig(sessionId);
+        recordCodexThreadAccount(result.sessionId, config.threadAccountId);
+    }
+    res.status(201).json(createApiSuccessResponse(result));
+}));
 router.put('/sessions/:sessionId', asyncHandler(async (req, res) => {
     const sessionId = parseSessionId(req.params.sessionId);
     const summary = parseSessionRenameSummary(req.body);
@@ -677,9 +716,21 @@ router.get('/sessions/:sessionId/messages', asyncHandler(async (req, res) => {
     const limit = parseBoundedIntegerQuery(req.query.limit, 'limit', null, 0);
     const offset = parseBoundedIntegerQuery(req.query.offset, 'offset', 0, 0);
     const result = await sessionsService.fetchHistory(sessionId, {
-        limit,
-        offset,
+        limit: req.query.visible === 'true' ? null : limit,
+        offset: req.query.visible === 'true' ? 0 : offset,
     });
+    if (req.query.visible === 'true') {
+        const messages = mergeAccountNotes(result.messages, getAccountNotes(sessionId)).filter(m =>
+            m.kind !== 'tool_result' &&
+            (req.query.tools === 'true' || !(['tool_use', 'tool_result', 'tool'].includes(m.kind ?? m.type) || m.isToolUse)) &&
+            (req.query.thinking === 'true' || !(m.kind === 'thinking' || m.isThinking || m.reasoning)));
+        const previousTotal = parseBoundedIntegerQuery(req.query.total, 'total', messages.length, 0);
+        const adjustedOffset = offset + Math.max(0, messages.length - previousTotal);
+        const end = Math.max(0, messages.length - adjustedOffset);
+        const start = limit === null ? 0 : Math.max(0, end - limit);
+        return res.json(createApiSuccessResponse({ ...result, messages: messages.slice(start, end),
+            total: messages.length, offset: adjustedOffset, limit, hasMore: start > 0 }));
+    }
     res.json(createApiSuccessResponse(result));
 }));
 router.get('/search/sessions', asyncHandler(async (req, res) => {
