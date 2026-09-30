@@ -1,0 +1,15 @@
+{
+  "name": "bigacli",
+  "version": "1.0.2",
+  "description": "Codex web client for desktop and mobile workflows",
+  "license": "AGPL-3.0-or-later",
+  "repository": {"type": "git", "url": "git+https://github.com/enzwklsb/BigaCli.git"},
+  "homepage": "https://github.com/enzwklsb/BigaCli#readme",
+  "bugs": {"url": "https://github.com/enzwklsb/BigaCli/issues"},
+  "bin": {"bigacli": "bin/bigacli.cjs"},
+  "files": ["bin/", "npm/", "LICENSE", "README.md"],
+  "engines": {"node": ">=22"},
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "publishConfig": {"access": "public"}
+}

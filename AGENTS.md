@@ -8,3 +8,4 @@ Never commit or package credentials, local databases, account stores, or convers
 Never modify or stop the original CloudCLI on port 3001.
 Quota query/reset controls now live in the composer quota panel. Reuse their existing account checks and idempotent reset request. Never consume a reset credit or invoke the reset endpoint for testing; verify the confirmation UI only with isolated mocks.
 Prepare releases as drafts for verification. Publish only when the user explicitly requests publication.
+Before each release, handwrite releases/update-notes.json with the matching version, date, and brief NEW/OPT/FIX entries in Chinese, English and Japanese. Packaging includes these notes in the update manifest; do not generate them from Git history.

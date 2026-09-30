@@ -18,9 +18,24 @@ BigaCli 是基于 [CloudCLI](https://github.com/siteboon/claudecodeui) 的 Codex
 
 ## 启动与手机连接
 
-从 [最新发行版](https://github.com/enzwklsb/BigaCli/releases/latest) 下载 **BigaCli-win-x64.zip** 完整 Windows 安装包，解压到可写目录，运行 `start.cmd`。在电脑浏览器打开 `http://localhost:3101`，添加 Codex 账号并选择项目、对话。首次使用需要自己的 Codex 账号；安装包不包含任何登录信息。
+支持 **Windows x64**，提供 ZIP 和 npm 两种安装方式，任选一种即可。
 
-后续在「设置 → 检查更新」获取新版本。点击「下载并更新」后会等待正在运行的任务结束再切换版本。首次安装只需完整 ZIP，其余组件 ZIP 和 `release.json` 由更新器使用，无需手动下载。
+**ZIP 安装：** 从 [最新发行版](https://github.com/enzwklsb/BigaCli/releases/latest) 下载 **BigaCli-win-x64.zip**，解压到可写目录，运行 `start.cmd`。安装包内置运行环境，无需额外安装 Node.js。
+
+**npm 安装（入口已实现，尚未发布到 npm；目前请使用 ZIP）：** npm 包发布后，先安装 Node.js 22 或更高版本（含 npm），然后执行：
+
+```powershell
+npm i -g bigacli
+bigacli
+```
+
+首次运行 `bigacli` 会从 GitHub 下载对应版本的完整安装包，校验 SHA-256 后安装到 `%LOCALAPPDATA%\BigaCli`。因此首次启动仍需要能够访问 GitHub，并下载完整程序；之后运行 `bigacli` 直接启动已安装的程序。npm 包仅提供命令入口，不包含用户认证数据，也不在 npm 安装阶段运行下载脚本。
+
+启动后在电脑浏览器打开 `http://localhost:3101`，添加自己的 Codex 账号并选择项目、对话。首次使用需要自己的 Codex 账号；安装包不包含任何登录信息。
+
+**两种方式均通过「设置 → 检查更新」升级。** 点击「立即更新」后会等待正在运行的任务结束再切换版本，更新说明随设置中的界面语言显示。npm 安装的程序也使用同一更新器，不需要每次重新执行 npm 安装；仅命令入口本身升级时需要再次运行 `npm i -g bigacli@latest`。`bigacli --version` 显示命令入口版本，实际应用版本以设置页面为准。卸载 npm 命令入口不会删除独立安装的程序或账号、对话数据。
+
+已有 ZIP 安装可继续使用，无需再装 npm；两种入口不会自动迁移或合并安装目录。其余组件 ZIP、`release.json` 和校验文件由安装器、更新器使用，无需手动下载。
 
 **BigaCli 本身不提供手机与电脑之间的网络穿透功能。跨网络访问推荐使用 [Tailscale](https://tailscale.com/download)。** 每个用户自行连接自己的设备，不需要加入作者的网络，也不依赖作者提供的连接服务器。
 
@@ -97,6 +112,8 @@ BigaCli 页面当前不设置独立的网页登录认证，能够连接服务的
 | `feedback/` | Cloudflare Worker 反馈接口、D1 建表与部署说明；自行部署参见 `feedback/SETUP_CN.md`。 |
 | `cloudcli/` | 固定版本的上游源码。 |
 | `scripts/` | 构建、验证及交付脚本。 |
+| `bin/bigacli.cjs`、`npm/install.cjs` | npm 命令入口、首次下载校验与安装，之后交给现有启动器。 |
+| `releases/update-notes.json` | 每个版本手写的中英日更新说明，随更新清单发布。 |
 
 手机连接依赖用户自己的网络配置；反馈接收服务与手机连接电脑是两个独立功能。自行部署反馈服务时，需将页面提交地址改为自己的服务地址。
 
@@ -109,6 +126,8 @@ Windows x64 and Node 24.19.0 are used for release builds. In `cloudcli/`, run `n
 `nodeArchive` pins an already published Node component by URL and SHA-256. Reuse that archive while Node stays unchanged, so differences between compression tools cannot force a redundant client download. When changing Node, build and publish the new component and update this pin. For local rebuilds, `-ReuseDependencies` may reuse the dependency archive only when the lockfile has not changed.
 
 The release workflow produces a **draft** release. Review it and publish it to make the update visible to installed users. Application, production dependencies and Node are separate complete component ZIPs. One release manifest selects the tested combination. This supports skipping releases without sequential patch installation.
+
+For npm releases, keep the root `package.json`, `release.json` and `releases/update-notes.json` versions aligned. Run `npm pack --pack-destination build` to prepare the small launcher package; its file allowlist excludes app sources, builds and user data. Publish the matching GitHub release **with the full Windows ZIP and SHA256SUMS.txt first**, then use an authorized npm account to publish the tested tarball (`npm publish build/bigacli-<version>.tgz`). Do not publish npm ahead of its downloadable GitHub release. The root npm package has no production dependencies or install scripts. Local 1.0.1 preparation does not publish either service.
 
 For application-only updates, `-ComponentsOnly -ReuseDependencies` packages the app and reuses the unchanged component archives placed in the new version's assets directory. It does not rebuild a full installation ZIP. Downloads happen in the desktop launcher under `<install>/downloads`; successfully extracted components live under `<install>/store`, and temporary ZIPs are removed.
 

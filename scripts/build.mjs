@@ -18,7 +18,7 @@ fs.cpSync('ui/vendor',path.join(out,'dist/vendor'),{recursive:true});
 fs.copyFileSync('ui/preview-ui.js',path.join(out,'dist/preview-ui.js'));
 fs.writeFileSync(path.join(out,'dist/i18n.js'),'window.BIGA_TRANSLATIONS='+fs.readFileSync('ui/locales.json','utf8')+';\n'+fs.readFileSync('ui/i18n.js','utf8'));
 for(const file of ['LICENSE','NOTICE'])if(fs.existsSync('cloudcli/'+file))fs.copyFileSync('cloudcli/'+file,path.join(out,file));
-const update=fs.readFileSync('ui/update.js','utf8').replaceAll('__BIGA_VERSION__',config.version);
+const update=fs.readFileSync('ui/update.js','utf8').replaceAll('__BIGA_VERSION__',config.version).replace('__BIGA_RELEASE_NOTES__',JSON.stringify(JSON.parse(fs.readFileSync('releases/update-notes.json','utf8'))).replaceAll('<','\\u003c'));
 let html=fs.readFileSync('ui/index.html','utf8').replace('id="buildVersion">v21','id="buildVersion">'+config.version).replace('<title>','<title>BigaCli · ');
 await require('esbuild').build({entryPoints:['ui/markdown.jsx'],bundle:true,format:'iife',globalName:'BigaMarkdown',platform:'browser',minify:true,nodePaths:[path.resolve('cloudcli/node_modules')],define:{'process.env.NODE_ENV':'"production"'},outfile:path.join(out,'dist/biga-markdown.js')});
 await require('esbuild').build({entryPoints:['cloudcli/src/modules/chat/utils/searchTargetLocator.ts'],bundle:true,format:'iife',globalName:'BigaSearch',platform:'browser',minify:true,outfile:path.join(out,'dist/biga-search.js')});

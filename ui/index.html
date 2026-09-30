@@ -2062,13 +2062,13 @@ function beginFinalReplyGate(itemId){
   const group=processGroup,drawer=group.querySelector('.processDrawer'),fold=group.querySelector('.processFold');
   const height=fold.getBoundingClientRect().height;
   finalReplyGateActive=true;group.classList.add('finishing');finishProcessGroup(true);
+  // Delivery must not depend on a background-tab animation finishing.
+  finalReplyGateTimer=setTimeout(flushFinalReplyGate,400+FINAL_REPLY_DELAY_MS);
   fold.style.transition='none';toggleProcessDetails(drawer,false);
   const collapse=fold.animate([{maxHeight:height+'px',opacity:1},{maxHeight:'0px',opacity:0}],{duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:400,easing:'cubic-bezier(.4,0,.2,1)',fill:'both'});
   collapse.finished.then(()=>{
     collapse.cancel();fold.style.transition='';clearProcessActivity(group);group.classList.remove('finishing');
-    if(!finalReplyGateActive||turnProcessGroup!==group||!group.isConnected)return;
-    finalReplyGateTimer=setTimeout(flushFinalReplyGate,FINAL_REPLY_DELAY_MS);
-  });
+  }).catch(()=>{fold.style.transition='';group.classList.remove('finishing')});
   return true;
 }
 function queueDuringFinalGate(m,eventKind){
@@ -3348,7 +3348,31 @@ function connectWs(){
     ws.onclose=()=>{if(ws!==socket)return;setStatus('');if(currentSession&&processing)showConnectionLoading(true);setTimeout(()=>{if(ws===socket){ws=null;connectWs()}},1000)}
   }catch(e){setStatus('')}
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)connectWs()});
+function resumeChatSync(){
+  if(document.hidden)return;
+  flushFinalReplyGate();flushStreamRenders();
+  if(ws?.readyState===1)subscribeCurrent();else connectWs();
+}
+document.addEventListener('visibilitychange',resumeChatSync);
+window.addEventListener('pageshow',e=>{if(e.persisted)resumeChatSync()});
+window.addEventListener('online',resumeChatSync);
+let completedHistorySync=null;
+async function syncCompletedHistory(){
+  const sid=sessionId(currentSession),state=historyState,seq=lastSeq.get(sid),run=lastRunStartedAt.get(sid);
+  if(!sid||state?.loading||completedHistorySync?.sid===sid)return;
+  const request={sid};completedHistorySync=request;
+  try{
+    const query=new URLSearchParams({limit:String(Math.max(20,state?.offset||0)),offset:'0',visible:'true',tools:String(showToolDetails),thinking:String(showThinking)});
+    const page=unwrap(await api(`/api/providers/sessions/${encodeURIComponent(sid)}/messages?${query}`));
+    if(sessionId(currentSession)!==sid||historyState!==state||processing||lastSeq.get(sid)!==seq||lastRunStartedAt.get(sid)!==run)return;
+    const messages=Array.isArray(page)?page:page?.messages||page?.history||[];
+    const chat=$('chat'),top=chat.scrollTop,following=followLatest;
+    clearChat();chat.appendChild(renderHistoryBatch(messages));syncRecoveryNotes();
+    historyState={sid,offset:messages.length,total:page.total,hasMore:!!page.hasMore,loading:false};updateHistoryMore();
+    followLatest=following;chat.scrollTop=following?chat.scrollHeight:top;
+  }catch(e){console.error('History resync failed',e)}
+  finally{if(completedHistorySync===request)completedHistorySync=null}
+}
 function sendWs(obj){if(!ws||ws.readyState!==1){return false}ws.send(JSON.stringify(obj));return true}
 let pendingChatSend=null;
 function sendChatAccepted(message){return new Promise((resolve,reject)=>{const socket=ws;const finish=(error)=>{clearTimeout(timer);socket?.removeEventListener('close',closed);pendingChatSend=null;error?reject(error):resolve()};const closed=()=>finish(Error(BigaI18n.t('消息尚未发送，请稍后重试')));const timer=setTimeout(closed,30000);pendingChatSend={sessionId:message.sessionId,finish};socket?.addEventListener('close',closed,{once:true});if(!sendWs(message))closed()})}
@@ -3402,6 +3426,7 @@ function handleEvent(m,bypassFinalGate=false){
   if((eventKind==='chat_run_started'||eventKind==='chat_subscribed')&&typeof m.runStartedAt==='number'){
     if(lastRunStartedAt.get(sid)!==m.runStartedAt)lastSeq.set(sid,0);
     lastRunStartedAt.set(sid,m.runStartedAt);
+    if(eventKind==='chat_run_started'||m.isProcessing)activityStartedAt=m.runStartedAt;
   }
   if(eventKind==='chat_run_started'){setProcessing(true,'Thinking');if(m.detached){subscribeCurrent();loadCodexAccounts()}return;}
   if(!bypassFinalGate){
@@ -3420,7 +3445,8 @@ function handleEvent(m,bypassFinalGate=false){
       if(m.replayFromStart&&typeof m.runStartedAt==='number'){
         for(const node of $('chat').querySelectorAll('[data-history-timestamp]'))if(Number(node.dataset.historyTimestamp)>=m.runStartedAt)node.remove();
       }
-      setProcessing(!!m.isProcessing,m.statusText||'Working');(m.pendingPermissions||[]).forEach(showPermission);if(queueCatchupSid===sid){queueCatchupSid=null;if(!m.isProcessing)loadHistory();}refreshQueuedMessage();return;
+      setProcessing(!!m.isProcessing,m.statusText||'Working');(m.pendingPermissions||[]).forEach(showPermission);if(queueCatchupSid===sid)queueCatchupSid=null;
+      if(!m.isProcessing)void syncCompletedHistory();refreshQueuedMessage();return;
     case'status':if(m.text&&m.text!=='token_budget')setProcessing(true,m.text);return;
     case'activity_start':setProcessing(true,'Thinking');setProcessActivity(m.text||BigaI18n.t("正在处理…"));return;
     case'activity_progress':setProcessing(true,'Thinking');setProcessActivity(m.text||BigaI18n.t("正在处理…"));return;

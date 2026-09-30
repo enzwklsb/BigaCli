@@ -1,0 +1,11 @@
+{
+  "version": "1.0.2",
+  "date": "2026.09.30",
+  "items": [
+    {"type":"FIX","text":{"zh-CN":"刷新后保留任务计时，返回页面时自动补齐已完成回复。","en-US":"Preserve elapsed task time after refresh and restore completed replies when returning to the page.","ja-JP":"再読み込み後もタスクの経過時間を維持し、画面復帰時に完了した返信を取得します。"}},
+    {"type":"FIX","text":{"zh-CN":"思考收起动画不再阻塞正文显示，修复后台返回时的回复缺失。","en-US":"Reasoning animations no longer block reply delivery after returning from the background.","ja-JP":"思考の折りたたみアニメーションが、バックグラウンドから復帰した際の返信表示を妨げないよう修正しました。"}},
+    {"type":"NEW","text":{"zh-CN":"仓库新增 npm 安装入口源码，npm 包待发布。","en-US":"Added the npm launcher source to the repository; npm publication is pending.","ja-JP":"npm インストール用のソースを追加しました。npm パッケージは公開準備中です。"}},
+    {"type":"OPT","text":{"zh-CN":"更新提示改为弹窗，按界面语言显示版本更新说明。","en-US":"The update popup shows release notes in your interface language.","ja-JP":"更新通知をポップアップに変更し、表示言語に合わせて更新内容を表示します。"}},
+    {"type":"FIX","text":{"zh-CN":"更新提示支持关闭或跳过此版本，不再反复弹出。","en-US":"Dismiss updates or skip a version without repeated prompts.","ja-JP":"更新通知を閉じたり、バージョンをスキップしたりでき、繰り返し表示されなくなりました。"}}
+  ]
+}
