@@ -33,7 +33,7 @@ try{
    const started=Date.now()-120000;
    handleEvent({kind:'chat_subscribed',sessionId:'sync-test',runStartedAt:started,isProcessing:true});
    if(activityStartedAt!==started||!processing)return false;
-   api=async p=>p.includes('/messages?')?{messages:[{kind:'user',content:'question'},{kind:'text',content:'restored final',phase:'final_answer'}],hasMore:false}:{};
+   api=async p=>p.includes('/messages?')?{messages:[{kind:'user',content:'question'},{kind:'text',content:'restored final',phase:'final_answer'}],hasMore:false}:p.startsWith('/api/bigacli/update/')?originalApi(p):{};
    handleEvent({kind:'chat_subscribed',sessionId:'sync-test',runStartedAt:started,isProcessing:false});
    await new Promise(r=>setTimeout(r,50));if(!$('chat').textContent.includes('restored final'))return false;
    const recovery={sessionIds:['sync-test'],ticket:'paused-test',reason:'',accountIds:{'sync-test':'a'},currentAccountId:'a',appointment:{at:Date.now()+600000,label:'A'}};
@@ -41,11 +41,12 @@ try{
    await syncCompletedHistory();if($('accountRecoveryNotice')!==card||$('chat').querySelector('.msg')!==message)return false;
    historyState.displayedMessages=null;await syncCompletedHistory();if($('accountRecoveryNotice')!==card)return false;
    renderAccountRecovery({...recovery,reason:'manual',appointment:null});if(!$('accountRecoveryNotice'))return false;
-   renderAccountRecovery({...recovery,reason:'manual',currentAccountId:'b',appointment:null});if($('accountRecoveryNotice'))return false;
+   // A changed account does not clear recovery until the server confirms quota is available.
+   renderAccountRecovery({...recovery,reason:'manual',currentAccountId:'b',appointment:null});if(!$('accountRecoveryNotice'))return false;
    renderAccountRecovery({...recovery,sessionIds:['other']});if($('accountRecoveryNotice'))return false;
    renderAccountRecovery(recovery);renderAccountRecovery({sessionIds:[]});if($('accountRecoveryNotice'))return false;
    const oldSend=sendWs;sendWs=()=>{sent++;return true};const oldWs=ws;ws={readyState:1};resumeChatSync();if(sent!==1)return false;sendWs=oldSend;ws=oldWs;
-   api=async p=>p.includes('/messages?')?new Promise(r=>resolveHistory=r):{};
+   api=async p=>p.includes('/messages?')?new Promise(r=>resolveHistory=r):p.startsWith('/api/bigacli/update/')?originalApi(p):{};
    const stale=syncCompletedHistory();handleEvent({kind:'chat_run_started',sessionId:'sync-test',runStartedAt:started+1});
    resolveHistory({messages:[{kind:'text',content:'STALE'}]});await stale;if($('chat').textContent.includes('STALE'))return false;
    clearChat();setProcessing(true);addThinking('working');
@@ -71,7 +72,7 @@ try{
    await bigaStatus('install');await pause();if(installs!==1||!$('bigaUpdateInstall').disabled)return false;
    bigaBanner.click();await pause();await bigaStatus();if(!bigaBanner.classList.contains('hidden'))return false;
    await bigaStatus('check');await pause();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));await pause();if(!bigaBanner.classList.contains('hidden'))return false;
-   api=original;return true;
+   bigaInstalling=false;api=original;return true;
   })()`),'update notes, close, skip, manual reopen, three languages, close during mocked download');
   console.log('PASS: update popup interactions; no actual install requested');
  }
