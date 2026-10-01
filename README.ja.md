@@ -49,6 +49,8 @@ BigaCli は [CloudCLI](https://github.com/siteboon/claudecodeui) をベースと
 7. **スマートフォンから利用枠をリセット。** リセット可能回数と有効期限を確認し、確認操作後に実行できます。利用可否はアカウントによって異なり、画面を開くだけでは回数を消費しません。
 8. **時刻と処理時間の表示。** メッセージの時刻、処理状況、取得できた所要時間を確認できます。
 9. **入力・添付ファイルの下書き保存。** アップロードや貼り付けに対応し、ページを更新してもテキストと保存済みの送信待ち添付を復元できます。
+10. **普段のブラウザーに接続。** PC の Chrome / Edge に[公式 Playwright 拡張機能](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)を入れ、設定 → コネクターで選択して接続を許可すると、ログイン状態を利用できます。専用 Chromium も予備として利用できます。
+11. **GitHub アカウント管理。** スマホや PC のブラウザーで認証し、設定 → コネクターからアカウントを切り替えたりログアウトしたりできます。BigaCli を動かす PC に [GitHub CLI](https://cli.github.com/) が必要です。
 
 <a id="quick-start"></a>
 

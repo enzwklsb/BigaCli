@@ -19,6 +19,7 @@ async function main(){
   process.env.LOCALAPPDATA=temp;
   childProcess.spawn=(exe,args,options)=>{assert.equal(exe,'powershell.exe');assert.equal(args.at(-1),path.join(root,'foreground.ps1'));assert.equal(options.cwd,root);assert.equal(options.stdio,'inherit');launched=true;const p=new EventEmitter();queueMicrotask(()=>p.emit('exit',0));return p};
   await require('../bin/bigacli.cjs').main([]);assert.ok(launched);
+  launched=false;await require('../bin/bigacli.cjs').main(['start']);assert.ok(launched);
  }finally{childProcess.spawn=spawn;if(local===undefined)delete process.env.LOCALAPPDATA;else process.env.LOCALAPPDATA=local}
  const manifest=validateInstall(root);
  childProcess.execFileSync(path.join(root,'store/node',manifest.components.node.id,'node.exe'),['scripts/smoke.mjs',root],{cwd:path.resolve(__dirname,'..'),stdio:'inherit',env:{...process.env,BIGACLI_TEST_PORT:process.env.BIGACLI_TEST_PORT||'3194',BIGA_TEST_BROWSER:'',BIGA_TEST_UPDATE:''}});

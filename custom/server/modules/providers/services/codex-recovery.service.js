@@ -43,14 +43,14 @@ export function readQuotaUsage(raw) {
   const availableAt = !quotaKnown||exhausted.some(x=>x===null)?null:Math.max(...exhausted)||null;
   return { usedPercent, weeklyUsedPercent, resetAt, weeklyResetAt, availableAt, fiveUnlimited, quotaKnown, limited };
 }
-export async function readRecoveryAccounts(sessionIds) {
+export async function readRecoveryAccounts(sessionIds, accountId) {
   const pending = getPendingRecoveries();
   const sessions = sessionIds.map(id => { const session = sessionsDb.getSessionById(id); return session && { ...session, ...pending[id]?.options }; }).filter(Boolean);
   for (const queued of sessionDraftsDb.listQueuedMessages()) if (sessionIds.includes(queued.sessionId)) {
     const session = sessionsDb.getSessionById(queued.sessionId);
     if (session) sessions.push({ ...session, ...queueItems(queued.queuedMessage)[0]?.options });
   }
-  return Promise.all(listCodexAccounts().map(async a => {
+  return Promise.all(listCodexAccounts().filter(a => !accountId || a.id === accountId).map(async a => {
     let info = { authenticated: false }, usage = { usedPercent: null, weeklyUsedPercent: null }, models = [];
     try { info = flattenAccountInfo(await readCodexAccountInfo(a.id)); } catch {}
     if (info.authenticated) await Promise.all([
@@ -63,6 +63,8 @@ export async function readRecoveryAccounts(sessionIds) {
 export function recoveryState() {
   const pending = getPendingRecoveries(), entries = Object.values(pending);
   return { sessionIds: Object.keys(pending), switching, reason: entries.find(p => p.reason)?.reason || reason,
+    accountIds: Object.fromEntries(Object.entries(pending).map(([id,p]) => [id,p.accountId])),
+    currentAccountId: getSessionCodexAccountConfig().currentAccountId,
     ticket: JSON.stringify(Object.entries(pending).map(([id,p]) => [id,p.createdAt || 0])),
     appointment: entries.find(p => p.appointment)?.appointment || null };
 }
@@ -78,34 +80,36 @@ export function pauseRecovery() {
   }
   setPendingRecoveries(pending); reason = 'manual'; broadcast();
 }
-export async function scheduleRecovery(accountId, ticket) {
-  checkRecoveryTicket(ticket);
-  if (switching) fail('正在切换账号，请稍后再试。');
-  const accounts = await readRecoveryAccounts(recoveryState().sessionIds);
-  checkRecoveryTicket(ticket);
-  if (switching) fail('正在切换账号，请稍后再试。');
-  const account = accounts.find(a => a.id === accountId);
-  if (!account?.authenticated || !account.compatible || !account.availableAt) fail('无法确定该账号的额度恢复时间。');
-  const appointment = { accountId, label:account.email || account.label || account.id, at:Math.max(Date.now(), account.availableAt) + 60000 };
+export async function changeRecoveryAccount(accountId, mode, ticket) {
+  if (ticket !== undefined) checkRecoveryTicket(ticket);
   const pending = getPendingRecoveries();
-  for (const [id,p] of Object.entries(pending)) { p.appointment = appointment; p.paused = true; p.reason = ''; p.createdAt = Math.max(Date.now(), (p.createdAt || 0) + 1); note(id, recoveryText(p.options.uiLanguage, 'scheduled') + ' (' + appointment.label + ' · ' + new Date(appointment.at).toISOString() + ')'); }
-  setPendingRecoveries(pending); reason = ''; broadcast(); return recoveryState();
+  if (switching || chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex') || Object.keys(pending).some(id => chatRunRegistry.getRun(id)?.providerSettled === false)) fail('任务运行中，结束后才能切换账号。');
+  const config = setSessionCodexAccountConfig(undefined, { accountId, mode });
+  for (const p of Object.values(pending)) {
+    p.accountId = accountId;
+    if (p.appointment) p.appointment = { accountId, label: accountId, at: null };
+    p.createdAt = Math.max(Date.now(), (p.createdAt || 0) + 1);
+  }
+  setPendingRecoveries(pending); broadcast();
+  await recoverPendingAccounts(accountId);
+  return { ...config, recovery: recoveryState() };
 }
 function broadcast() {
   const data = JSON.stringify({ kind: 'account_recovery', recovery: recoveryState() });
   for (const client of connectedClients) if (client.readyState === WS_OPEN_STATE) client.send(data);
 }
-async function waitForCurrentQuota(ids, accounts) {
-  const ticket=recoveryState().ticket,config=getSessionCodexAccountConfig(ids[0]);
-  const list=accounts || await readRecoveryAccounts(ids);
-  if(ticket!==recoveryState().ticket)return;
-  const account=list.find(a=>a.id===config.currentAccountId);
-  const pending=getPendingRecoveries();
-  const appointment={accountId:config.currentAccountId,label:account?.email || account?.label || config.currentAccountId,at:account?.availableAt?Math.max(Date.now(),account.availableAt)+60000:null};
-  for(const p of Object.values(pending)){p.appointment=appointment;p.paused=true;p.reason='';}
-  setPendingRecoveries(pending);reason='';broadcast();
+export async function scheduleDefaultRecovery(ticket) {
+  checkRecoveryTicket(ticket);
+  if (switching) fail('正在切换账号，请稍后再试。');
+  const accountId = getSessionCodexAccountConfig().currentAccountId, pending = getPendingRecoveries();
+  for (const p of Object.values(pending)) {
+    p.appointment = { accountId, label: accountId, at: null };
+    p.paused = true; p.reason = ''; p.createdAt = Math.max(Date.now(), (p.createdAt || 0) + 1);
+  }
+  setPendingRecoveries(pending); reason = ''; broadcast();
+  await recoverPendingAccounts(accountId);
+  return recoveryState();
 }
-export async function scheduleDefaultRecovery(ticket){checkRecoveryTicket(ticket);if(switching)fail('正在切换账号，请稍后再试。');await waitForCurrentQuota(recoveryState().sessionIds);return recoveryState()}
 function note(sessionId, content) {
   const note={ id: 'recovery-' + Date.now(), timestamp: new Date().toISOString(), content, kind:'account_note', role:'system' };
   saveAccountNote(sessionId, note);
@@ -134,7 +138,7 @@ function recoveryText(language, kind) {
   const texts = {
     limited: ['额度耗尽，任务已暂停。', 'Usage limit reached. Task paused.', '利用上限に達したため、タスクを中断しました。'],
     resume: ['继续完成中断的任务，并处理下方补充要求（如有）。', 'Continue the unfinished task and address any additional request below.', '中断した作業を再開し、以下に追加の依頼があれば併せて対応してください。'],
-    ready: ['已切换账号，继续任务。', 'Account switched. Resuming task.', 'アカウントを切り替えました。タスクを再開します。'],
+    ready: ['额度可用，继续任务。', 'Quota available. Resuming task.', '利用枠が回復しました。タスクを再開します。'],
     scheduled: ['已预约额度恢复后继续任务。', 'Task resume scheduled after quota resets.', '利用枠回復後の再開を予約しました。'],
     cancelled: ['已取消预约，任务保持暂停。', 'Reservation cancelled. Tasks remain paused.', '予約を取り消しました。タスクは中断したままです。'],
     unavailable: ['预约时间已到，但账号额度暂不可用；任务保持暂停，请重新选择。', 'The reservation is due, but quota is not available. Tasks remain paused; select again.', '予約時刻になりましたが利用枠を確認できません。中断したまま再選択してください。'],
@@ -144,63 +148,77 @@ function recoveryText(language, kind) {
 // The existing dispatcher calls this before claiming any queued messages.
 export async function recoverPendingAccounts(accountId, ticket) {
   if (ticket !== undefined) checkRecoveryTicket(ticket);
-  if (accountId !== undefined && !accountId) fail('请选择账号。');
-  if (switching) { if (accountId) fail('正在恢复任务，请稍后再试。'); return; }
-  let pending = getPendingRecoveries();
+  const requested = accountId !== undefined;
+  if (requested && !accountId) fail('请选择账号。');
+  if (switching) { if (requested) fail('正在恢复任务，请稍后再试。'); return; }
+  const pending = getPendingRecoveries();
   let removed = false;
   for (const id of Object.keys(pending)) if (!sessionsDb.getSessionById(id)) { delete pending[id]; removed = true; }
   if (removed) setPendingRecoveries(pending);
   const ids = Object.keys(pending);
   if (!ids.length) return;
+  const config = getSessionCodexAccountConfig();
   const appointment = Object.values(pending).find(p => p.appointment)?.appointment;
-  const scheduled = !accountId && appointment;
-  if (scheduled) { if (appointment.at > Date.now()) return; accountId = appointment.accountId; }
-  else if (!accountId && (reason === 'unavailable' || Object.values(pending).some(p => p.paused))) return;
-  if (chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex') || ids.some(id=>chatRunRegistry.getRun(id)?.providerSettled===false)) {
-    reason = 'waiting'; broadcast();
-    if (accountId && !scheduled) fail('请等待正在运行的 Codex 任务结束后再切换。');
-    return;
+  const cancelled = Object.values(pending).every(p => p.paused && !p.appointment);
+  if (!requested) {
+    if (appointment) {
+      if (appointment.at > Date.now()) return;
+      accountId = appointment.accountId;
+    } else if (cancelled || config.mode !== 'auto') accountId = config.currentAccountId;
   }
-  const config = getSessionCodexAccountConfig(ids[0]);
-  if (!accountId && config.mode !== 'auto') { await waitForCurrentQuota(ids); return; }
+  if (chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex') || ids.some(id => chatRunRegistry.getRun(id)?.providerSettled === false)) {
+    reason = 'waiting'; broadcast(); return;
+  }
   switching = true; reason = ''; broadcast();
   const snapshot = JSON.stringify(pending);
-  let accounts;
+  let resumed = false;
   try {
-    accounts = await readRecoveryAccounts(ids);
-    if (snapshot !== JSON.stringify(getPendingRecoveries()) || chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) return;
+    const accounts = await readRecoveryAccounts(ids, accountId);
+    if (snapshot !== JSON.stringify(getPendingRecoveries()) || config.currentAccountId !== getSessionCodexAccountConfig().currentAccountId || chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) return;
     const tried = new Set(Object.values(pending).flatMap(p => p.tried));
-    const eligible = accounts.filter(a => a.authenticated && a.compatible && !a.limited && (accountId || !tried.has(a.id)) && (a.usedPercent == null || a.usedPercent < 100) && (a.weeklyUsedPercent == null || a.weeklyUsedPercent < 100) && (!scheduled || a.quotaKnown));
-    const pick = accountId ? eligible.find(a => a.id === accountId) : eligible.filter(a => a.quotaKnown).sort((a,b) => Math.max(a.usedPercent||0,a.weeklyUsedPercent)-Math.max(b.usedPercent||0,b.weeklyUsedPercent))[0];
-    if (!pick) { reason = 'unavailable'; if (accountId && !scheduled) fail('该账号额度不足、尚未登录或不支持待恢复任务的模型设置。'); return; }
-    setSessionCodexAccountConfig(ids[0], { accountId: pick.id });
+    const eligible = accounts.filter(a => a.authenticated && a.compatible && a.quotaKnown && !a.limited && (a.usedPercent == null || a.usedPercent < 100) && a.weeklyUsedPercent < 100);
+    const pick = accountId ? eligible.find(a => a.id === accountId) : eligible.filter(a => !tried.has(a.id)).sort((a,b) => Math.max(a.usedPercent||0,a.weeklyUsedPercent)-Math.max(b.usedPercent||0,b.weeklyUsedPercent))[0];
+    if (!pick) {
+      const targetId = accountId || config.currentAccountId;
+      const account = accounts.find(a => a.id === targetId);
+      const waiting = { accountId: targetId, label: account?.email || account?.label || targetId, at: account?.availableAt ? Math.max(Date.now(), account.availableAt) + 60000 : null };
+      for (const p of Object.values(pending)) {
+        const autoContinue = !!p.appointment || !p.paused;
+        p.accountId = targetId;
+        if (autoContinue) {
+          p.appointment = waiting;
+          p.reason = !accountId && config.mode === 'auto' ? 'auto_unavailable' : (p.reason === 'auto_unavailable' && !requested ? p.reason : 'reservation_failed');
+        } else { delete p.appointment; p.reason = 'manual'; }
+        p.paused = true;
+      }
+      setPendingRecoveries(pending);
+      return;
+    }
+    if (pick.id !== config.currentAccountId) setSessionCodexAccountConfig(undefined, { accountId: pick.id });
     for (const id of ids) {
-      const entry = pending[id];
+      const entry = pending[id], autoContinue = !!entry.appointment || !entry.paused;
       const draft = sessionDraftsDb.getDrafts(entry.userId).find(d => d.scope === id);
       const queued = draft?.queuedMessage;
-      sessionDraftsDb.saveDraft(entry.userId, id, { text: draft?.text || '', queuedMessage: {
-        ...queueWithItems(queued,queueItems(queued)),paused:false,
-        resume:{content:recoveryText(entry.options.uiLanguage, 'resume'),attachments:[],options:{...entry.options,images:[],files:[],attachments:[],bigaQueued:true,bigaRecoveryTried:entry.tried}},
-      } });
-      delete pending[id]; setPendingRecoveries(pending);
-      note(id, recoveryText(entry.options.uiLanguage, 'ready') + ' (' + (pick.email || pick.label || pick.id) + ')');
-    }
-  } catch (error) { reason = 'unavailable'; if (accountId && !scheduled) throw error; console.error('[BigaCli] Account recovery:', error.message); }
-  finally {
-    if (reason === 'unavailable') {
-      const remaining = getPendingRecoveries();
-      for (const [id,p] of Object.entries(remaining)) {
-        if (scheduled && p.appointment) {
-          const account=accounts?.find(a=>a.id===p.appointment.accountId);
-          p.appointment.at=account?.availableAt?Math.max(Date.now(),account.availableAt)+60000:null;
-        }
-        p.paused = true; p.reason = scheduled ? 'reservation_failed' : 'unavailable';
+      if (autoContinue) {
+        sessionDraftsDb.saveDraft(entry.userId, id, { text: draft?.text || '', queuedMessage: {
+          ...queueWithItems(queued,queueItems(queued)), paused:false,
+          resume:{content:recoveryText(entry.options.uiLanguage, 'resume'),attachments:[],options:{...entry.options,images:[],files:[],attachments:[],bigaQueued:true,bigaRecoveryTried:entry.tried}},
+        } });
+        resumed = true;
+        note(id, recoveryText(entry.options.uiLanguage, 'ready') + ' (' + (pick.email || pick.label || pick.id) + ')');
+      } else if (queued) {
+        // Unlock manual input without dispatching the old queue or a resume turn.
+        sessionDraftsDb.saveDraft(entry.userId, id, { text: draft.text || '', queuedMessage: queueWithItems({...queued, paused:true, resume:null},queueItems(queued)) });
       }
-      setPendingRecoveries(remaining);
+      delete pending[id];
     }
+    setPendingRecoveries(pending);
+  } catch (error) {
+    if (requested) throw error;
+    console.error('[BigaCli] Account recovery:', error.message);
+  } finally {
     switching = false; broadcast();
-    if(reason==='unavailable'&&!accountId)await waitForCurrentQuota(Object.keys(getPendingRecoveries()),accounts);
-    if (accountId && !scheduled && !reason) setImmediate(async () => {
+    if (requested && resumed) setImmediate(async () => {
       try {
         const [{ dispatchQueuedMessages }, { providerRuntimeService }] = await Promise.all([
           import('../../scheduled-messages/services/scheduled-message-dispatcher.service.js'),

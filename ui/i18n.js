@@ -16,6 +16,7 @@ window.BigaI18n=(()=>{
   function setLanguage(value){if(!supported.includes(value))return;language=value;localStorage.setItem('bigacli-language',value);apply();}
   function error(value){
     if(typeof value!=='string')return value;
+    if(/\bENOSPC\b|\bSQLITE_FULL\b|no space left on device|database or disk is full|os error 112|磁盘空间不足/i.test(value))return t('磁盘空间不足，任务已暂停。请清理空间后重试。');
     if(window.BIGA_TRANSLATIONS[value])return t(value);
     const separator=value.indexOf('：');
     if(separator>=0){const prefix=value.slice(0,separator+1),head=value.slice(0,separator);if(window.BIGA_TRANSLATIONS[prefix])return t(prefix)+error(value.slice(separator+1));if(window.BIGA_TRANSLATIONS[head])return t(head)+': '+value.slice(separator+1);}

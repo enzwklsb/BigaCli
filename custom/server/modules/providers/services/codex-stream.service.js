@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { readCodexTranscriptLines } from './codex-transcript.service.js';
 import { spawnCodex } from './codex-command.service.js';
 import { getReplyPreference } from '../../bigacli/preferences.service.js';
+import { browserUseService } from '../../browser-use/browser-use.service.js';
 
 // Native App Server events adapted to the existing CloudCLI runtime contract.
 const approvals = new Map();
@@ -169,7 +170,8 @@ export async function* streamCodexTurn(input, options, signal) {
         const { config } = await request('config/read', { cwd: options.workingDirectory, includeLayers: false });
         const developerInstructions = [config.developer_instructions, agentRules].filter(Boolean).join('\n\n');
         const params = { cwd: options.workingDirectory, model: options.model, sandbox: options.sandboxMode, approvalPolicy: options.approvalPolicy,
-            config: { model_verbosity: getReplyPreference(options.sessionId).verbosity, developer_instructions: developerInstructions } };
+            config: { model_verbosity: getReplyPreference(options.sessionId).verbosity, developer_instructions: developerInstructions,
+                'mcp_servers.bigacli-browser': browserUseService.getAgentMcpConfig() } };
         let result;
         if (options.handoff) {
             try {

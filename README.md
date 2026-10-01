@@ -49,6 +49,8 @@ The features below describe the current repository. Older downloads may not incl
 7. **Reset quota from your phone.** Check available reset credits and expiry dates, then reset after confirmation. Availability depends on the account; simply opening the control does not consume a credit.
 8. **Message timing.** Review message timestamps, progress, and available duration information across long tasks.
 9. **Text and attachment drafts.** Upload or paste files, and restore text and saved pending attachments after refreshing.
+10. **Your everyday browser.** Connect desktop Chrome or Edge with the [official Playwright extension](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm) to use existing website logins. Select the browser in Settings → Connectors and allow the connection. A separate persistent Chromium browser remains available as a backup.
+11. **GitHub account management.** Authorize GitHub from your phone or computer, switch accounts, and sign out in Settings → Connectors. Install [GitHub CLI](https://cli.github.com/) on the computer running BigaCli first.
 
 <a id="quick-start"></a>
 

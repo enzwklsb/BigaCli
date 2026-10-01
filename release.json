@@ -1,8 +1,8 @@
 {
-  "version": "1.0.2",
+  "version": "1.1.0",
   "repository": "enzwklsb/BigaCli",
   "cloudcli": "1.37.3",
-  "codex": "0.153.4",
+  "codex": "0.159.3",
   "node": "24.19.0",
   "nodeArchive": {
     "url": "https://github.com/enzwklsb/BigaCli/releases/download/v0.1.0/node-win-x64.zip",

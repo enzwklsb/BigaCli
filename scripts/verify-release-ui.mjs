@@ -36,6 +36,14 @@ try{
    api=async p=>p.includes('/messages?')?{messages:[{kind:'user',content:'question'},{kind:'text',content:'restored final',phase:'final_answer'}],hasMore:false}:{};
    handleEvent({kind:'chat_subscribed',sessionId:'sync-test',runStartedAt:started,isProcessing:false});
    await new Promise(r=>setTimeout(r,50));if(!$('chat').textContent.includes('restored final'))return false;
+   const recovery={sessionIds:['sync-test'],ticket:'paused-test',reason:'',accountIds:{'sync-test':'a'},currentAccountId:'a',appointment:{at:Date.now()+600000,label:'A'}};
+   renderAccountRecovery(recovery);const card=$('accountRecoveryNotice'),message=$('chat').querySelector('.msg');
+   await syncCompletedHistory();if($('accountRecoveryNotice')!==card||$('chat').querySelector('.msg')!==message)return false;
+   historyState.displayedMessages=null;await syncCompletedHistory();if($('accountRecoveryNotice')!==card)return false;
+   renderAccountRecovery({...recovery,reason:'manual',appointment:null});if(!$('accountRecoveryNotice'))return false;
+   renderAccountRecovery({...recovery,reason:'manual',currentAccountId:'b',appointment:null});if($('accountRecoveryNotice'))return false;
+   renderAccountRecovery({...recovery,sessionIds:['other']});if($('accountRecoveryNotice'))return false;
+   renderAccountRecovery(recovery);renderAccountRecovery({sessionIds:[]});if($('accountRecoveryNotice'))return false;
    const oldSend=sendWs;sendWs=()=>{sent++;return true};const oldWs=ws;ws={readyState:1};resumeChatSync();if(sent!==1)return false;sendWs=oldSend;ws=oldWs;
    api=async p=>p.includes('/messages?')?new Promise(r=>resolveHistory=r):{};
    const stale=syncCompletedHistory();handleEvent({kind:'chat_run_started',sessionId:'sync-test',runStartedAt:started+1});

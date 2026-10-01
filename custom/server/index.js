@@ -2,6 +2,7 @@
 // Load environment variables before other imports execute.
 import './load-env.js';
 import bigaUpdateRoutes from './modules/bigacli/update.routes.js';
+import githubRoutes from './modules/github/github.routes.js';
 import { createCodexAuthBridgeRouter } from './modules/codex-shell/codex-auth-bridge.routes.js';
 import fs, { promises as fsPromises } from 'fs';
 import path from 'path';
@@ -155,6 +156,7 @@ app.use('/api/commands', authenticateToken, commandsRoutes);
 app.use('/api/settings', authenticateToken, settingsRoutes);
 app.use('/api/system', authenticateToken, systemRoutes);
 app.use('/api/bigacli/update', authenticateToken, bigaUpdateRoutes);
+app.use('/api/github', authenticateToken, githubRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 // User API Routes (protected)
 app.use('/api/user', authenticateToken, userRoutes);

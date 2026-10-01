@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<script src="/i18n.js?v=4"></script>
+<script src="/i18n.js?v=20261002b"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Codex</title>
 <style>
@@ -355,9 +355,9 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .expanded > .processSummary::before { transform: rotate(90deg); }
 .processGroup.active .processSummary::before { content: ''; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; mask:none; background: var(--text); transform: none; animation: thoughtDot 1.6s ease-in-out infinite alternate; }
 .processFold { max-height: 0; overflow: hidden; transition: max-height .32s cubic-bezier(.4,0,.2,1); }
-.expanded > .processFold { max-height: 650px; }
+.expanded > .processFold { max-height: none; }
 .processClip { min-height: 0; overflow: hidden; touch-action: pan-y; overscroll-behavior-y: auto; -webkit-overflow-scrolling: touch; }
-.expanded > .processFold > .processClip { max-height: 650px; overflow-y: auto; }
+.expanded > .processFold > .processClip { overflow: visible; }
 
 .processGroup.noSteps .processSummary { cursor: default; }
 .processGroup.noSteps .processSummary::before { display: none; }
@@ -457,14 +457,17 @@ html, body { background: var(--bg); color: var(--text); }
   height: 34px;
   flex: 0 0 34px;
   padding: 0;
-  border: 1px solid var(--border-subtle);
+  border: 0;
   border-radius: 8px;
-  background: var(--panel);
+  background: transparent;
   color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 17px;
   font-weight: 600;
 }
-.menuBtn:hover:not(:disabled), .menuBtn:active:not(:disabled) { background: var(--panel); }
+.menuBtn:hover:not(:disabled), .menuBtn:active:not(:disabled) { background: var(--hover-bg,var(--panel)); }
 .headText { margin-left: 0; }
 .headTitle { font-size: 16px; font-weight: 600; letter-spacing: 0; }
 #buildVersion {
@@ -1354,7 +1357,7 @@ button,[role="button"],.picker > summary { border-radius:var(--button-radius)!im
 #quotaSwitchAccount svg { width:18px; height:18px; }
 </style>
 <div class="app">
-  <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区" data-i18n-aria-label="打开工作区">☰</button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><button id="conversationFilesBtn" aria-label="当前对话文件" title="当前对话文件" data-i18n-title="当前对话文件" data-i18n-aria-label="当前对话文件"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg></button></div>
+  <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区" data-i18n-aria-label="打开工作区"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><button id="conversationFilesBtn" aria-label="当前对话文件" title="当前对话文件" data-i18n-title="当前对话文件" data-i18n-aria-label="当前对话文件"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg></button></div>
   <div id="permissionArea"></div>
   <div id="chat" class="chat"><div class="small"><span data-i18n="登录后选择项目和 Session。">登录后选择项目和 Session。</span></div></div>
 
@@ -1740,9 +1743,34 @@ button.primary:hover:not(:disabled),#sendBtn:not(:has(.stopIcon)):hover:not(:dis
 <div class="setting-row"><span class="row-label" id="toolsLabel"><span data-i18n="显示工具调用与处理详情">显示工具调用与处理详情</span></span><label class="switch"><input id="showToolDetails" type="checkbox" aria-labelledby="toolsLabel"><span class="slider"></span></label></div>
 <div class="section-desc"><span data-i18n="思考摘要和工具详情默认隐藏。只改变页面显示，不影响任务执行、正文回复和权限确认。">思考摘要和工具详情默认隐藏。只改变页面显示，不影响任务执行、正文回复和权限确认。</span></div></div>
 <div class="divider"></div>
+<div class="setting-section"><button id="connectionsBtn" type="button"><span data-i18n="连接器">连接器</span><span aria-hidden="true">›</span></button></div><div class="divider"></div>
 <div class="setting-section"><button id="reportIssueBtn" type="button"><span data-i18n="报告问题">报告问题</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div><div class="divider"></div><div id="settingsSystemInfo" class="footer-links"></div>
 </div></section></div>
 <div id="languagePopup" class="usageModalBackdrop hidden"><div class="sessionActionSheet" role="menu" aria-labelledby="languageLabel"></div></div>
+<div id="connectionsPane" class="usageModalBackdrop hidden"><section class="usageModal" role="dialog" aria-modal="true" aria-labelledby="connectionsTitle">
+<header><strong id="connectionsTitle" data-i18n="连接器">连接器</strong><button id="connectionsClose" type="button" aria-label="关闭" data-i18n-aria-label="关闭">×</button></header>
+<div class="connectionSection" style="border-bottom:1px solid var(--border-subtle)"><label for="browserChannel"><strong data-i18n="浏览器">浏览器</strong></label>
+<select id="browserChannel" style="width:100%;margin:10px 0" disabled><option value="chrome">Chrome</option><option value="msedge">Edge</option><option value="chromium" data-i18n="独立 Chromium（备用）">独立 Chromium（备用）</option></select>
+<p id="browserExtensionHint" class="small" data-i18n="使用电脑浏览器已有的登录状态。首次请在该浏览器安装扩展，并允许连接。">使用电脑浏览器已有的登录状态。首次请在该浏览器安装扩展，并允许连接。</p>
+<a id="browserExtensionInstall" href="https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm" target="_blank" rel="noopener noreferrer" data-i18n="安装浏览器扩展（电脑端）">安装浏览器扩展（电脑端）</a>
+<p id="browserChannelStatus" class="small" role="status"></p></div>
+<div class="connectionSection"><div class="githubHeading"><strong><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.8.1-.8 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.4-5.5-6A4.7 4.7 0 0 1 5.6 8.6c-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2a4.7 4.7 0 0 1 1.2 3.2c0 4.6-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>GitHub</strong><span id="githubBadge" class="githubBadge"></span></div>
+<div class="githubPanel"><div id="githubAccounts" class="hidden"><select id="githubAccount" aria-label="切换账号" data-i18n-aria-label="切换账号"></select><svg class="githubSelectArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div>
+<div class="githubActions"><button id="githubLogin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="githubLoginLabel" data-i18n="连接 GitHub">连接 GitHub</span></button><button id="githubLogout" type="button" class="hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span data-i18n="退出所选账号">退出所选账号</span></button></div></div>
+<div id="githubDevice" class="hidden"><p><span data-i18n="验证码">验证码</span>：<strong id="githubCode" style="font-family:monospace;user-select:all"></strong></p><a id="githubAuthorize" href="https://github.com/login/device" target="_blank" rel="noopener noreferrer" data-i18n="复制验证码并前往授权">复制验证码并前往授权</a><p class="small" data-i18n="请在 GitHub 授权页选择你要连接的账号。">请在 GitHub 授权页选择你要连接的账号。</p><p id="githubCopyStatus" class="small" role="status"></p></div><button id="githubCancel" type="button" class="hidden" data-i18n="取消授权">取消授权</button><a id="githubInstall" class="hidden" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer" data-i18n="安装 GitHub CLI">安装 GitHub CLI</a></div>
+<footer class="githubFooter"><p id="githubStatus" role="status"></p><button id="connectionsRefresh" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg><span data-i18n="刷新">刷新</span></button></footer>
+</section></div>
+<style>
+#connectionsBtn{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;padding:4px 0;height:auto;color:var(--text);font-size:14px;font-weight:450}
+#connectionsPane{z-index:70}#connectionsPane .usageModal{width:min(100%,400px);max-height:85dvh;overflow:auto;padding:0;border:1px solid var(--border-subtle);border-radius:16px;background:var(--popup-bg,var(--panel));color:var(--text);box-shadow:0 20px 40px -12px #0003}
+#connectionsPane header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-subtle);font-size:15px}#connectionsClose{width:28px;height:28px;padding:0;border:0;background:transparent;font-size:22px;color:var(--muted)}
+.connectionSection{padding:16px 20px;font-size:13px}.connectionSection p{margin:8px 0;line-height:1.6}.connectionSection .small{color:var(--muted)}.connectionSection a{color:var(--accent-color);font-size:13px}
+.githubHeading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.githubHeading strong{display:flex;align-items:center;gap:8px;font-weight:600}.githubBadge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}.githubBadge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}.githubBadge.connected{color:#10b981}
+.githubPanel{background:var(--bg);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}#githubAccounts{position:relative}#githubAccount{width:100%;max-width:100%;appearance:none;background:var(--panel);border:1px solid var(--border-subtle);border-radius:8px;padding:8px 30px 8px 10px;font-size:13px;color:var(--text);height:auto;margin:0}.githubSelectArrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+.githubActions{display:flex;gap:8px}.githubActions button{display:flex;align-items:center;justify-content:center;gap:5px;flex:1;min-width:0;min-height:32px;height:auto;padding:6px 8px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--panel);color:var(--text);font-size:12px;line-height:1.4;white-space:normal}.githubActions svg{flex-shrink:0}#githubLogout{color:#dc2626;border-color:color-mix(in srgb,#ef4444 30%,var(--border-subtle))}
+.githubFooter{padding:12px 20px;background:var(--bg);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.githubFooter p{margin:0;min-width:0;overflow-wrap:anywhere}#connectionsRefresh{display:flex;align-items:center;gap:5px;flex-shrink:0;margin:0;padding:4px 6px;height:auto;border:0;background:transparent;color:var(--muted);font-size:12px}
+#filePreviewDownload{display:inline-flex;align-items:center;justify-content:center;width:32px;padding:0;background:transparent;color:var(--muted);border:0;border-radius:6px}#filePreviewDownload:hover:not(:disabled){background:var(--hover);color:var(--text)}
+</style>
 <div id="queueEditor" class="usageModalBackdrop hidden"><section class="usageModal" role="dialog" aria-labelledby="queueEditorTitle"><header><span id="queueEditorTitle"></span><button id="queueEditorClose" type="button" aria-label="关闭" data-i18n-aria-label="关闭">×</button></header><textarea id="queueEditorText" aria-label="编辑排队消息" data-i18n-aria-label="编辑排队消息"></textarea><footer><button id="queueEditorSend" type="button" class="primary" data-i18n="立即发送">立即发送</button></footer></section></div>
 <style>
 #reportIssueBtn{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;padding:4px 0;height:auto;color:var(--text);font-size:14px;font-weight:450}
@@ -1781,7 +1809,7 @@ button.primary:hover:not(:disabled),#sendBtn:not(:has(.stopIcon)):hover:not(:dis
   <div id="toast" class="toast" role="status"></div>
 <div id="filePreview" tabindex="-1" class="filePreview hidden" role="dialog" aria-modal="true" aria-label="文件预览" data-i18n-aria-label="文件预览">
   <div class="filePreviewPanel">
-  <div class="filePreviewHeader"><strong id="filePreviewName"></strong><button id="filePreviewDownload" disabled><span data-i18n="下载">下载</span></button></div>
+  <div class="filePreviewHeader"><strong id="filePreviewName"></strong><button id="filePreviewDownload" disabled title="下载" aria-label="下载" data-i18n-title="下载" data-i18n-aria-label="下载"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg></button></div>
   <div id="filePreviewBody"></div>
   </div>
 </div>
@@ -1958,6 +1986,45 @@ $('conversationFilesBtn').onclick=async()=>{
 /* 轻量 Markdown：支持本地文件链接 */
 function md(src){return BigaMarkdown.render(String(src??''))}
 const messageStreams=new Map();
+// Presentation-only buffer: never delays transport, permissions or user actions.
+const streamPlayback=[];let streamPlaybackFrame=null,streamPlaybackLast=0,streamPlaybackStopped=false;
+function clearStreamPlayback(){cancelAnimationFrame(streamPlaybackFrame);streamPlaybackFrame=null;streamPlayback.length=0;streamPlaybackLast=0;}
+function drainStreamPlayback(){
+  cancelAnimationFrame(streamPlaybackFrame);streamPlaybackFrame=null;
+  const queued=streamPlayback.splice(0);streamPlaybackLast=0;
+  for(const item of queued){const m=item.message;if(item.chars){const content=item.chars.slice(item.sent).join('');if(content)handleEvent({...m,content});}else handleEvent(m)}
+  flushFinalReplyGate();flushStreamRenders();
+}
+function tickStreamPlayback(now){
+  streamPlaybackFrame=null;
+  const elapsed=streamPlaybackLast?Math.min(now-streamPlaybackLast,50):16;streamPlaybackLast=now;
+  while(streamPlayback.length){
+    const item=streamPlayback[0];
+    if(item.chars){
+      const left=item.chars.length-item.sent;
+      item.credit+=left*elapsed/Math.max(elapsed,item.until-now);
+      const count=now>=item.until?left:Math.min(left,Math.floor(item.credit));
+      if(count){handleEvent({...item.message,content:item.chars.slice(item.sent,item.sent+count).join('')});item.sent+=count;item.credit-=count;}
+      if(item.sent<item.chars.length)break;
+    }else handleEvent(item.message);
+    streamPlayback.shift();
+  }
+  if(streamPlayback.length)streamPlaybackFrame=requestAnimationFrame(tickStreamPlayback);else streamPlaybackLast=0;
+}
+function receiveChatEvent(m){
+  const kind=m.kind??m.type??m.event;
+  const current=!m.sessionId||m.sessionId===sessionId(currentSession);
+  if(!current){handleEvent(m);return;}
+  if(kind==='chat_run_started'){drainStreamPlayback();streamPlaybackStopped=false;}
+  if(document.hidden||m.replayed||streamPlaybackStopped||['error','protocol_error','permission_request','chat_subscribed'].includes(kind)||m.aborted){drainStreamPlayback();handleEvent(m);return;}
+  if(kind==='stream_delta'){
+    const now=performance.now(),chars=Array.from(String(m.content||'')),tail=streamPlayback.at(-1);
+    if(tail?.chars&&tail.message.itemId===m.itemId&&tail.message.phase===m.phase&&tail.message.messageKind===m.messageKind){tail.chars=tail.chars.concat(chars);tail.until=now+1000;tail.message=m;}
+    else streamPlayback.push({message:m,chars,sent:0,credit:0,until:now+1000});
+  }else if(streamPlayback.length&&['stream_end','text','thinking','tool_use','tool_result','status','activity_start','activity_end','activity_progress','final_answer_start','complete','account_limit'].includes(kind)){streamPlayback.push({message:m});}
+  else{handleEvent(m);return;}
+  if(streamPlaybackFrame===null)streamPlaybackFrame=requestAnimationFrame(tickStreamPlayback);
+}
 const pendingStreamRenders=new Map();let streamRenderTimer=null;
 function flushStreamRenders(){
   clearTimeout(streamRenderTimer);streamRenderTimer=null;
@@ -2089,7 +2156,7 @@ function messageStamp(timestamp){
   const time=date.toLocaleTimeString(BigaI18n.language,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
   return `<time class="messageTime" datetime="${date.toISOString()}" title="${received?BigaI18n.t("接收时间"):BigaI18n.t("消息时间")} ${date.toLocaleString(BigaI18n.language,{hour12:false})}">${today?'':date.toLocaleDateString(BigaI18n.language)+' '}${time}</time>`;
 }
-function clearChat(t=''){clearTimeout(streamRenderTimer);streamRenderTimer=null;pendingStreamRenders.clear();resetFinalReplyGate();processGroup=null;turnProcessGroup=null;streamingEl=null;messageStreams.clear();toolNodes.clear();$('chat').innerHTML=t?`<div class="small">${esc(t)}</div>`:''}
+function clearChat(t=''){clearStreamPlayback();clearTimeout(streamRenderTimer);streamRenderTimer=null;pendingStreamRenders.clear();resetFinalReplyGate();processGroup=null;turnProcessGroup=null;streamingEl=null;messageStreams.clear();toolNodes.clear();$('chat').innerHTML=t?`<div class="small">${esc(t)}</div>`:''}
 
 function parseUserContent(content){
   const embedded=[];
@@ -2176,7 +2243,7 @@ function renderMessageStream(m,done=false){
     styleAssistantMessage(node.closest('.msg'),node.dataset.phase||null,kind,!done);
   }
   if(done){flushStreamRenders();messageStreams.delete(key);if(kind!=='thinking')addCopyActions(node)}
-  else if(streamRenderTimer===null)streamRenderTimer=setTimeout(flushStreamRenders,120);
+  else if(streamRenderTimer===null)streamRenderTimer=setTimeout(flushStreamRenders,32);
 }
 function toolSummary(name,input){
   let hint='';
@@ -2261,6 +2328,10 @@ function renderCodexAccounts(){
     const meta=[a.email||'',a.planType||'',a.authenticated?BigaI18n.t("已绑定"):''].filter(Boolean).join(' · ');
     row.innerHTML='<button class="accountPick"><span class="accountIdentity"><span class="accountName">'+esc(a.email||accountLabel(a))+'</span><span class="accountPlan">'+esc(a.planType||(a.authenticated?BigaI18n.t('已绑定'):BigaI18n.t('未登录')))+'</span></span><span class="accountLimits"></span></button><button class="accountRemove" aria-label="'+esc(BigaI18n.t('删除账号'))+'">✕</button>';
     row.querySelector('.accountPick').disabled=processing;
+    if(a.error){
+      row.querySelector('.accountPlan').textContent=BigaI18n.t('状态读取失败');
+      const detail=document.createElement('span');detail.className='small';detail.textContent=BigaI18n.error(a.error);row.querySelector('.accountIdentity').append(detail);
+    }
     row.querySelector('.accountRemove').disabled=processing||a.isDefault;
     const q=a.quota?.quotaState||{};
     for(const [i,used,reset] of [[0,q.usedPercent,q.resetAt],[1,q.weeklyUsedPercent,q.weeklyResetAt]]){
@@ -2268,13 +2339,15 @@ function renderCodexAccounts(){
       const group=document.createElement('span');group.className='accountLimit'+(left===0?' empty':'');
       group.innerHTML='<span class="accountLimitLabel"><span>'+BigaI18n.t(i?'7d 额度':'5h 额度')+'</span><span>'+esc(unlimited?BigaI18n.t('无限制'):left===null?BigaI18n.t('未知'):Math.round(left)+'%')+'</span></span><span class="accountLimitBar"><i style="width:'+(left??0)+'%"></i></span>';
       const label=document.createElement('span');label.className='accountResetTime';
-      label.textContent=unlimited?'　':reset>0?quotaTime(reset/1000)+BigaI18n.t(' 重置'):BigaI18n.t('未知');group.append(label);row.querySelector('.accountLimits').append(group);
+      label.textContent=unlimited?'　':reset>0?quotaTime(reset/1000)+BigaI18n.t(' 重置'):BigaI18n.t('未知');
+      if(a.error){group.querySelector('.accountLimitLabel').lastElementChild.textContent=BigaI18n.t('暂时无法读取');label.textContent='';}
+      group.append(label);row.querySelector('.accountLimits').append(group);
     }
     if(earliest!==Infinity&&q.availableAt===earliest){const tag=document.createElement('span');tag.className='earliestRecovery';tag.textContent=BigaI18n.t('最早恢复');row.querySelector('.accountIdentity').prepend(tag)}
     if(row.querySelector('.accountLimit.empty'))row.classList.add('exhausted');
     row.querySelector('.accountRemove').innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg>';
     const recovering=!!$('accountSwitchPane').dataset.recoveryTicket;
-    if(recovering)row.querySelector('.accountPick').disabled=processing||!a.authenticated||!a.compatible||((a.limited||a.usedPercent>=100||a.weeklyUsedPercent>=100)&&!a.availableAt);
+    if(recovering)row.querySelector('.accountPick').disabled=processing||!a.authenticated||!a.compatible;
     row.querySelector('.accountPick').onclick=()=>{if(!isCurrent||recovering)confirmAccountRow(row,a,false)};
     row.querySelector('.accountRemove').onclick=()=>confirmAccountRow(row,a,true);box.appendChild(row)
   });
@@ -2298,12 +2371,10 @@ function confirmAccountRow(row,account,remove){
   closeAccountConfirmation();
   if(processing)return;
   const recoveryTicket=remove?undefined:$('accountSwitchPane').dataset.recoveryTicket;
-  const schedule=!!recoveryTicket&&(account.usedPercent>=100||account.weeklyUsedPercent>=100);
   const overlay=document.createElement('div');overlay.className='accountConfirm'+(remove?' removing':'');
   overlay.innerHTML='<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:10px;text-align:center">'+esc((remove?BigaI18n.t("删除："):BigaI18n.t("确认切换至 "))+(account.email||accountLabel(account))+'？')+("</span><div style=\"display:flex;justify-content:flex-end;gap:8px\"><button class=\"cancel\">"+BigaI18n.t("取消")+"</button><button class=\"primary\">")+(remove?BigaI18n.t("删除"):BigaI18n.t("确认"))+'</button></div>';
   overlay.querySelector('.cancel').onclick=closeAccountConfirmation;
-  if(recoveryTicket){overlay.querySelector('.primary').textContent=BigaI18n.t(schedule?'预约继续':'切换并继续');if(schedule)overlay.querySelector('span').textContent=BigaI18n.t('预约 {0} 恢复 {1} 个对话？',account.email||accountLabel(account),accountRecoveryState.sessionIds.length)}
-  overlay.querySelector('.primary').onclick=async()=>{overlay.querySelectorAll('button').forEach(b=>b.disabled=true);selectedCodexAccountId=account.id;if(remove)await deleteSelectedCodexAccount();else await selectCodexAccountForSession(account.id,recoveryTicket,schedule?'schedule':'resume');closeAccountConfirmation()};
+  overlay.querySelector('.primary').onclick=async()=>{overlay.querySelectorAll('button').forEach(b=>b.disabled=true);selectedCodexAccountId=account.id;if(remove)await deleteSelectedCodexAccount();else await selectCodexAccountForSession(account.id,recoveryTicket);closeAccountConfirmation()};
   document.body.appendChild(overlay);const rect=row.getBoundingClientRect(),card=row.closest('.settingsCard').getBoundingClientRect();Object.assign(overlay.style,{display:'block',width:'max-content',maxWidth:(card.width-24)+'px'});overlay.style.left=(card.left+(card.width-overlay.offsetWidth)/2)+'px';overlay.style.top=Math.max(card.top+95,rect.top-62)+'px';animatePopup(overlay,true);
 }
 async function cleanupPendingAddedAccount(){
@@ -2324,14 +2395,15 @@ async function deleteSelectedCodexAccount(){
   const a=codexAccounts.find(x=>x.id===selectedCodexAccountId);if(!a)return;if(a.isDefault)return toast(BigaI18n.t("默认账号不能删除"));
   try{await api(`/api/providers/codex/accounts/${encodeURIComponent(a.id)}`,{method:'DELETE'});selectedCodexAccountId='default';await loadCodexAccounts()}catch(e){toast(BigaI18n.t("删除失败：")+e.message)}
 }
-async function selectCodexAccountForSession(accountId=selectedCodexAccountId,recoveryTicket,action='resume'){
+async function selectCodexAccountForSession(accountId=selectedCodexAccountId,recoveryTicket){
   if(processing){toast(BigaI18n.t("任务运行中，停止后才能切换账号"));return false}
   try{
     if(recoveryTicket){
-      const state=unwrap(await api('/api/providers/codex/accounts/recovery',{method:'POST',body:JSON.stringify({action,accountId,ticket:recoveryTicket})}));
-      closeAccountSwitch();renderAccountRecovery(state);return true;
+      const state=unwrap(await api('/api/providers/codex/accounts/recovery',{method:'POST',body:JSON.stringify({action:'switch',accountId,ticket:recoveryTicket})}));
+      closeAccountSwitch();renderAccountRecovery(state);await loadCodexAccounts();if(currentSession){await loadProviderControls();await checkCurrentProviderAuth({showGuide:true})}return true;
     }
     currentSessionAccountConfig=unwrap(await api('/api/providers/codex/accounts/current',{method:'POST',body:JSON.stringify({accountId,mode:$('codexAccountMode')?.value||currentSessionAccountConfig.mode||'manual'})}));
+    if(currentSessionAccountConfig.recovery)renderAccountRecovery(currentSessionAccountConfig.recovery);
     selectedCodexAccountId=accountId;renderCodexAccounts();
     if(currentSession){await loadProviderControls();await checkCurrentProviderAuth({showGuide:true})}
     return true;
@@ -2354,26 +2426,30 @@ function renderAccountRecovery(state=accountRecoveryState){
   const wait=$('recoveryWait'),locked=recoveryLocked();wait.classList.toggle('hidden',!locked);
   renderRecoveryWait();
   setComposerEnabled(providerReadyState.ready);
+  syncSendButton();renderQueuedMessage();
   $('attachmentBtn').disabled=sendingMessage;
   let notice=$('accountRecoveryNotice');
-  syncRecoveryNotes();
-  if(!state.sessionIds?.length){notice?.remove();return}
+  const sid=sessionId(currentSession);
+  if(!locked){notice?.remove();syncRecoveryNotes();return}
+  const displayKey=JSON.stringify([sid,state.ticket,state.switching,state.reason,state.currentAccountId,state.appointment,BigaI18n.language]);
+  if(notice?.dataset.displayKey===displayKey){syncRecoveryNotes();return}
   if(!notice){notice=document.createElement('div');notice.id='accountRecoveryNotice';notice.className='systemNote recoveryNotice';$('chat').appendChild(notice)}
-  const text=state.switching?'':state.reason==='waiting'?BigaI18n.t('等待运行中的任务结束后统一切换账号。'):state.reason==='unavailable'?BigaI18n.t('暂无可恢复全部对话的账号，请选择其他账号。'):'';
+  notice.dataset.displayKey=displayKey;syncRecoveryNotes();
+  const text=state.switching?'':state.reason==='waiting'?BigaI18n.t('等待运行中的任务结束后统一切换账号。'):state.reason==='auto_unavailable'?BigaI18n.t('暂无可切换的账号，任务已暂停，正在等待当前账号额度恢复。'):'';
   const title=document.createElement('div');title.className='recoveryNoticeTitle';
   title.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-  title.append(document.createTextNode(BigaI18n.t(state.switching?'正在切换账号':'任务因额度耗尽暂停')));
+  title.append(document.createTextNode(BigaI18n.t(state.switching?'正在确认额度':'任务因额度耗尽暂停')));
   const content=document.createElement('div');content.className='recoveryNoticeContent';
   content.textContent=state.reason==='reservation_failed'?BigaI18n.t('额度尚未恢复，继续等待。'):text;
   const actions=document.createElement('div');actions.className='recoveryNoticeActions';notice.replaceChildren(title,content,actions);
-  if(!state.switching){const button=document.createElement('button');button.className='primary';button.textContent=BigaI18n.t('切换账号恢复');button.onclick=openRecoveryOptions;actions.appendChild(button)}
+  if(!state.switching){const button=document.createElement('button');button.className='primary';button.textContent=BigaI18n.t('切换账号');button.onclick=openRecoveryOptions;actions.appendChild(button)}
   if(!state.switching){
     const details=document.createElement('div');details.className='recoveryDetails';details.textContent=BigaI18n.t('正在读取账号额度…');content.append(details);
     const button=document.createElement('button');button.className='recoveryResetButton';button.disabled=true;button.textContent=BigaI18n.t('正在读取重置机会…');actions.append(button);
     const ticket=state.ticket;
     (async()=>{try{
       const context=await quotaResetAccount(),data=unwrap(await api('/api/providers/codex/rate-limits?accountId='+encodeURIComponent(context.accountId))),count=data?.rateLimitResetCredits?.availableCount;
-      if(!button.isConnected||ticket!==accountRecoveryState.ticket)return;
+      if(!button.isConnected||ticket!==accountRecoveryState.ticket||notice.dataset.displayKey!==displayKey)return;
       const at=data?.quotaState?.availableAt,credits=(data?.rateLimitResetCredits?.credits||[]).filter(c=>c.status==='available'),expiries=credits.map(c=>c.expiresAt).filter(v=>typeof v==='number'&&v>0);
       const expiry=count===0?BigaI18n.t('暂无可用重置机会'):count===credits.length&&credits.every(c=>c.expiresAt===null)?BigaI18n.t('无到期限制'):expiries.length?quotaTime(Math.min(...expiries),true):BigaI18n.t('未知');
       details.textContent=BigaI18n.t('额度恢复：{0}',at?recoveryTime(at):BigaI18n.t('未知'))+'\n'+BigaI18n.t('重置机会：{0}',Number.isInteger(count)?count:BigaI18n.t('未知'))+'\n'+BigaI18n.t('最近到期：{0}',expiry);
@@ -2384,7 +2460,7 @@ function renderAccountRecovery(state=accountRecoveryState){
         e.stopPropagation();
         if(ticket!==accountRecoveryState.ticket)return;
         quotaResetState={...context,count,recoveryTicket:ticket};
-        showQuotaConfirmation(button,BigaI18n.t('消耗 1 次重置机会并继续任务？'));
+        showQuotaConfirmation(button,BigaI18n.t(state.appointment?'消耗 1 次重置机会并继续任务？':'确定消耗 1 次重置机会？'));
       };
     }catch{if(button.isConnected){button.textContent=BigaI18n.t('重置机会未返回');details.textContent=BigaI18n.t('额度恢复：{0}',BigaI18n.t('未知'))+'\n'+BigaI18n.t('重置机会：{0}',BigaI18n.t('未知'))+'\n'+BigaI18n.t('最近到期：{0}',BigaI18n.t('未知'))}}})();
   }
@@ -2663,12 +2739,6 @@ function positionQuotaConfirmation(){
 $('quotaResetCancel').onclick=()=>{closeQuotaConfirmation();positionComposerPicker($('speedPicker'))};
 $('quotaResetSubmit').onclick=async()=>{
   const checked=quotaResetState;
-  if(checked?.scheduleOnly){
-    if($('quotaResetConfirm').classList.contains('hidden')||$('quotaResetSubmit').disabled)return;
-    closeQuotaConfirmation();$('quotaResetSubmit').disabled=true;
-    try{renderAccountRecovery(unwrap(await api('/api/providers/codex/accounts/recovery',{method:'POST',body:JSON.stringify({action:'schedule',accountId:checked.accountId,ticket:checked.recoveryTicket})})))}catch(e){toast(e.message)}
-    finally{$('quotaResetSubmit').disabled=false;quotaResetState=null}return;
-  }
   if($('quotaResetConfirm').classList.contains('hidden')||$('quotaResetSubmit').disabled||!checked||!(checked.count>0))return;
   $('quotaResetSubmit').disabled=true;closeQuotaConfirmation();
   $('quotaResetApply').disabled=true;
@@ -2683,16 +2753,13 @@ $('quotaResetSubmit').onclick=async()=>{
       quotaResetAttempt={accountId:context.accountId,idempotencyKey:hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20)};
     }
     const result=unwrap(await api('/api/providers/codex/rate-limits/reset',{method:'POST',body:JSON.stringify({...quotaResetAttempt,recoveryTicket:checked.recoveryTicket})}));
+    if(result?.recovery)renderAccountRecovery(result.recovery);
     outcome=result?.outcome;
     const messages={reset:BigaI18n.t("额度已重置，消耗 1 次机会"),alreadyRedeemed:BigaI18n.t("此次重置已完成"),nothingToReset:BigaI18n.t("当前没有可重置的额度窗口"),noCredit:BigaI18n.t("当前账号没有重置机会")};
     if(!Object.hasOwn(messages,outcome))throw Error(BigaI18n.t("未返回明确的重置结果，请重新查询"));
     quotaResetAttempt=null;
     try{await queryQuotaReset(context)}catch{quotaResetState=null;$('quotaResetCount').textContent=BigaI18n.t("重置机会未返回")}
     toast(messages[outcome]+(!quotaResetState?BigaI18n.t("；额度刷新失败，请重新查询"):''));
-    if(checked.recoveryTicket&&['reset','alreadyRedeemed'].includes(outcome)&&checked.recoveryTicket===accountRecoveryState.ticket){
-      try{renderAccountRecovery(unwrap(await api('/api/providers/codex/accounts/recovery',{method:'POST',body:JSON.stringify({action:'resume',accountId:context.accountId,ticket:checked.recoveryTicket})})))}catch(e){toast(e.message)}
-    }
-    else if(checked.recoveryTicket)renderAccountRecovery();
   }catch(e){quotaResetState=null;$('quotaResetCount').textContent=BigaI18n.t("重置机会未返回");toast(BigaI18n.t("重置未确认：")+e.message)}
   finally{$('quotaResetSubmit').disabled=false;$('quotaResetApply').disabled=!(quotaResetState?.count>0)}
 };
@@ -2726,8 +2793,9 @@ async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}
   try{
     let x;
     if(currentProvider==='codex'){
-      if(!accountsLoaded)await loadCodexAccounts();
+      if(!accountsLoaded&&!await loadCodexAccounts())throw Error(BigaI18n.t('状态读取失败'));
       const a=codexAccounts.find(v=>v.id===currentSessionAccountConfig.currentAccountId);
+      if(!a||a.error||a.authenticated===null)throw Error(a?.error||BigaI18n.t('状态读取失败'));
       x={installed:true,authenticated:a?.authenticated===true,email:a?.email,planType:a?.planType};
     }else x=unwrap(await api(`/api/providers/${encodeURIComponent(currentProvider)}/auth/status`));
     const installed=x?.installed!==false;
@@ -2749,7 +2817,7 @@ async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}
     return true;
   }catch(e){
     providerReadyState={provider:currentProvider,checked:true,ready:false,status:null};
-    if(showGuide)showProviderGate(BigaI18n.t("无法确认 {0} 登录状态：{1}。为避免直接请求失败，当前已禁止发送。",providerDisplayName(currentProvider),e.message),true);
+    if(showGuide)showProviderGate(BigaI18n.t('账号状态读取失败：{0}。请稍后重试。',BigaI18n.error(e.message)),false);
     else setComposerEnabled(false);
     return false;
   }
@@ -2777,7 +2845,10 @@ function errorText(m){
 }
 function surfaceRuntimeError(m,prefix=''){
   const txt=(prefix?prefix+'：':'')+errorText(m);
-  addError(txt);
+  const key=String(m.runStartedAt||lastRunStartedAt.get(sessionId(currentSession))||'')+':'+txt;
+  if(![...$('chat').querySelectorAll('[data-runtime-error]')].some(node=>node.dataset.runtimeError===key)){
+    const node=addAssistant(txt,'error',m.timestamp).closest('.msg');node.dataset.runtimeError=key;
+  }
   setProcessing(false);
   setStatus(BigaI18n.t("执行失败"),'bad');
   streamingEl=null;
@@ -3162,8 +3233,9 @@ async function loadHistory(searchTarget=null){
       if(index>=0){target=messages[index];const count=Math.max(20,BigaSearch.resolveSearchWindowSize(messages.length,index,2));messages=messages.slice(-count);state.offset=messages.length;state.hasMore=state.offset<state.total}
       else{messages=messages.slice(-20);state.offset=messages.length;state.hasMore=state.offset<state.total;toast(BigaI18n.t("未找到对应的历史消息"))}
     }
-    clearChat();lastSeq.set(state.sid,0);$('chat').appendChild(renderHistoryBatch(messages,target));syncRecoveryNotes();
+    clearChat();lastSeq.set(state.sid,0);$('chat').appendChild(renderHistoryBatch(messages,target));state.displayedMessages=JSON.stringify(messages);
     if(!messages.length)clearChat(BigaI18n.t("该 Session 暂无历史消息。"));
+    renderAccountRecovery();
     state.loading=false;updateHistoryMore();$('chat').scrollTop=$('chat').scrollHeight;
     if(target){
       stopReplyFollow();
@@ -3183,6 +3255,7 @@ async function loadOlderHistory(){
   try{
     const messages=await fetchHistoryBatch(state);if(!messages||state!==historyState)return;
     chat.insertBefore(renderHistoryBatch(messages),$('historyMore').nextSibling);
+    delete state.displayedMessages;
     state.loading=false;updateHistoryMore();
     if(anchor)chat.scrollTop+=anchor.getBoundingClientRect().top-top;
   }catch(e){if(state===historyState){state.loading=false;updateHistoryMore();toast(BigaI18n.t("读取更早消息失败：")+e.message)}}
@@ -3224,7 +3297,7 @@ new ResizeObserver(()=>scheduleJumpLayout()).observe(document.querySelector('.co
 new MutationObserver(()=>scheduleJumpLayout()).observe($('chat'),{childList:true,subtree:true,characterData:true});
 function syncRecoveryNotes(){
   const nodes=Array.from($('chat').children),lastUser=nodes.findLastIndex(n=>n.matches('.msg.user'));
-  nodes.forEach((n,i)=>{if(n.hasAttribute('data-recovery-note'))n.classList.toggle('hidden',i>lastUser&&accountRecoveryState.sessionIds?.includes(sessionId(currentSession)))});
+  nodes.forEach((n,i)=>{if(n.hasAttribute('data-recovery-note'))n.classList.toggle('hidden',i>lastUser&&!!$('accountRecoveryNotice'))});
 }
 function renderAccountNote(m){
   const target=historyRenderTarget||$('chat');
@@ -3343,14 +3416,14 @@ function connectWs(){
   try{
     ws=new WebSocket(wsUrl());const socket=ws;
     ws.onopen=()=>{setStatus('');showConnectionLoading(false);subscribeCurrent()};
-    ws.onmessage=e=>{try{handleEvent(JSON.parse(e.data))}catch(err){console.error(err)}};
+    ws.onmessage=e=>{try{receiveChatEvent(JSON.parse(e.data))}catch(err){console.error(err)}};
     ws.onerror=()=>{};
     ws.onclose=()=>{if(ws!==socket)return;setStatus('');if(currentSession&&processing)showConnectionLoading(true);setTimeout(()=>{if(ws===socket){ws=null;connectWs()}},1000)}
   }catch(e){setStatus('')}
 }
 function resumeChatSync(){
   if(document.hidden)return;
-  flushFinalReplyGate();flushStreamRenders();
+  drainStreamPlayback();flushFinalReplyGate();flushStreamRenders();
   if(ws?.readyState===1)subscribeCurrent();else connectWs();
 }
 document.addEventListener('visibilitychange',resumeChatSync);
@@ -3366,9 +3439,13 @@ async function syncCompletedHistory(){
     const page=unwrap(await api(`/api/providers/sessions/${encodeURIComponent(sid)}/messages?${query}`));
     if(sessionId(currentSession)!==sid||historyState!==state||processing||lastSeq.get(sid)!==seq||lastRunStartedAt.get(sid)!==run)return;
     const messages=Array.isArray(page)?page:page?.messages||page?.history||[];
+    const displayedMessages=JSON.stringify(messages);
+    if(state?.displayedMessages===displayedMessages)return;
     const chat=$('chat'),top=chat.scrollTop,following=followLatest;
-    clearChat();chat.appendChild(renderHistoryBatch(messages));syncRecoveryNotes();
-    historyState={sid,offset:messages.length,total:page.total,hasMore:!!page.hasMore,loading:false};updateHistoryMore();
+    const notice=$('accountRecoveryNotice');notice?.remove();
+    const errors=[...chat.querySelectorAll('[data-runtime-error]')];
+    clearChat();chat.appendChild(renderHistoryBatch(messages));for(const error of errors)chat.appendChild(error);if(notice)chat.appendChild(notice);renderAccountRecovery();
+    historyState={sid,offset:messages.length,total:page.total,hasMore:!!page.hasMore,loading:false,displayedMessages};updateHistoryMore();
     followLatest=following;chat.scrollTop=following?chat.scrollHeight:top;
   }catch(e){console.error('History resync failed',e)}
   finally{if(completedHistorySync===request)completedHistorySync=null}
@@ -3413,7 +3490,7 @@ function handleEvent(m,bypassFinalGate=false){
     if(m.kind==='protocol_error'){const error=Error(m.error||m.message||'Send failed');error.code=m.code;pendingChatSend.finish(error);return}
   }
   if(m.kind==='account_recovery'){renderAccountRecovery(m.recovery);return}
-  if(m.kind==='codex_account_changed'){syncCurrentCodexAccount(m.config);quotaResetState=null;closeQuotaConfirmation();if($('speedPicker').open)loadConversationStatus();return}
+  if(m.kind==='codex_account_changed'){syncCurrentCodexAccount(m.config);renderAccountRecovery({...accountRecoveryState,currentAccountId:m.config.currentAccountId});quotaResetState=null;closeQuotaConfirmation();if($('speedPicker').open)loadConversationStatus();return}
   const sid=typeof m.sessionId==='string'&&m.sessionId||null;if(sid&&typeof m.seq==='number')lastSeq.set(sid,Math.max(lastSeq.get(sid)||0,m.seq));
   if(currentSession&&sid&&sid!==sessionId(currentSession))return;
   // A queued turn can start before the previous reply's collapse animation ends.
@@ -3640,7 +3717,7 @@ async function sendChat(mode='normal'){
   }catch(e){toast(BigaI18n.t("发送失败：")+e.message)}
   finally{sendingMessage=false;$('attachmentBtn').disabled=false;renderPendingFiles();setComposerEnabled(providerReadyState.ready)}
 }
-function stopChat(){if(currentSession)sendWs({type:'chat.abort',sessionId:sessionId(currentSession)})}
+function stopChat(){streamPlaybackStopped=true;drainStreamPlayback();if(currentSession)sendWs({type:'chat.abort',sessionId:sessionId(currentSession)})}
 function createAttachmentChip(name,image,preview){
   const chip=document.createElement('div');chip.className='attachmentChip'+(image?' imageChip':'');
   const button=document.createElement('button');button.type='button';button.title=name;button.setAttribute('aria-label',BigaI18n.t("预览 ")+name);button.onclick=preview;
@@ -3804,6 +3881,83 @@ $('profileMenu').onclick=e=>{if(e.target===$('profileMenu'))closeProfileMenu()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('profileMenu').classList.contains('hidden')){closeProfileMenu();e.stopImmediatePropagation()}});
 $('providerGateLogin').onclick=openProviderLoginGuide;$('menuBtn').onclick=openDrawer;$('scrim').onclick=closeDrawer;$('settingsBtn').onclick=()=>{closeDrawer();setOverlay($('settingsPane'),true)};$('accountsBtn').onclick=openAccountSwitch;
 function closeSettings(){closeLanguagePopup();setOverlay($('settingsPane'),false);}
+async function refreshConnections(){
+  $('connectionsRefresh').disabled=true;
+  try{await Promise.all([refreshGithub(),refreshBrowserSettings()])}finally{$('connectionsRefresh').disabled=false}
+}
+function renderBrowserSettings(browser){
+  $('browserChannel').value=browser;
+  for(const id of ['browserExtensionHint','browserExtensionInstall'])$(id).classList.toggle('hidden',browser==='chromium');
+}
+async function refreshBrowserSettings(){
+  try{
+    const value=await api('/api/browser-use/settings');
+    renderBrowserSettings(value.data.settings.browser);$('browserChannel').disabled=false;
+  }catch(error){$('browserChannelStatus').textContent=error.message}
+}
+$('browserChannel').onchange=async()=>{
+  $('browserChannel').disabled=true;
+  try{
+    const value=await api('/api/browser-use/settings',{method:'POST',body:JSON.stringify({browser:$('browserChannel').value})});
+    renderBrowserSettings(value.data.settings.browser);$('browserChannelStatus').textContent=BigaI18n.t('已保存，下次发送消息时生效。');
+  }catch(error){await refreshBrowserSettings();$('browserChannelStatus').textContent=error.message}
+  finally{$('browserChannel').disabled=false}
+};
+$('connectionsBtn').onclick=()=>{setOverlay($('connectionsPane'),true);$('connectionsClose').focus({preventScroll:true});void refreshConnections()};
+function closeConnections(){clearTimeout(githubPoll);setOverlay($('connectionsPane'),false);$('connectionsBtn').focus({preventScroll:true})}
+$('connectionsClose').onclick=closeConnections;
+$('connectionsPane').onclick=e=>{if(e.target===$('connectionsPane'))closeConnections()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('connectionsPane').classList.contains('hidden')){e.stopImmediatePropagation();closeConnections()}},true);
+$('connectionsRefresh').onclick=()=>void refreshConnections();
+let githubPoll=null,githubBusy=false;
+function renderGithub(status){
+  const waiting=['starting','waiting'].includes(status.state);
+  const key=status.state==='missing'||status.available===false?'请先在运行 BigaCli 的电脑上安装 GitHub CLI，然后重启 BigaCli。':waiting?(status.userCode?'请在 GitHub 输入验证码并确认授权。':'正在获取 GitHub 验证码…'):status.connected?'已连接 GitHub':status.state==='expired'?'验证码已过期，请重新连接。':status.state==='failed'?'GitHub 授权未完成，请重试。':'尚未连接 GitHub';
+  $('githubStatus').textContent=BigaI18n.t(key)+(status.connected?' · '+status.account:'');
+  $('githubBadge').textContent=BigaI18n.t(status.connected?'已连接':'未连接');$('githubBadge').classList.toggle('connected',!!status.connected);
+  $('githubLogin').classList.toggle('hidden',waiting||status.available===false||status.state==='missing');
+  $('githubLogin').disabled=githubBusy;
+  const loginKey=status.accounts?.length?'登录其他账号':'连接 GitHub';
+  $('githubLoginLabel').setAttribute('data-i18n',loginKey);$('githubLoginLabel').textContent=BigaI18n.t(loginKey);
+  const accounts=status.accounts||[];
+  $('githubAccounts').classList.toggle('hidden',waiting||!accounts.length);
+  $('githubLogout').classList.toggle('hidden',waiting||!accounts.length);
+  $('githubLogin').closest('.githubPanel').classList.toggle('hidden',waiting||status.available===false||status.state==='missing');
+  $('githubAccount').replaceChildren(...accounts.map(a=>{const option=document.createElement('option');option.value=a.login;option.textContent=a.login+(a.active?' · '+BigaI18n.t('当前账号'):'');option.selected=a.active;option.dataset.active=String(a.active);option.dataset.valid=String(a.state==='success');return option}));
+  updateGithubActions();
+  $('githubInstall').classList.toggle('hidden',status.available!==false&&status.state!=='missing');
+  $('githubDevice').classList.toggle('hidden',!status.userCode);
+  $('githubCode').textContent=status.userCode||'';
+  $('githubCancel').classList.toggle('hidden',!waiting);
+  clearTimeout(githubPoll);
+  if(waiting&&!$('connectionsPane').classList.contains('hidden'))githubPoll=setTimeout(()=>void refreshGithub(),2000);
+}
+function updateGithubActions(){
+  const option=$('githubAccount').selectedOptions[0];
+  $('githubAccount').disabled=githubBusy;
+  $('githubLogout').disabled=githubBusy||!option;
+}
+$('githubAccount').onchange=()=>{updateGithubActions();const option=$('githubAccount').selectedOptions[0];if(option?.dataset.active==='false'&&option.dataset.valid==='true')void changeGithub('switch')};
+async function changeGithub(action){
+  if(githubBusy)return;
+  const account=$('githubAccount').value;
+  if(action==='logout'&&!confirm(account+'\n'+BigaI18n.t('退出会移除本机 GitHub CLI 中该账号的登录，也会影响其他使用它的工具；不会退出浏览器中的 GitHub。继续？')))return;
+  githubBusy=true;updateGithubActions();$('githubLogin').disabled=true;
+  try{renderGithub(unwrap(await api('/api/github/'+action,{method:'POST',body:JSON.stringify({account})})))}
+  catch(error){$('githubStatus').textContent=error.message;if(action==='switch'){const active=[...$('githubAccount').options].find(option=>option.dataset.active==='true');if(active)$('githubAccount').value=active.value}}
+  finally{githubBusy=false;updateGithubActions();$('githubLogin').disabled=false}
+}
+$('githubLogout').onclick=()=>void changeGithub('logout');
+async function refreshGithub(){
+  try{renderGithub(unwrap(await api('/api/github/status')))}catch(error){$('githubStatus').textContent=error.message}
+}
+$('githubLogin').onclick=async()=>{
+  if(githubBusy)return;githubBusy=true;$('githubLogin').disabled=true;$('githubCopyStatus').textContent='';
+  try{renderGithub(unwrap(await api('/api/github/login',{method:'POST'})))}catch(error){$('githubStatus').textContent=error.message}
+  finally{githubBusy=false;$('githubLogin').disabled=false}
+};
+$('githubAuthorize').onclick=()=>{void copyText($('githubCode').textContent).then(ok=>{$('githubCopyStatus').textContent=BigaI18n.t(ok?'验证码已复制，请在 GitHub 页面粘贴。':'无法自动复制，请手动复制上方验证码。')})};
+$('githubCancel').onclick=async()=>{try{await api('/api/github/cancel',{method:'POST'});await refreshGithub()}catch(error){$('githubStatus').textContent=error.message}};
 let reportIssuePending=null,reportIssueBusy=false;
 function reportIssueStatus(key){$('reportIssueStatus').setAttribute('data-i18n',key||'');$('reportIssueStatus').textContent=key?BigaI18n.t(key):'';$('reportIssueStatus').classList.toggle('hidden',!key)}
 $('reportIssueText').maxLength=10000;

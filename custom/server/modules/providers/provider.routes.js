@@ -1,5 +1,5 @@
 import express from 'express';
-import { flattenAccountInfo, readQuotaUsage, readRecoveryAccounts, recoveryState, recoverPendingAccounts, isRecoverySwitching, pauseRecovery, scheduleRecovery, scheduleDefaultRecovery, checkRecoveryTicket } from './services/codex-recovery.service.js';
+import { flattenAccountInfo, readQuotaUsage, readRecoveryAccounts, recoveryState, recoverPendingAccounts, isRecoverySwitching, pauseRecovery, changeRecoveryAccount, scheduleDefaultRecovery, checkRecoveryTicket } from './services/codex-recovery.service.js';
 import { steerCodexTurn } from './services/codex-stream.service.js';
 import { filterAttachmentsToUploadStore } from '../websocket/services/chat-websocket.service.js';
 import { appendFilesInputTag, buildCodexInputItems, isImageAttachmentDescriptor, normalizeAttachmentDescriptors } from '../../shared/image-attachments.js';
@@ -68,12 +68,16 @@ router.post('/codex/rate-limits/reset', asyncHandler(async (req, res) => {
         checkRecoveryTicket(req.body.recoveryTicket);
         if (isRecoverySwitching() || getSessionCodexAccountConfig().currentAccountId !== accountId) throw new AppError('当前账号已变化，请重新查询', { statusCode:409 });
     }
-    res.json(createApiSuccessResponse(await consumeCodexRateLimitReset(accountId, idempotencyKey)));
+    const result = await consumeCodexRateLimitReset(accountId, idempotencyKey);
+    if (['reset', 'alreadyRedeemed', 'nothingToReset'].includes(result?.outcome) && getSessionCodexAccountConfig().currentAccountId === accountId && !isRecoverySwitching()) {
+        await recoverPendingAccounts(accountId);
+    }
+    res.json(createApiSuccessResponse({ ...result, recovery: recoveryState() }));
 }));
 router.get('/codex/accounts', asyncHandler(async (_req,res)=>{
     const accounts=listCodexAccounts();
     const enriched=await Promise.all(accounts.map(async a=>{
-        try{const info=flattenAccountInfo(await readCodexAccountInfo(a.id));return {...a,...info}}catch{return {...a,email:null,planType:null,authenticated:false}}
+        try{const info=flattenAccountInfo(await readCodexAccountInfo(a.id));return {...a,...info}}catch(error){return {...a,email:null,planType:null,authenticated:null,error:error instanceof Error?error.message:String(error)}}
     }));
     res.json(createApiSuccessResponse(enriched));
 }));
@@ -83,8 +87,9 @@ router.post('/codex/accounts/current', asyncHandler(async (req,res)=>{
     if (isRecoverySwitching()) throw new AppError('Account recovery is in progress.', { statusCode:409 });
     if (chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) throw new AppError('任务运行中，结束后才能切换账号。', {statusCode:409});
     if (!listCodexAccounts().some(a => a.id === req.body?.accountId)) throw new AppError('账号不存在。', {statusCode:404});
-    if (!req.body?.modeOnly) pauseRecovery();
-    res.json(createApiSuccessResponse(setSessionCodexAccountConfig(undefined,{accountId:String(req.body?.accountId||''),mode:req.body?.mode})));
+    const accountId = String(req.body?.accountId || ''), mode = req.body?.mode;
+    const config = req.body?.modeOnly ? setSessionCodexAccountConfig(undefined,{accountId,mode}) : await changeRecoveryAccount(accountId,mode);
+    res.json(createApiSuccessResponse(config));
 }));
 router.delete('/codex/accounts/:accountId', asyncHandler(async (req,res)=>{deleteCodexAccount(String(req.params.accountId));res.json(createApiSuccessResponse({deleted:true}))}));
 router.get('/codex/accounts/session/:sessionId', asyncHandler(async (req,res)=>res.json(createApiSuccessResponse(getSessionCodexAccountConfig(String(req.params.sessionId))))));
@@ -95,8 +100,7 @@ router.post('/codex/accounts/session/:sessionId', asyncHandler(async (req,res)=>
     const accountId=String(req.body?.accountId||''); const mode=req.body?.mode;
     if (isRecoverySwitching() || chatRunRegistry.listRunningRuns().some(r => r.provider === 'codex')) throw new AppError('任务运行中，结束后才能切换账号。', {statusCode:409});
     if (!listCodexAccounts().some(a => a.id === accountId)) throw new AppError('账号不存在。', {statusCode:404});
-    pauseRecovery();
-    res.json(createApiSuccessResponse(setSessionCodexAccountConfig(sessionId,{accountId,mode})));
+    res.json(createApiSuccessResponse(await changeRecoveryAccount(accountId,mode)));
 }));
 router.post('/codex/accounts/session/:sessionId/mode', asyncHandler(async (req,res)=>{
     const sessionId=String(req.params.sessionId); if(chatRunRegistry.isProcessing(sessionId))throw new AppError('任务运行中，停止后才能修改账号模式。',{code:'RUN_IN_PROGRESS',statusCode:409});
@@ -111,9 +115,8 @@ router.get('/codex/accounts/session/:sessionId/recovery-options', asyncHandler(a
 router.post('/codex/accounts/recovery', asyncHandler(async (req,res)=>{
     const { action, accountId, ticket } = req.body || {};
     checkRecoveryTicket(ticket);
-    if (action === 'schedule') await scheduleRecovery(String(accountId || ''), ticket);
+    if (action === 'schedule' || action === 'resume' || action === 'switch') await changeRecoveryAccount(String(accountId || ''), undefined, ticket);
     else if (action === 'schedule-default') await scheduleDefaultRecovery(ticket);
-    else if (action === 'resume') await recoverPendingAccounts(String(accountId || ''), ticket);
     else if (action === 'cancel') pauseRecovery();
     else throw new AppError('无效操作。', {statusCode:400});
     res.json(createApiSuccessResponse(recoveryState()));

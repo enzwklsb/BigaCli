@@ -1,11 +1,12 @@
 {
-  "version": "1.0.2",
-  "date": "2026.09.30",
+  "version": "1.1.0",
+  "date": "2026.10.02",
   "items": [
-    {"type":"FIX","text":{"zh-CN":"刷新后保留任务计时，返回页面时自动补齐已完成回复。","en-US":"Preserve elapsed task time after refresh and restore completed replies when returning to the page.","ja-JP":"再読み込み後もタスクの経過時間を維持し、画面復帰時に完了した返信を取得します。"}},
-    {"type":"FIX","text":{"zh-CN":"思考收起动画不再阻塞正文显示，修复后台返回时的回复缺失。","en-US":"Reasoning animations no longer block reply delivery after returning from the background.","ja-JP":"思考の折りたたみアニメーションが、バックグラウンドから復帰した際の返信表示を妨げないよう修正しました。"}},
-    {"type":"NEW","text":{"zh-CN":"仓库新增 npm 安装入口源码，npm 包待发布。","en-US":"Added the npm launcher source to the repository; npm publication is pending.","ja-JP":"npm インストール用のソースを追加しました。npm パッケージは公開準備中です。"}},
-    {"type":"OPT","text":{"zh-CN":"更新提示改为弹窗，按界面语言显示版本更新说明。","en-US":"The update popup shows release notes in your interface language.","ja-JP":"更新通知をポップアップに変更し、表示言語に合わせて更新内容を表示します。"}},
-    {"type":"FIX","text":{"zh-CN":"更新提示支持关闭或跳过此版本，不再反复弹出。","en-US":"Dismiss updates or skip a version without repeated prompts.","ja-JP":"更新通知を閉じたり、バージョンをスキップしたりでき、繰り返し表示されなくなりました。"}}
+    {"type":"NEW","text":{"zh-CN":"连接日常 Chrome / Edge 并沿用网站登录状态，保留独立 Chromium 备用。","en-US":"Connect everyday Chrome or Edge with existing website logins; separate Chromium remains available.","ja-JP":"普段の Chrome / Edge のログイン状態を利用。専用 Chromium も予備として利用できます。"}},
+    {"type":"NEW","text":{"zh-CN":"设置中支持 GitHub 浏览器授权、切换账号和退出登录。","en-US":"Connect GitHub from Settings with browser authorization, account switching and sign-out.","ja-JP":"設定から GitHub のブラウザー認証、アカウント切り替え、ログアウトに対応。"}},
+    {"type":"FIX","text":{"zh-CN":"切号立即生效，自动继续由预约状态控制；恢复额度后无需刷新即可正常输入。","en-US":"Account changes apply immediately; recovery follows your auto-resume choice, and restored quota unlocks the composer without refreshing.","ja-JP":"アカウント切り替えを即時反映。自動再開は予約設定に従い、利用枠回復後は再読み込みなしで入力できます。"}},
+    {"type":"FIX","text":{"zh-CN":"账号状态读取失败不再误报未登录，磁盘空间不足时明确显示错误。","en-US":"Account read failures no longer appear as signed-out accounts; disk-space failures show a clear error.","ja-JP":"アカウント情報の取得失敗を未ログインと誤表示せず、空き容量不足のエラーを明示。"}},
+    {"type":"OPT","text":{"zh-CN":"正文与思考过程平滑显示，取消思考区域高度限制，修复标点后的 Markdown 加粗。","en-US":"Smoother streamed replies and reasoning, unrestricted reasoning height, and corrected Markdown bold next to punctuation.","ja-JP":"回答と思考の表示を滑らかにし、思考欄の高さ制限を撤廃。句読点付近の Markdown 太字表示も修正。"}},
+    {"type":"OPT","text":{"zh-CN":"ZIP 与 npm 使用统一前台启动窗口；升级内置 Codex CLI / SDK 至 0.159.3。","en-US":"ZIP and npm use the same foreground service window; bundled Codex CLI and SDK updated to 0.159.3.","ja-JP":"ZIP と npm の起動を共通の前面ウィンドウに統一。内蔵 Codex CLI / SDK を 0.159.3 に更新。"}}
   ]
 }

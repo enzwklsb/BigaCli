@@ -5,9 +5,10 @@ const childProcess=require('node:child_process');
 const installer=require('../npm/install.cjs');
 const {version}=require('../package.json');
 async function main(args=process.argv.slice(2)){
+ if(args[0]==='start')args=args.slice(1);
  if(args.length===1&&['--version','-v'].includes(args[0])){console.log('BigaCli npm launcher '+version);return}
  if(args.length===1&&['--help','-h'].includes(args[0])){
-  console.log('Usage: bigacli\n\nFirst run downloads and verifies BigaCli for Windows x64.\nOpen http://localhost:3101 after startup. Update the app from Settings.\n--version shows the npm launcher version; the app version is in Settings.');return;
+  console.log('Usage: bigacli start\n\nCommands:\n  start          Start BigaCli (also the default when no command is given)\n  --help, -h     Show this help\n  --version, -v  Show the npm launcher version\n\nFirst run downloads and verifies BigaCli for Windows x64.\nOpen http://localhost:3101 after startup. Update the app from Settings.\nThe app version is shown in Settings.');return;
  }
  if(args.length)throw Error('Unknown option. Run bigacli --help.');
  if(process.platform!=='win32'||process.arch!=='x64')throw Error('BigaCli currently supports Windows x64 only.');

@@ -20,7 +20,7 @@ function writeJsonAtomic(file,value){ ensureDir(path.dirname(file)); const tmp=f
 function defaultStore(){ return {version:1,accounts:[{id:'default',label:'账号 1',codexHome:DEFAULT_HOME,isDefault:true}],sessions:{}}; }
 function loadStore(){ const s=readJson(STORE_PATH,null)||readJson(LEGACY_STORE_PATH,null)||defaultStore(); if(!Array.isArray(s.accounts))s.accounts=[]; if(!s.sessions||typeof s.sessions!=='object')s.sessions={}; if(!s.accounts.some(a=>a.id==='default'))s.accounts.unshift({id:'default',label:'账号 1',codexHome:DEFAULT_HOME,isDefault:true}); return s; }
 function saveStore(s){ writeJsonAtomic(STORE_PATH,s); }
-function copyIfExists(src,dst){ try{ if(fs.statSync(src).isFile())fs.copyFileSync(src,dst); }catch{} }
+function copyIfExists(src,dst){ try{if(!fs.statSync(src).isFile())return;const data=fs.readFileSync(src);if(fs.existsSync(dst)&&data.equals(fs.readFileSync(dst)))return;fs.writeFileSync(dst+'.tmp',data);fs.renameSync(dst+'.tmp',dst)}catch{} }
 function ensureSharedDir(profileHome,name,required=false){
   const shared=path.join(DEFAULT_HOME,name), target=path.join(profileHome,name);
   ensureDir(shared);
@@ -45,12 +45,13 @@ function prepareProfileHome(home){
   ensureDir(home);
   ensureSharedDir(home,'sessions',true);
   for(const name of ['archived_sessions','skills'])ensureSharedDir(home,name);
-  for(const file of ['config.toml','AGENTS.md','AGENTS.override.md']) copyIfExists(path.join(DEFAULT_HOME,file),path.join(home,file));
+  for(const file of ['AGENTS.md','AGENTS.override.md']) copyIfExists(path.join(DEFAULT_HOME,file),path.join(home,file));
   const configPath=path.join(home,'config.toml');
-  let config=''; try{config=fs.readFileSync(configPath,'utf8')}catch{}
+  let existing=''; try{existing=fs.readFileSync(configPath,'utf8')}catch(error){if(error.code!=='ENOENT')throw error}
+  let config=existing; try{config=fs.readFileSync(path.join(DEFAULT_HOME,'config.toml'),'utf8')}catch(error){if(error.code!=='ENOENT')throw error}
   if(/^\s*cli_auth_credentials_store\s*=/m.test(config)) config=config.replace(/^\s*cli_auth_credentials_store\s*=.*$/m,'cli_auth_credentials_store = "file"');
   else config=`cli_auth_credentials_store = "file"\n${config}`;
-  fs.writeFileSync(configPath,config,'utf8');
+  if(config!==existing){fs.writeFileSync(configPath+'.tmp',config,'utf8');fs.renameSync(configPath+'.tmp',configPath)}
   return home;
 }
 export function listCodexAccounts(){

@@ -51,6 +51,8 @@ BigaCli 是基于 [CloudCLI](https://github.com/siteboon/claudecodeui) 的 Codex
 7. **在手机上直接重置额度。** 不必回到电脑，就能查看剩余重置次数及到期时间，并在二次确认后消耗一次机会重置额度。额度查看、切号、等待恢复和重置都在同一手机工作流中完成；重置能力取决于账号实际提供的机会。
 8. **消息时间留痕。** 显示消息时间、处理过程及可获得的耗时信息，便于回看长任务和跨时段作业。
 9. **输入与附件草稿保留。** 支持上传和粘贴文件，保留文字与已保存的待发送附件草稿，刷新页面后可继续编辑。
+10. **连接日常浏览器。** 在电脑的 Chrome / Edge 安装[官方 Playwright 扩展](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)，在设置 → 连接器选择浏览器并允许连接，即可沿用网站登录状态；独立 Chromium 保留备用。
+11. **GitHub 账号管理。** 在手机或电脑浏览器完成授权，从设置 → 连接器切换账号或退出。运行 BigaCli 的电脑需先安装 [GitHub CLI](https://cli.github.com/)。
 
 <a id="quick-start"></a>
 

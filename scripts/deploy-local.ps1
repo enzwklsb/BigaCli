@@ -1,4 +1,4 @@
-param([string]$InstallRoot='C:\Users\mouke\Downloads\CodexLite_CP10')
+param([string]$InstallRoot=(Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'BigaCli-local'))
 $ErrorActionPreference='Stop'
 $repo=Split-Path $PSScriptRoot -Parent
 $version=(Get-Content (Join-Path $repo 'release.json') -Raw | ConvertFrom-Json).version
@@ -6,7 +6,7 @@ $source=Join-Path $repo "build/$version/components/app"
 $root=(Resolve-Path -LiteralPath $InstallRoot).Path
 $log=Join-Path $repo "build/$version/local-deploy.log"
 try {
- $active=Get-Content (Join-Path $root 'active.json') -Raw | ConvertFrom-Json
+ $active=Get-Content (Join-Path $root 'active.json') -Raw -Encoding UTF8 | ConvertFrom-Json
  $hashes=Get-ChildItem -LiteralPath $source -File -Recurse | Sort-Object FullName | Get-FileHash
  $sha=[Security.Cryptography.SHA256]::Create()
  try {$id=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($hashes.Hash -join '')))).Replace('-','').ToLowerInvariant()} finally {$sha.Dispose()}
@@ -27,9 +27,9 @@ try {
  $active.components.app.sha256=$id
  Stop-Process -Id $launcher.ProcessId
  Stop-Process -Id $server.ProcessId
- $active | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $root 'active.json') -Encoding utf8
- $node=Join-Path $root ('store/node/'+$active.components.node.id+'/node.exe')
- Start-Process -FilePath $node -ArgumentList 'launcher.cjs' -WorkingDirectory $root -WindowStyle Hidden
+ [IO.File]::WriteAllText((Join-Path $root 'active.json'),($active|ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)))
+ Copy-Item -LiteralPath (Join-Path $repo 'foreground.ps1') -Destination (Join-Path $root 'foreground.ps1') -Force
+ (New-Object -ComObject Shell.Application).ShellExecute('powershell.exe',('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $root 'foreground.ps1')+'" -StartService'),$root,'open',1)
  for($i=0;$i -lt 40;$i++){
   Start-Sleep -Milliseconds 500
   try {$health=Invoke-RestMethod 'http://127.0.0.1:3101/health';if($health.bigaVersion -eq $version){"PASS: 3101 running $version" | Add-Content -LiteralPath $log;exit 0}} catch {}
