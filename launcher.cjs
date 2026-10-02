@@ -1,17 +1,17 @@
-// Stable launcher: runs the selected release and installs complete changed components.
+// Stable launcher: downloads only missing target files and switches when idle.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {fork,spawn}=require('node:child_process');
-const {createHash,randomUUID}=require('node:crypto');
-const {Readable}=require('node:stream');
-const {pipeline}=require('node:stream/promises');
+const {randomUUID}=require('node:crypto');
+const updateFiles=require('./update-files.cjs');
 const root=__dirname, activeFile=path.join(root,'active.json');
 let active=JSON.parse(fs.readFileSync(activeFile)),child,busy=false;
-let state={phase:'idle',version:active.version,available:null,error:null};
+let state={phase:'idle',version:active.version,available:null,error:null,installError:null};
+try{state.installError=JSON.parse(fs.readFileSync(path.join(root,'update-failure.json'))).message;fs.rmSync(path.join(root,'update-failure.json'))}catch{}
 const componentPath=(m,k)=>path.join(root,'store',k,m.components[k].id);
 const atomic=(file,value)=>{fs.writeFileSync(file+'.tmp',JSON.stringify(value,null,2));fs.renameSync(file+'.tmp',file)};
 function validate(m){
  if(!/^\d+\.\d+\.\d+$/.test(m.version))throw Error('Invalid release version');
- for(const k of ['app','deps','node']){
+ for(const k of ['app','deps','node',...(m.components?.boot?['boot']:[])]){
   const c=m.components?.[k];
   if(!c||!/^[a-f0-9]{64}$/.test(c.id)||c.sha256!==c.id)throw Error('Invalid component: '+k);
   if(!c.url.startsWith('https://github.com/enzwklsb/BigaCli/releases/download/'))throw Error('Invalid download source');
@@ -30,22 +30,6 @@ async function check(){
  }catch(e){state.error=e.message}
  return state;
 }
-function command(exe,args){return new Promise((resolve,reject)=>{const p=spawn(exe,args,{windowsHide:true,stdio:['ignore','ignore','pipe']});let err='';p.stderr.on('data',s=>err+=s);p.on('error',reject);p.on('exit',c=>c===0?resolve():reject(Error(err||'Command failed: '+c)))})}
-async function downloadComponent(m,k){
- const c=m.components[k],target=componentPath(m,k);if(fs.existsSync(target))return;
- const downloads=path.join(root,'downloads');fs.mkdirSync(downloads,{recursive:true});
- const zip=path.join(downloads,k+'-'+c.id+'.zip');
- const r=await fetch(c.url,{signal:AbortSignal.timeout(600000)});if(!r.ok)throw Error('下载失败：HTTP '+r.status);
- const hash=createHash('sha256'),stream=Readable.fromWeb(r.body);stream.on('data',b=>hash.update(b));
- await pipeline(stream,fs.createWriteStream(zip));
- if(hash.digest('hex')!==c.sha256)throw Error('下载校验失败，请重试');
- // Windows' archive cmdlet can silently skip long dependency paths. tar.exe ships with supported Windows versions.
- const temp=path.join(downloads,'unpack-'+randomUUID());fs.mkdirSync(temp,{recursive:true});fs.mkdirSync(path.dirname(target),{recursive:true});
- await command('tar.exe',['-xf',zip,'-C',temp]);
- const entry={app:'cloudcli/dist-server/server/index.js',deps:'node_modules/@openai/codex-sdk/package.json',node:'node.exe'}[k];
- if(!fs.existsSync(path.join(temp,entry)))throw Error('更新包缺少运行文件：'+entry);
- fs.renameSync(temp,target);fs.unlinkSync(zip);
-}
 function start(m){
  const app=path.join(componentPath(m,'app'),'cloudcli'),deps=path.join(componentPath(m,'deps'),'node_modules');
  const link=path.join(app,'node_modules');
@@ -62,7 +46,7 @@ function start(m){
   else if(msg.action==='check')reply(await check());
   else if(msg.action==='install'){
    if(busy){reply(state);return}if(!state.available){reply({...state,error:'没有可安装的更新'});return}
-   busy=true;reply({...state,phase:'downloading'});void install(state.available);
+   busy=true;reply({...state,phase:'downloading',installError:null});void install(state.available);
   }
  });
 }
@@ -75,21 +59,32 @@ async function health(version){
 async function stop(){if(!child||child.exitCode!==null)return;const p=child;await new Promise(resolve=>{p.once('exit',resolve);p.kill()});}
 async function install(m){
  const previous=active;
+ const older=updateFiles.readPrevious(root);
  try{
-  state={...state,phase:'downloading',error:null};
-  for(const k of ['app','deps','node']){state.component=k;await downloadComponent(m,k)}
+  state={...state,phase:'downloading',error:null,installError:null};
+  const index=await updateFiles.loadIndex(m,root);
+  const prepared=await updateFiles.prepare(root,active,m,index,progress=>Object.assign(state,progress));
   state.phase='waiting';
   // Ask the existing server to reserve the switch only when all runs are idle.
   while(true){
    const idle=await new Promise(resolve=>{const id=randomUUID();const timer=setTimeout(()=>{child.off('message',on);resolve(false)},3000);const on=msg=>{if(msg?.type==='bigacli-idle'&&msg.id===id){clearTimeout(timer);child.off('message',on);resolve(msg.idle)}};child.on('message',on);child.send({type:'bigacli-prepare-switch',id})});
    if(idle)break;await new Promise(r=>setTimeout(r,1000));
   }
-  state.phase='restarting';await stop();atomic(path.join(root,'previous.json'),previous);atomic(activeFile,m);start(m);
+  state.phase='restarting';await stop();
+  updateFiles.promote(root,m,index,prepared.stage);
+  if(prepared.bootChanged){
+   atomic(path.join(root,'pending-update.json'),{target:m,previous,older,stage:prepared.stage});
+   const worker=spawn(process.execPath,[path.join(root,'local-start.cjs'),'--pending-update'],{cwd:root,detached:true,windowsHide:true,stdio:'ignore'});worker.unref();
+   process.exit(0);return;
+  }
+  atomic(path.join(root,'previous.json'),previous);atomic(activeFile,m);start(m);
   if(!await health(m.version))throw Error('新版启动失败');
-  active=m;state={phase:'idle',version:m.version,available:null,error:null};
+  active=m;const cleanupWarnings=updateFiles.cleanup(root,m,previous);
+  try{updateFiles.removeTree(prepared.stage,path.join(root,'downloads'))}catch(e){cleanupWarnings.push(e.message)}
+  state={phase:'idle',version:m.version,available:null,error:null,installError:null,cleanupWarning:cleanupWarnings.join('\n')};
  }catch(e){
-  if(state.phase==='restarting'){await stop();atomic(activeFile,previous);start(previous)}
-  state={phase:'idle',version:previous.version,available:m,error:e.message};
+  if(state.phase==='restarting'){await stop();atomic(activeFile,previous);if(older)atomic(path.join(root,'previous.json'),older);else fs.rmSync(path.join(root,'previous.json'),{force:true});start(previous)}
+  state={phase:'idle',version:previous.version,available:m,error:null,installError:e.message};
  }finally{busy=false}
 }
 async function main(){

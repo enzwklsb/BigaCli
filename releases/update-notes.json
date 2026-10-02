@@ -1,12 +1,54 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "date": "2026.10.02",
   "items": [
-    {"type":"NEW","text":{"zh-CN":"连接日常 Chrome / Edge 并沿用网站登录状态，保留独立 Chromium 备用。","en-US":"Connect everyday Chrome or Edge with existing website logins; separate Chromium remains available.","ja-JP":"普段の Chrome / Edge のログイン状態を利用。専用 Chromium も予備として利用できます。"}},
-    {"type":"NEW","text":{"zh-CN":"设置中支持 GitHub 浏览器授权、切换账号和退出登录。","en-US":"Connect GitHub from Settings with browser authorization, account switching and sign-out.","ja-JP":"設定から GitHub のブラウザー認証、アカウント切り替え、ログアウトに対応。"}},
-    {"type":"FIX","text":{"zh-CN":"切号立即生效，自动继续由预约状态控制；恢复额度后无需刷新即可正常输入。","en-US":"Account changes apply immediately; recovery follows your auto-resume choice, and restored quota unlocks the composer without refreshing.","ja-JP":"アカウント切り替えを即時反映。自動再開は予約設定に従い、利用枠回復後は再読み込みなしで入力できます。"}},
-    {"type":"FIX","text":{"zh-CN":"账号状态读取失败不再误报未登录，磁盘空间不足时明确显示错误。","en-US":"Account read failures no longer appear as signed-out accounts; disk-space failures show a clear error.","ja-JP":"アカウント情報の取得失敗を未ログインと誤表示せず、空き容量不足のエラーを明示。"}},
-    {"type":"OPT","text":{"zh-CN":"正文与思考过程平滑显示，取消思考区域高度限制，修复标点后的 Markdown 加粗。","en-US":"Smoother streamed replies and reasoning, unrestricted reasoning height, and corrected Markdown bold next to punctuation.","ja-JP":"回答と思考の表示を滑らかにし、思考欄の高さ制限を撤廃。句読点付近の Markdown 太字表示も修正。"}},
-    {"type":"OPT","text":{"zh-CN":"ZIP 与 npm 使用统一前台启动窗口；升级内置 Codex CLI / SDK 至 0.159.3。","en-US":"ZIP and npm use the same foreground service window; bundled Codex CLI and SDK updated to 0.159.3.","ja-JP":"ZIP と npm の起動を共通の前面ウィンドウに統一。内蔵 Codex CLI / SDK を 0.159.3 に更新。"}}
+    {
+      "type": "NEW",
+      "text": {
+        "zh-CN": "新增 Windows 桌面操作：截图、读取控件、点击和输入，权限跟随当前 Codex 会话。",
+        "en-US": "Windows desktop control: inspect, capture, click and type with permissions tied to the current Codex session.",
+        "ja-JP": "Windows の画面取得、UI 読み取り、クリック、入力に対応。権限は現在の Codex セッションに従います。"
+      }
+    },
+    {
+      "type": "OPT",
+      "text": {
+        "zh-CN": "更新仅下载新增或变化的文件，复用已有依赖，并保留上一版本供失败回退。",
+        "en-US": "Updates download only new or changed files, reuse dependencies and retain the previous version for rollback.",
+        "ja-JP": "追加・変更されたファイルのみ取得。依存関係を再利用し、失敗時に戻せるよう前版を保持します。"
+      }
+    },
+    {
+      "type": "FIX",
+      "text": {
+        "zh-CN": "改善更新临时空间占用与失败处理，新版本删除的文件不再留在新应用中。",
+        "en-US": "Improved update disk usage and failure handling; obsolete files are excluded from the new app.",
+        "ja-JP": "更新時の一時容量と失敗処理を改善。削除されたファイルを新アプリに残しません。"
+      }
+    },
+    {
+      "type": "OPT",
+      "text": {
+        "zh-CN": "权限选项读取 Codex CLI 原生配置，统一权限页样式。",
+        "en-US": "Permission choices follow native Codex CLI profiles with a consistent layout.",
+        "ja-JP": "権限候補を Codex CLI から取得し、画面の表示を統一しました。"
+      }
+    },
+    {
+      "type": "FIX",
+      "text": {
+        "zh-CN": "手动停止后保留已生成的回复，刷新后仍可查看。",
+        "en-US": "Keep partial replies after stopping, including after a page refresh.",
+        "ja-JP": "手動停止時までの回答を保持し、再読み込み後も表示します。"
+      }
+    },
+    {
+      "type": "OPT",
+      "text": {
+        "zh-CN": "模型列表独立滚动；思考文字显示期间隐藏处理中提示，停顿一秒后再显示。",
+        "en-US": "Scroll the model list independently; show the processing hint after visible reasoning pauses for one second.",
+        "ja-JP": "モデル一覧のみスクロール可能に。思考の表示中は処理中表示を隠し、1 秒停止後に表示します。"
+      }
+    }
   ]
 }

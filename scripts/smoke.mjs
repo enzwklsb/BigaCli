@@ -1,5 +1,7 @@
 // Runs the distributed package, using a fresh application database; prints no credentials.
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+const {removeTree}=createRequire(import.meta.url)('../update-files.cjs');
 const root=path.resolve(process.argv[2]),m=JSON.parse(fs.readFileSync(path.join(root,'active.json'))),port=process.env.BIGACLI_TEST_PORT||'3191';
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'bigacli-smoke-'));
 const home=path.join(temp,'home');fs.mkdirSync(home);
@@ -24,4 +26,6 @@ try{
 }finally{
  // Tell the supervisor to terminate its child through a dedicated shutdown signal.
  if(p.connected)p.send({type:'shutdown'});
+ if(p.exitCode===null)await new Promise(resolve=>p.once('exit',resolve));
+ removeTree(temp,os.tmpdir());
 }

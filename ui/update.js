@@ -32,16 +32,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!bigaBanner.classLi
 $('bigaUpdateIgnore').onclick=()=>{localStorage.setItem('bigacli-ignored-update',bigaUpdateState.available.version);closeBigaUpdate()};
 $('bigaUpdateInstall').onclick=()=>bigaStatus('install');
 function renderBigaUpdate(s){
+ const failure=s.installError||s.error;
  const available=s.available,active=s.phase!=='idle';
  const notes=available?.releaseNotes||(available?.version===bigaBundledRelease.version?bigaBundledRelease:null);
  bigaBanner.querySelector('.releaseVersion').textContent='v'+(available?.version||s.version);
  const date=bigaBanner.querySelector('time');date.textContent=notes?.date||'';date.hidden=!date.textContent;
  const list=bigaBanner.querySelector('ul');list.replaceChildren();
  for(const item of notes?.items||[]){const li=document.createElement('li'),type=document.createElement('span'),desc=document.createElement('span');type.className='releaseType';type.textContent=item.type;desc.textContent=item.text?.[BigaI18n.language]||item.text?.['zh-CN']||'';li.append(type,desc);list.append(li)}
- const status=$('bigaUpdateStatus');status.textContent=s.error||(active?({downloading:BigaI18n.t('正在下载更新，可继续聊天…'),waiting:BigaI18n.t('更新已下载，等待当前任务完成…'),restarting:BigaI18n.t('正在重启，稍后自动恢复…')}[s.phase]||s.phase):!notes?.items?.length?BigaI18n.t('此版本未提供更新说明'): '');status.hidden=!status.textContent;
+ const status=$('bigaUpdateStatus');status.textContent=failure||(active?({downloading:BigaI18n.t('正在下载更新，可继续聊天…')+(Number.isFinite(s.downloadBytes)?` (${((s.downloadedBytes||0)/1048576).toFixed(2)} / ${(s.downloadBytes/1048576).toFixed(2)} MB)`:''),waiting:BigaI18n.t('更新已下载，等待当前任务完成…'),restarting:BigaI18n.t('正在重启，稍后自动恢复…')}[s.phase]||s.phase):s.cleanupWarning||(!notes?.items?.length?BigaI18n.t('此版本未提供更新说明'): ''));status.hidden=!status.textContent;
  $('bigaUpdateClose').setAttribute('aria-label',BigaI18n.t('关闭'));
  $('bigaUpdateIgnore').textContent=BigaI18n.t('此版本不再提示');$('bigaUpdateIgnore').hidden=active||!available;
- $('bigaUpdateInstall').textContent=BigaI18n.t(s.error?'重试更新':'立即更新');$('bigaUpdateInstall').disabled=active;$('bigaUpdateInstall').hidden=!available;
+ $('bigaUpdateInstall').textContent=BigaI18n.t(s.installError?'重试更新':s.error?'检查更新':'立即更新');$('bigaUpdateInstall').disabled=active;$('bigaUpdateInstall').hidden=!available&&!s.error;
+ $('bigaUpdateInstall').onclick=()=>bigaStatus(s.error&&!s.installError?'check':'install');
 }
 async function bigaStatus(action='status'){
  try{
@@ -49,9 +51,9 @@ async function bigaStatus(action='status'){
   const r=await api('/api/bigacli/update/'+action,action==='status'?{}:{method:'POST',body:'{}'});
   const s=unwrap(r),active=s.phase!=='idle';
   if(s.appId){if(bigaLoadedAppId&&bigaLoadedAppId!==s.appId){location.reload();return}bigaLoadedAppId=s.appId}
-  if(bigaInstalling&&!active&&!s.error){location.reload();return}
+  if(bigaInstalling&&!active&&!s.error&&!s.installError){location.reload();return}
   bigaInstalling=active;bigaUpdateState=s;
-  if(!s.available&&!active){setOverlay(bigaBanner,false);if(action==='check')toast(s.error?BigaI18n.t('检查更新失败：')+s.error:BigaI18n.t('已是最新版本'));return}
+  if(!s.available&&!active&&!s.installError){setOverlay(bigaBanner,false);if(action==='check')toast(s.error?BigaI18n.t('检查更新失败：')+s.error:BigaI18n.t('已是最新版本'));return}
   renderBigaUpdate(s);
   const version=s.available?.version||'active';
   if(action!=='status'){bigaDismissedVersion=null;setOverlay(bigaBanner,true)}

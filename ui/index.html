@@ -1002,14 +1002,14 @@ html, body { background: var(--bg); color: var(--text); }
 #permissionChoices { display:flex; flex-direction:column; gap:4px; }
 .permissionCard { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:10px 12px; border:1.5px solid transparent; border-radius:10px; background:transparent; text-align:left; transition:border-color .15s cubic-bezier(.16,1,.3,1); }
 .permissionCard[aria-pressed="true"] { background:transparent; border-color:var(--text); }
-.permissionIcon { width:18px; height:18px; margin-top:1px; flex-shrink:0; }
-.permissionIcon svg { width:100%; height:100%; }
+.permissionIcon { display:flex; align-items:center; justify-content:center; width:20px; height:20px; flex-shrink:0; }
+.permissionIcon svg { display:block; width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .permissionIcon { color:var(--muted); }
 .permissionCard[aria-pressed="true"] .permissionIcon { color:var(--text); }
-.permissionMain { display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0; }
+.permissionMain { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
 .permissionInfo { flex:1; min-width:0; }
-.permissionInfo strong { display:block; font-size:13.5px; font-weight:500; line-height:1.3; }
-.permissionInfo small { display:block; margin-top:2px; font-size:11.5px; line-height:1.35; color:var(--muted); font-weight:400; }
+.permissionInfo strong { display:block; font-size:14px; font-weight:500; line-height:1.5; }
+.permissionInfo small { display:block; margin-top:3px; font-size:12px; line-height:1.5; color:var(--muted); font-weight:400; }
 .permissionCard[data-mode="bypassPermissions"] :is(.permissionIcon,.permissionInfo strong,.permissionInfo small) { color:var(--stop-color); }
 .permissionCheck { width:15px; height:15px; margin-left:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; opacity:0; transition:opacity .15s ease; }
 .permissionCard[aria-pressed="true"] .permissionCheck { opacity:1; }
@@ -1267,7 +1267,9 @@ button,[role="button"],.picker > summary { border-radius:var(--button-radius)!im
 .processBody:has(.processSteps:not(:empty),.processActivity:not([hidden]))::before { content:''; position:absolute; left:0; top:0; bottom:.2em; width:1px; background:var(--thinking-line); opacity:.4; }
 .processSteps > .msg:last-child .bubble { padding-bottom:0; }
 .processSteps > .msg:last-child .bubble > :last-child { margin-bottom:0; }
-#modelPicker .pickerPanel { scrollbar-width:none; }
+#modelPicker .pickerPanel { scrollbar-width:none; display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain; }
+#modelPicker .pickerPanel > * {flex-shrink:0;}
+#modelPicker #modelChoices {flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;}
 #modelPicker .pickerPanel::-webkit-scrollbar { display:none; }
 .messageTime,.timestamp,.status-time,.msg-meta { color:var(--timestamp-color); }
 .popupShade { position:fixed; inset:0; background:var(--popup-shade); z-index:34; }
@@ -2026,9 +2028,14 @@ function receiveChatEvent(m){
   if(streamPlaybackFrame===null)streamPlaybackFrame=requestAnimationFrame(tickStreamPlayback);
 }
 const pendingStreamRenders=new Map();let streamRenderTimer=null;
+let lastVisibleStreamAt=0,processActivityTimer=null;
+function noteVisibleStream(){
+  lastVisibleStreamAt=performance.now();clearProcessActivity();clearTimeout(processActivityTimer);
+  processActivityTimer=setTimeout(()=>{processActivityTimer=null;if(processing)ensureProcessActivityFallback()},1000);
+}
 function flushStreamRenders(){
   clearTimeout(streamRenderTimer);streamRenderTimer=null;
-  for(const [node,kind] of pendingStreamRenders){if(!node.isConnected)continue;node.innerHTML=md(node.dataset.raw||'');if(kind==='thinking')updateReasoningPreview(node,node.dataset.raw)}
+  for(const [node,kind] of pendingStreamRenders){if(!node.isConnected)continue;const raw=node.dataset.raw||'';if(node.dataset.renderedRaw!==raw){node.innerHTML=md(raw);node.dataset.renderedRaw=raw;if(raw&&!historyRenderTarget)noteVisibleStream()}if(kind==='thinking')updateReasoningPreview(node,node.dataset.raw)}
   pendingStreamRenders.clear();scrollBottom();
 }
 let historyRenderTarget=null,followLatest=true,historyState=null;
@@ -2072,7 +2079,7 @@ function ensureProcessActivityFallback(group=processGroup||turnProcessGroup){
   if(activity?.hidden)setProcessActivity();
 }
 function setProcessActivity(){
-  if(historyRenderTarget||finalReplyGateActive)return;
+  if(historyRenderTarget||finalReplyGateActive||performance.now()-lastVisibleStreamAt<1000)return;
   ensureProcessGroup();
   const activity=processGroup?.querySelector('.processActivity');if(!activity)return;
   if(!activity.hidden)return;
@@ -3318,29 +3325,36 @@ function renderHistoryMessage(m){
   if(kind==='tool_use'||m.isToolUse||m.type==='tool')return addTool(m.toolName??m.name??'Tool',m.input??m.toolInput??content,m.toolResult,m.toolId,timestamp);
   if(kind==='tool_result')return;
   if(kind==='error'||m.type==='error')return addError(content,timestamp);
-  if(kind==='text'||m.role==='assistant'||m.type==='assistant'||content)return addAssistant(content,'',timestamp,m.phase);
+  if(kind==='text'||m.role==='assistant'||m.type==='assistant'||content){const node=addAssistant(content,'',timestamp,m.phase);if(m.interrupted){const label=document.createElement('span');label.className='messageTime';label.textContent=BigaI18n.t('已停止响应');node.closest('.msg').querySelector('.messageMeta').appendChild(label)}return node;}
 }
 
-/* 模型 / 思考深度 / 权限：直接复用 CloudCLI 后端的 catalog 与 capabilities */
+/* Codex models and permission profiles come from the installed CLI. */
+let codexPermissionProfiles=null;
 async function loadProviderControls(){
   loadReplyPreference();
   const target=currentSession;
   const sid=sessionId(currentSession),p=currentProvider;
   try{
-    const [modelsResp,capsResp,activeResp]=await Promise.all([
+    const [modelsResp,capsResp,activeResp,permissionsResp]=await Promise.all([
       api(`/api/providers/${encodeURIComponent(p)}/models?${currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId):'sessionId='+encodeURIComponent(sid)}`),
       api('/api/providers/capabilities'),
-      sid?api(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`):Promise.resolve({})
+      sid?api(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`):Promise.resolve({}),
+      p==='codex'?api('/api/providers/codex/permissions?'+(currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId)+'&cwd='+encodeURIComponent(projectPath(currentProject)):'sessionId='+encodeURIComponent(sid))):Promise.resolve(null)
     ]);
     if(currentSession!==target)return;
     providerModels=unwrap(modelsResp)?.models||null;
     const caps=unwrap(capsResp)?.providers||[];
     providerCapabilities=Array.isArray(caps)?caps.find(x=>x.provider===p):null;
+    codexPermissionProfiles=p==='codex'?unwrap(permissionsResp):null;
     const active=unwrap(activeResp)||{};
     currentModel=(active.source!=='default'&&active.model)||providerModels?.DEFAULT||providerModels?.OPTIONS?.[0]?.value||'';
     currentEffort=active.effort||localStorage.getItem(`${p}-effort`)||'default';
     const validPerms=providerCapabilities?.permissionModes||(['codex'].includes(p)?['default','acceptEdits','bypassPermissions']:['default']);
     currentPermission=localStorage.getItem(`permissionMode-${sid}`)||localStorage.getItem(`permissionMode-last-${p}`)||providerCapabilities?.defaultPermissionMode||validPerms[0]||'default';
+    if(p==='codex'){
+      const saved=localStorage.getItem(`permissionMode-${sid}`)??localStorage.getItem(`permissionMode-last-${p}`);
+      currentPermission=({default:':workspace',acceptEdits:':workspace',bypassPermissions:':danger-full-access'})[saved]??saved??codexPermissionProfiles.defaultId??'';
+    }
     fillModelSelect();fillPermissionSelect();fillEffortSelect();fillSpeedSelect();
     ['modelSelect','permissionSelect'].forEach(id=>$(id).disabled=false);
   }catch(e){setStatus(BigaI18n.t("模型/权限配置读取失败：")+e.message,'bad')}
@@ -3370,6 +3384,14 @@ function fillEffortSelect(){
   s.disabled=false
 }
 function fillPermissionSelect(){
+  if(currentProvider==='codex'){
+    const s=$('permissionSelect');s.replaceChildren();
+    const profiles=codexPermissionProfiles?.data||[];
+    const labels={':read-only':BigaI18n.t("只读"),':workspace':BigaI18n.t("工作区"),':danger-full-access':BigaI18n.t("完整访问")};
+    profiles.forEach(profile=>{const o=document.createElement('option');o.value=profile.id;o.textContent=labels[profile.id]||profile.id;o.disabled=!profile.allowed;o.dataset.description=profile.description||'';s.appendChild(o)});
+    if(!profiles.some(profile=>profile.id===currentPermission&&profile.allowed))currentPermission=[codexPermissionProfiles?.defaultId,':workspace',...profiles.map(profile=>profile.id)].find(id=>profiles.some(profile=>profile.id===id&&profile.allowed))||'';
+    s.value=currentPermission;return;
+  }
   const s=$('permissionSelect'),vals=providerCapabilities?.permissionModes||['default','acceptEdits','bypassPermissions'];s.innerHTML='';
   const labels={default:BigaI18n.t("默认权限"),acceptEdits:BigaI18n.t("自动接受编辑"),bypassPermissions:BigaI18n.t("跳过权限确认"),plan:'Plan',auto:'Auto'};
   vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=labels[v]||v;s.appendChild(o)});
@@ -3457,6 +3479,7 @@ function subscribeCurrent(){if(sessionId(currentSession)&&ws?.readyState===1){co
 function setProcessing(on,text='Thinking'){
   text=BigaI18n.t(text);
   const changed=processing!==on;
+  if(changed){clearTimeout(processActivityTimer);processActivityTimer=null;if(on)lastVisibleStreamAt=0;}
   if(!on)flushStreamRenders();
   if(!on)finishProcessGroup();
   if(on&&(!turnProcessGroup||text===BigaI18n.t("正在压缩上下文")))ensureProcessGroup();
@@ -3479,6 +3502,7 @@ function setProcessing(on,text='Thinking'){
 function permissionNode(id){return document.querySelector(`[data-permission="${CSS.escape(id)}"]`)}
 function showPermission(m){
   if(!m.requestId||permissionNode(m.requestId))return;
+  if(m.toolName==='desktop_control')m={...m,toolName:BigaI18n.t('桌面操作'),input:BigaI18n.t('允许本轮任务操作电脑？操作范围包括工作区以外的应用，可能切换前台窗口。')};
   const d=document.createElement('div');d.className='permission';d.dataset.permission=m.requestId;
   d.innerHTML=("<strong>"+BigaI18n.t("权限请求：{0}",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</strong><pre>"+(esc(pretty(m.input??m.context??'')))+"</pre><div class=\"actions\"><button data-a=\"1\" class=\"primary\">"+BigaI18n.t("允许",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</button><button data-a=\"0\" class=\"danger\">"+BigaI18n.t("拒绝",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</button></div>");
   d.querySelector('[data-a="1"]').onclick=()=>permissionDecision(m.requestId,true);d.querySelector('[data-a="0"]').onclick=()=>permissionDecision(m.requestId,false);$('permissionArea').appendChild(d)
@@ -4141,11 +4165,12 @@ function syncPanelChoices(){
   $('fastModeToggle').disabled=speed.disabled||!!Array.from(speed.options).find(o=>o.value==='priority')?.disabled;
   $('speedHintText').textContent=fast?BigaI18n.t("1.5 倍速，用量增加"):BigaI18n.t("默认速度，正常用量");
   const icons={default:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',acceptEdits:'<path d="m16 3 5 5-12 12-6 1 1-6zM14 5l5 5"/>',bypassPermissions:'<path d="m12 3 10 18H2zM12 9v5m0 3v1"/>'};
-  const names={default:BigaI18n.t("默认模式"),acceptEdits:BigaI18n.t("编辑模式"),bypassPermissions:BigaI18n.t("无限制模式")},desc={default:BigaI18n.t("自动运行受信任命令，修改操作需人工确认。"),acceptEdits:BigaI18n.t("工作区内指令全自动运行，具备沙盒隔离防护。"),bypassPermissions:BigaI18n.t("全系统访问权限，跳过所有确认（请谨慎使用）。")};
+  const names={default:BigaI18n.t("默认模式"),acceptEdits:BigaI18n.t("编辑模式"),bypassPermissions:BigaI18n.t("无限制模式")},desc={default:BigaI18n.t("自动运行受信任命令，修改操作需人工确认。"),acceptEdits:BigaI18n.t("工作区内指令全自动运行，具备沙盒隔离防护。"),bypassPermissions:BigaI18n.t("全系统访问权限，跳过所有确认（请谨慎使用）。"), ':read-only':BigaI18n.t("只读访问；操作确认由 Codex 配置决定。"), ':workspace':BigaI18n.t("可写工作区；操作确认由 Codex 配置决定。"), ':danger-full-access':BigaI18n.t("解除本地沙盒限制；操作确认由 Codex 配置决定。")};
+  icons[':read-only']=icons.default;icons[':workspace']=icons.acceptEdits;icons[':danger-full-access']=icons.bypassPermissions;
   const select=$('permissionSelect'),box=$('permissionChoices');box.replaceChildren();
   $('permissionPicker').querySelector('summary svg').innerHTML=icons[select.value]||icons.default;
-  $('permissionPicker').querySelector('summary').style.color=select.value==='bypassPermissions'?'var(--stop-color)':'';
-  for(const o of select.options){const b=document.createElement('button');b.className='permissionCard';b.dataset.mode=o.value;b.disabled=select.disabled||o.disabled;b.setAttribute('aria-pressed',String(o.selected));b.innerHTML='<span class="permissionMain"><span class="permissionIcon"><svg viewBox="0 0 24 24">'+(icons[o.value]||icons.default)+'</svg></span><span class="permissionInfo"><strong>'+esc(names[o.value]||o.textContent)+'</strong><small>'+esc(desc[o.value]||BigaI18n.t("使用当前提供方的权限设置。"))+'</small></span></span><span class="permissionCheck" aria-hidden="true">✓</span>';b.onclick=e=>{e.stopPropagation();select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}))};box.appendChild(b)}
+  $('permissionPicker').querySelector('summary').style.color=['bypassPermissions',':danger-full-access'].includes(select.value)?'var(--stop-color)':'';
+  for(const o of select.options){const b=document.createElement('button');b.className='permissionCard';b.dataset.mode=o.value;b.disabled=select.disabled||o.disabled;b.setAttribute('aria-pressed',String(o.selected));b.innerHTML='<span class="permissionMain"><span class="permissionIcon"><svg viewBox="0 0 24 24">'+(icons[o.value]||icons.default)+'</svg></span><span class="permissionInfo"><strong>'+esc(names[o.value]||o.textContent)+'</strong><small>'+esc(o.disabled?BigaI18n.t("当前 Codex 配置不可用。"):(o.dataset.description||desc[o.value]||BigaI18n.t("使用当前提供方的权限设置。")))+'</small></span></span><span class="permissionCheck" aria-hidden="true">✓</span>';b.onclick=e=>{e.stopPropagation();select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}))};box.appendChild(b)}
 }
 $('fastModeToggle').onchange=()=>{$('speedSelect').value=$('fastModeToggle').checked?'priority':'default';$('speedSelect').dispatchEvent(new Event('change',{bubbles:true}))};
 const composerSelectObserver=new MutationObserver(syncComposerLabels);

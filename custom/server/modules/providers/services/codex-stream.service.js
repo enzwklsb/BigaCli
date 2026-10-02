@@ -5,8 +5,10 @@ import { AppError } from '../../../shared/utils.js';
 import { readFileSync } from 'node:fs';
 import { readCodexTranscriptLines } from './codex-transcript.service.js';
 import { spawnCodex } from './codex-command.service.js';
+import { nativePermissionId } from './codex-permissions.service.js';
 import { getReplyPreference } from '../../bigacli/preferences.service.js';
 import { browserUseService } from '../../browser-use/browser-use.service.js';
+import { createDesktopContext } from '../../desktop-use/desktop-use.service.js';
 
 // Native App Server events adapted to the existing CloudCLI runtime contract.
 const approvals = new Map();
@@ -74,6 +76,7 @@ function activityFromItem(item) {
 }
 
 export async function* streamCodexTurn(input, options, signal) {
+    const desktop = createDesktopContext();
     const proc = spawnCodex(spawn, ['app-server'], { env: options.env, cwd: options.workingDirectory, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     const lines = createInterface({ input: proc.stdout });
     const pending = new Map(), queue = [], ownedApprovals = new Set();
@@ -102,13 +105,27 @@ export async function* streamCodexTurn(input, options, signal) {
         }
         const p = m.params || {};
         if (m.id !== undefined && m.method) {
-            if (['item/commandExecution/requestApproval', 'item/fileChange/requestApproval'].includes(m.method)) {
+            const desktopElicitation = m.method === 'mcpServer/elicitation/request' && p.serverName === 'bigacli-desktop' && p.mode === 'form';
+            const nativeDesktopApproval = desktopElicitation && p._meta?.codex_approval_kind === 'mcp_tool_call';
+            const desktopApproval = nativeDesktopApproval || desktopElicitation && p.requestedSchema?.properties?.allow?.type === 'boolean';
+            if (desktopApproval && (desktop?.access() !== 'workspaceWrite' || !desktop?.canAsk())) {
+                const allow = desktop?.access() === 'dangerFullAccess';
+                send({ id: m.id, result: { action: allow ? 'accept' : 'decline', content: allow ? (nativeDesktopApproval ? {} : { allow: true }) : null } }); return;
+            }
+            if (desktopApproval && desktop?.approved()) {
+                send({ id: m.id, result: { action: 'accept', content: nativeDesktopApproval ? {} : { allow: true } } }); return;
+            }
+            if (desktopApproval || ['item/commandExecution/requestApproval', 'item/fileChange/requestApproval', 'item/permissions/requestApproval'].includes(m.method)) {
                 const requestId = randomUUID(); ownedApprovals.add(requestId);
-                approvals.set(requestId, { requestId, sessionId: options.sessionId, toolName: m.method.includes('commandExecution') ? 'command_execution' : 'file_change', input: p, receivedAt: new Date(), resolve: decision => {
-                    send({ id: m.id, result: { decision: decision.allow ? 'accept' : 'decline' } });
+                const permissionGrant = m.method === 'item/permissions/requestApproval';
+                const approvalInput = desktopApproval ? { message: p.message, scope: 'turn' } : p;
+                approvals.set(requestId, { requestId, sessionId: options.sessionId, toolName: desktopApproval ? 'desktop_control' : permissionGrant ? 'permissions' : m.method.includes('commandExecution') ? 'command_execution' : 'file_change', input: approvalInput, receivedAt: new Date(), resolve: decision => {
+                    if (signal?.aborted) decision = { allow: false };
+                    if (desktopApproval && decision.allow) desktop?.grant();
+                    send({ id: m.id, result: desktopApproval ? { action: decision.allow ? 'accept' : 'decline', content: decision.allow ? (nativeDesktopApproval ? {} : { allow: true }) : null } : permissionGrant ? { permissions: decision.allow ? p.permissions : {}, scope: 'turn' } : { decision: decision.allow ? 'accept' : 'decline' } });
                     approvals.delete(requestId); ownedApprovals.delete(requestId);
                 } });
-                message({ kind: 'permission_request', requestId, toolName: approvals.get(requestId).toolName, input: p });
+                message({ kind: 'permission_request', requestId, toolName: approvals.get(requestId).toolName, input: approvalInput });
             } else send({ id: m.id, error: { code: -32601, message: `Unsupported client request: ${m.method}` } });
             return;
         }
@@ -158,6 +175,7 @@ export async function* streamCodexTurn(input, options, signal) {
         }
     });
     const abort = async () => {
+        desktop?.close();
         const error = new Error('Codex turn aborted'); error.name = 'AbortError';
         const timer = setTimeout(() => { proc.kill(); fail(error); }, 2000);
         try { if (threadId && turnId) await request('turn/interrupt', { threadId, turnId }); } catch {} finally { clearTimeout(timer); fail(error); }
@@ -168,10 +186,10 @@ export async function* streamCodexTurn(input, options, signal) {
         await request('initialize', { clientInfo: { name: 'bigacli', title: 'BigaCli', version: '0.2.0' }, capabilities: { experimentalApi: true } });
         send({ method: 'initialized' });
         const { config } = await request('config/read', { cwd: options.workingDirectory, includeLayers: false });
-        const developerInstructions = [config.developer_instructions, agentRules].filter(Boolean).join('\n\n');
-        const params = { cwd: options.workingDirectory, model: options.model, sandbox: options.sandboxMode, approvalPolicy: options.approvalPolicy,
+        const developerInstructions = [config.developer_instructions, agentRules, desktop?.instructions].filter(Boolean).join('\n\n');
+        const params = { cwd: options.workingDirectory, model: options.model, permissions: nativePermissionId(options.permissionMode) || undefined,
             config: { model_verbosity: getReplyPreference(options.sessionId).verbosity, developer_instructions: developerInstructions,
-                'mcp_servers.bigacli-browser': browserUseService.getAgentMcpConfig() } };
+                'mcp_servers.bigacli-browser': browserUseService.getAgentMcpConfig(), ...(desktop ? { 'mcp_servers.bigacli-desktop': desktop.config } : {}) } };
         let result;
         if (options.handoff) {
             try {
@@ -193,6 +211,7 @@ export async function* streamCodexTurn(input, options, signal) {
             await options.onThreadReady?.(result.thread);
         }
         if (signal?.aborted) { const error = new Error('Codex turn aborted'); error.name = 'AbortError'; throw error; }
+        desktop?.update(result);
         threadId = result.thread.id;
         yield { type: 'thread.started', thread_id: threadId };
         const userInput = typeof input === 'string' ? [{ type: 'text', text: input }] : input.map(item => item.type === 'local_image' ? { type: 'localImage', path: item.path } : { type: 'text', text: item.text });
@@ -209,6 +228,7 @@ export async function* streamCodexTurn(input, options, signal) {
             await new Promise(resolve => { wake = resolve; });
         }
     } finally {
+        desktop?.close();
         activeTurns.delete(options.sessionId);
         signal?.removeEventListener('abort', abort);
         for (const id of ownedApprovals) approvals.delete(id);

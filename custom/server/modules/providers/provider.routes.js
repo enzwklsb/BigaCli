@@ -10,6 +10,7 @@ import { providerAuthService } from '../../modules/providers/services/provider-a
 import { readCodexRateLimits, consumeCodexRateLimitReset } from './services/codex-rate-limits.service.js';
 import { readCodexAccountInfo } from './services/codex-account-info.service.js';
 import { readCodexModelCatalog } from './services/codex-models.service.js';
+import { readCodexPermissionProfiles } from './services/codex-permissions.service.js';
 import { listCodexAccounts, createCodexAccount, deleteCodexAccount, getSessionCodexAccountConfig, setSessionCodexAccountConfig, setSessionCodexMode, recordCodexThreadAccount } from './services/codex-account.service.js';
 import { chatRunRegistry } from '../websocket/services/chat-run-registry.service.js';
 import { sessionsDb, sessionDraftsDb } from '../database/index.js';
@@ -498,6 +499,14 @@ router.get('/:provider/auth/status', asyncHandler(async (req, res) => {
     const provider = parseProvider(req.params.provider);
     const status = await providerAuthService.getProviderAuthStatus(provider);
     res.json(createApiSuccessResponse(status));
+}));
+router.get('/codex/permissions', asyncHandler(async (req, res) => {
+    const sessionId = readOptionalQueryString(req.query.sessionId);
+    const session = sessionId ? sessionsDb.getSessionById(sessionId) : null;
+    if (sessionId && (!session || session.provider !== 'codex')) throw new AppError('Codex session not found.', { code: 'SESSION_NOT_FOUND', statusCode: 404 });
+    const accountId = sessionId ? getSessionCodexAccountConfig(sessionId).currentAccountId : readOptionalQueryString(req.query.accountId) || 'default';
+    const cwd = session?.project_path || readOptionalQueryString(req.query.cwd) || process.cwd();
+    res.json(createApiSuccessResponse(await readCodexPermissionProfiles(accountId, cwd)));
 }));
 router.get('/:provider/models', asyncHandler(async (req, res) => {
     const provider = parseProvider(req.params.provider);

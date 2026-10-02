@@ -1,4 +1,5 @@
 import fsSync from 'node:fs';
+import { mergeInterruptedReplies } from '../../services/codex-interrupted.service.js';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import readline from 'node:readline';
@@ -1141,6 +1142,7 @@ async function getCodexSessionMessages(sessionId) {
             }
             messages.push({
                 type: 'assistant',
+                uuid: payload.id,
                 timestamp,
                 phase: payload.phase ?? null,
                 message: { role: 'assistant', content: textContent },
@@ -1155,6 +1157,7 @@ async function getCodexSessionMessages(sessionId) {
             if (summaryText.trim()) {
                 messages.push({
                     type: 'thinking',
+                    uuid: payload.id,
                     timestamp,
                     message: { role: 'assistant', content: summaryText },
                 });
@@ -1933,8 +1936,12 @@ export class CodexSessionsProvider {
             return { messages: [], total: 0, hasMore: false, offset: 0, limit: null };
         }
         const normalized = [];
+        const nativeSession = sessionsDb.getSessionById(sessionId);
+        mergeInterruptedReplies(sessionId, nativeSession?.provider_session_id || sessionId, result.messages);
         for (const raw of result.messages) {
-            normalized.push(...this.normalizeHistoryEntry(raw, sessionId));
+            const entries=this.normalizeHistoryEntry(raw, sessionId);
+            if(raw.interrupted)for(const entry of entries)entry.interrupted=true;
+            normalized.push(...entries);
         }
         const toolResultMap = new Map();
         for (const msg of normalized) {

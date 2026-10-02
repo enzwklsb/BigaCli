@@ -4,6 +4,8 @@ import { chatRunRegistry } from '../websocket/services/chat-run-registry.service
 export let updateSwitchPending=false;
 process.on('message',m=>{if(m?.type==='bigacli-prepare-switch'){const idle=chatRunRegistry.listRunningRuns().length===0;if(idle)updateSwitchPending=true;process.send?.({type:'bigacli-idle',id:m.id,idle})}});
 const router=express.Router();
+router.post('/reserve-switch',(req,res)=>{const idle=chatRunRegistry.listRunningRuns().length===0;if(idle)updateSwitchPending=true;res.json({idle})});
+router.post('/release-switch',(req,res)=>{updateSwitchPending=false;res.json({ok:true})});
 router.all('/:action',async(req,res)=>{
  const action=req.params.action;
  if(!['status','check','install'].includes(action)||(action!=='status'&&req.method!=='POST'))return res.sendStatus(405);

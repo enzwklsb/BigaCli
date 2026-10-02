@@ -77,13 +77,18 @@ foreach($name in @('app','deps','node')){
 }
 $json=$manifest | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText((Join-Path $assets 'release.json'),$json)
+# Reuse component ZIPs as file-level range sources. No full-package fallback in updates.
+& (Join-Path $components 'node/node.exe') (Join-Path $repo 'scripts/index-release.cjs') $assets
+if($LASTEXITCODE){throw 'File update index generation failed'}
+Copy-Item -LiteralPath (Join-Path $assets 'boot-win-x64.zip') -Destination (Join-Path $assets 'BigaCli-updater-win-x64.zip')
+$json=Get-Content (Join-Path $assets 'release.json') -Raw -Encoding UTF8
 function Write-Checksums {
  $lines=Get-ChildItem -LiteralPath $assets -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()+'  '+$_.Name }
  [IO.File]::WriteAllLines((Join-Path $assets 'SHA256SUMS.txt'),[string[]]$lines)
 }
 if($ComponentsOnly){Write-Checksums; Get-ChildItem $assets -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize; return}
 [IO.File]::WriteAllText((Join-Path $full 'active.json'),$json)
-Copy-Item start.cmd,foreground.ps1,launcher.cjs,local-start.cjs,LICENSE,README.md -Destination $full
+Copy-Item start.cmd,foreground.ps1,launcher.cjs,local-start.cjs,update-files.cjs,LICENSE,README.md -Destination $full
 $fullZip=Join-Path $assets 'BigaCli-win-x64.zip'
 & tar.exe -a -cf $fullZip -C $full .
 if($LASTEXITCODE){throw 'Could not create full package'}

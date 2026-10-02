@@ -77,4 +77,4 @@ try{
   console.log('PASS: update popup interactions; no actual install requested');
  }
  console.log('PASS: packaged page loads scripts, version '+expectedVersion+', mobile settings/report popup, three languages');
-}finally{ws?.close();browser.kill()}
+}finally{ws?.close();browser.kill();if(browser.exitCode===null)await new Promise(resolve=>browser.once('exit',resolve));try{const {removeTree}=createRequire(import.meta.url)('../update-files.cjs');removeTree(profile,os.tmpdir())}catch(error){console.warn('Browser profile cleanup: '+error.message)}}

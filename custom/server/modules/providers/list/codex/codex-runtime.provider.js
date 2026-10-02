@@ -13,6 +13,7 @@
  * - getActiveCodexSessions() - List all active sessions
  */
 import { streamCodexTurn, codexStreamPermissions } from '../../services/codex-stream.service.js';
+import { captureInterruptedPart, saveInterruptedReplies } from '../../services/codex-interrupted.service.js';
 import { recordAccountLimit } from '../../services/codex-recovery.service.js';
 import { readCodexModelCatalog } from '../../services/codex-models.service.js';
 import { buildCodexEnv, getSessionCodexAccountConfig, recordCodexThreadAccount } from '../../services/codex-account.service.js';
@@ -176,38 +177,13 @@ function transformCodexEvent(event) {
     }
 }
 /**
- * Map permission mode to Codex SDK options
- * @param {string} permissionMode - 'default', 'acceptEdits', or 'bypassPermissions'
- * @returns {object} - { sandboxMode, approvalPolicy }
- */
-function mapPermissionModeToCodexOptions(permissionMode) {
-    switch (permissionMode) {
-        case 'acceptEdits':
-            return {
-                sandboxMode: 'workspace-write',
-                approvalPolicy: 'never'
-            };
-        case 'bypassPermissions':
-            return {
-                sandboxMode: 'danger-full-access',
-                approvalPolicy: 'never'
-            };
-        case 'default':
-        default:
-            return {
-                sandboxMode: 'workspace-write',
-                approvalPolicy: 'untrusted'
-            };
-    }
-}
-/**
  * Execute a Codex query with streaming
  * @param {string} command - The prompt to send
  * @param {object} options - Options including cwd, sessionId, model, permissionMode
  * @param {WebSocket|object} ws - WebSocket connection or response writer
  */
 export async function queryCodex(command, options = {}, ws, context) {
-    const { sessionId, sessionSummary, cwd, projectPath, model, effort, images, files, permissionMode = 'default' } = options;
+    const { sessionId, sessionSummary, cwd, projectPath, model, effort, images, files, permissionMode } = options;
     const accountConfig = getSessionCodexAccountConfig(sessionId);
     const accountId = options.codexAccountId || accountConfig.currentAccountId;
     // Callers pass the stable app session id; the SDK resumes threads with the
@@ -215,7 +191,6 @@ export async function queryCodex(command, options = {}, ws, context) {
     const providerSessionId = context.resolveProviderSessionId(sessionId);
     const resolvedModel = await context.resolveResumeModel(sessionId, model);
     const workingDirectory = cwd || projectPath || process.cwd();
-    const { sandboxMode, approvalPolicy } = mapPermissionModeToCodexOptions(permissionMode);
     let codex;
     let thread;
     // Provider-native thread id (starts as the resume id, or is captured from
@@ -224,6 +199,7 @@ export async function queryCodex(command, options = {}, ws, context) {
     let sessionCreatedSent = false;
     let terminalFailure = null;
     const abortController = new AbortController();
+    const interruptedParts = new Map();
     // Session-map key: the app session id when the caller supplied one, else
     // the provider-native thread id once captured (legacy/direct API callers).
     const sessionKey = () => sessionId || capturedSessionId || null;
@@ -260,8 +236,7 @@ export async function queryCodex(command, options = {}, ws, context) {
         const threadOptions = {
             workingDirectory,
             skipGitRepoCheck: true,
-            sandboxMode,
-            approvalPolicy,
+            permissionMode,
             model: resolvedModel,
             modelReasoningEffort: resolvedEffort,
             serviceTier: options.serviceTier,
@@ -276,6 +251,7 @@ export async function queryCodex(command, options = {}, ws, context) {
                 codex,
                 status: 'running',
                 abortController,
+                saveInterrupted: () => saveInterruptedReplies(sessionKey(), capturedSessionId, interruptedParts),
                 startedAt: new Date().toISOString()
             });
         };
@@ -345,6 +321,7 @@ export async function queryCodex(command, options = {}, ws, context) {
                 continue;
             }
             if (event.type === 'normalized') {
+                captureInterruptedPart(interruptedParts, event.message);
                 sendMessage(ws, createNormalizedMessage({ ...event.message, sessionId: capturedSessionId || sessionId || null, provider: 'codex' }));
                 continue;
             }
@@ -468,6 +445,7 @@ export function abortCodexSession(sessionId) {
     if (!session) {
         return false;
     }
+    try { session.saveInterrupted?.(); } catch(error) { console.error('[Codex] Could not save interrupted reply:',error); }
     session.status = 'aborted';
     try {
         session.abortController?.abort();

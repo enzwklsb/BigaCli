@@ -3,6 +3,7 @@ cloudcli/dist/
 cloudcli/dist-server*/
 build/
 downloads/
+vendor/cua-driver/
 *.log
 .env
 **/auth.json

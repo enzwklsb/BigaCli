@@ -1,4 +1,13 @@
 {
+  "桌面操作": ["Desktop control", "デスクトップ操作"],
+  "允许本轮任务操作电脑？操作范围包括工作区以外的应用，可能切换前台窗口。": ["Allow desktop control for this turn? This includes apps outside the workspace and may bring windows to the foreground.", "このターンでパソコンの操作を許可しますか？ワークスペース外のアプリも対象となり、前面のウィンドウが切り替わる場合があります。"],
+  "只读": ["Read-only", "読み取り専用"],
+  "工作区": ["Workspace", "ワークスペース"],
+  "完整访问": ["Full access", "フルアクセス"],
+  "只读访问；操作确认由 Codex 配置决定。": ["Read-only access. Approvals follow Codex settings.", "読み取り専用。操作の承認は Codex の設定に従います。"],
+  "可写工作区；操作确认由 Codex 配置决定。": ["Workspace writes. Approvals follow Codex settings.", "ワークスペース内に書き込み可能。承認は Codex の設定に従います。"],
+  "解除本地沙盒限制；操作确认由 Codex 配置决定。": ["No local sandbox restrictions. Approvals follow Codex settings.", "ローカルのサンドボックス制限を解除。承認は Codex の設定に従います。"],
+  "当前 Codex 配置不可用。": ["Unavailable in the current Codex configuration.", "現在の Codex 設定では使用できません。"],
   "独立 Chromium（备用）": ["Separate Chromium (backup)", "専用 Chromium（予備）"],
   "使用电脑浏览器已有的登录状态。首次请在该浏览器安装扩展，并允许连接。": ["Use your computer browser’s existing logins. Install the extension in that browser and allow the first connection.", "PC ブラウザーのログイン状態を使います。初回はそのブラウザーに拡張機能を入れ、接続を許可してください。"],
   "安装浏览器扩展（电脑端）": ["Install browser extension (on PC)", "拡張機能をインストール（PC）"],
