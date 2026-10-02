@@ -1,4 +1,10 @@
 {
+  "连接 Codex 账号，然后选择或新建对话。": ["Connect a Codex account, then select or create a conversation.", "Codex アカウントを接続し、会話を選択または作成してください。"],
+  "选择或新建对话": ["Select or create a conversation", "会話を選択・作成"],
+  "请先选择或新建对话。": ["Select or create a conversation first.", "まず会話を選択または作成してください。"],
+  "查看错误详情": ["View error details", "エラーの詳細"],
+  "账号状态暂时无法读取，请重试。": ["Account status is unavailable. Please try again.", "アカウントの状態を取得できません。再試行してください。"],
+  "添加账号并登录后显示额度。": ["Add an account and sign in to view usage limits.", "アカウントを追加してログインすると、利用枠が表示されます。"],
   "桌面操作": ["Desktop control", "デスクトップ操作"],
   "允许本轮任务操作电脑？操作范围包括工作区以外的应用，可能切换前台窗口。": ["Allow desktop control for this turn? This includes apps outside the workspace and may bring windows to the foreground.", "このターンでパソコンの操作を許可しますか？ワークスペース外のアプリも対象となり、前面のウィンドウが切り替わる場合があります。"],
   "只读": ["Read-only", "読み取り専用"],

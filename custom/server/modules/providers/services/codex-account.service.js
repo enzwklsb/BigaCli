@@ -112,6 +112,6 @@ export function recordCodexThreadAccount(sessionId,accountId){
   const s=loadStore(); s.sessions[sessionId]={...s.sessions[sessionId],threadAccountId:accountId}; saveStore(s);
 }
 export function buildCodexEnv(accountId){
-  const account=getCodexAccount(accountId); if(!account)throw new Error('账号不存在'); if(!account.isDefault)prepareProfileHome(account.codexHome);
+  const account=getCodexAccount(accountId); if(!account)throw new Error('账号不存在'); if(account.isDefault)ensureDir(account.codexHome);else prepareProfileHome(account.codexHome);
   return {...process.env,CODEX_HOME:account.codexHome};
 }

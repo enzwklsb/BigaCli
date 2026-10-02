@@ -1205,6 +1205,11 @@ p,.msg-text,.sidebar-desc { font-weight:400; }
 :is(#settingsPane,#accountSwitchPane) .accountPick { height:auto; flex-direction:column; align-items:stretch; gap:8px; }
 .accountIdentity { display:flex; align-items:center; gap:8px; min-width:0; padding-right:22px; }
 .accountIdentity .accountPlan { flex-shrink:0; }
+.accountRow:has(.accountError) { flex-wrap:wrap; }
+.accountError { flex-basis:100%; width:100%; min-width:0; font-size:12px; color:var(--muted); }
+.accountError summary { cursor:pointer; }
+.accountError p { white-space:pre-wrap; overflow-wrap:anywhere; margin:8px 0; }
+.accountLimits > .small { grid-column:1/-1; }
 :is(#settingsPane,#accountSwitchPane) .accountRemove { position:absolute; top:8px; right:6px; width:26px; height:26px; }
 .accountLimits { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; }
 .accountLimitLabel { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
@@ -1361,7 +1366,7 @@ button,[role="button"],.picker > summary { border-radius:var(--button-radius)!im
 <div class="app">
   <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区" data-i18n-aria-label="打开工作区"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><button id="conversationFilesBtn" aria-label="当前对话文件" title="当前对话文件" data-i18n-title="当前对话文件" data-i18n-aria-label="当前对话文件"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg></button></div>
   <div id="permissionArea"></div>
-  <div id="chat" class="chat"><div class="small"><span data-i18n="登录后选择项目和 Session。">登录后选择项目和 Session。</span></div></div>
+  <div id="chat" class="chat"><div class="small"><p data-i18n="连接 Codex 账号，然后选择或新建对话。">连接 Codex 账号，然后选择或新建对话。</p><button id="initialAccounts" data-i18n="Codex 账号">Codex 账号</button> <button id="initialWorkspace" data-i18n="选择或新建对话">选择或新建对话</button></div></div>
 
   <div id="activity" class="activity">
     <div class="bar">
@@ -2337,11 +2342,14 @@ function renderCodexAccounts(){
     row.querySelector('.accountPick').disabled=processing;
     if(a.error){
       row.querySelector('.accountPlan').textContent=BigaI18n.t('状态读取失败');
-      const detail=document.createElement('span');detail.className='small';detail.textContent=BigaI18n.error(a.error);row.querySelector('.accountIdentity').append(detail);
+      const detail=document.createElement('details');detail.className='accountError';
+      const summary=document.createElement('summary');summary.textContent=BigaI18n.t('查看错误详情');
+      const message=document.createElement('p');message.textContent=BigaI18n.error(a.error);detail.append(summary,message);row.append(detail);
     }
     row.querySelector('.accountRemove').disabled=processing||a.isDefault;
     const q=a.quota?.quotaState||{};
-    for(const [i,used,reset] of [[0,q.usedPercent,q.resetAt],[1,q.weeklyUsedPercent,q.weeklyResetAt]]){
+    if(!a.authenticated){const hint=document.createElement('span');hint.className='small';hint.textContent=BigaI18n.t(a.error?'账号状态暂时无法读取，请重试。':'添加账号并登录后显示额度。');row.querySelector('.accountLimits').append(hint)}
+    for(const [i,used,reset] of (a.authenticated?[[0,q.usedPercent,q.resetAt],[1,q.weeklyUsedPercent,q.weeklyResetAt]]:[])){
       const unlimited=i===0&&q.fiveUnlimited,known=typeof used==='number'&&Number.isFinite(used),left=unlimited?100:known?Math.max(0,Math.min(100,100-used)):null;
       const group=document.createElement('span');group.className='accountLimit'+(left===0?' empty':'');
       group.innerHTML='<span class="accountLimitLabel"><span>'+BigaI18n.t(i?'7d 额度':'5h 额度')+'</span><span>'+esc(unlimited?BigaI18n.t('无限制'):left===null?BigaI18n.t('未知'):Math.round(left)+'%')+'</span></span><span class="accountLimitBar"><i style="width:'+(left??0)+'%"></i></span>';
@@ -3400,7 +3408,7 @@ function fillPermissionSelect(){
 async function changeModel(){
   if(!currentSession)return;const next=$('modelSelect').value,sid=sessionId(currentSession);
   const savedEffort=currentEffort;
-  $('modelSelect').disabled=true;$('effortSelect').disabled=true;syncComposerLabels();
+  $('modelSelect').dataset.saving='true';$('modelSelect').disabled=true;$('effortSelect').disabled=true;syncComposerLabels();
   try{
     if(sid)await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-model`,{method:'POST',body:JSON.stringify({model:next})});
     currentModel=next;localStorage.setItem(`${currentProvider}-model`,next);fillEffortSelect();fillSpeedSelect();
@@ -3408,16 +3416,16 @@ async function changeModel(){
     if(currentEffort){if(sid)await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-effort`,{method:'POST',body:JSON.stringify({effort:currentEffort})});localStorage.setItem(`${currentProvider}-effort`,currentEffort)}
     setStatus(BigaI18n.t("模型与思考深度已保存"),'ok')
   }catch(e){currentEffort=savedEffort;toast(BigaI18n.t("模型或深度保存失败：")+e.message);setStatus(BigaI18n.t("模型或深度保存失败：")+e.message,'bad')}
-  finally{fillModelSelect();fillEffortSelect();$('modelSelect').disabled=false;syncComposerLabels()}
+  finally{delete $('modelSelect').dataset.saving;fillModelSelect();fillEffortSelect();$('modelSelect').disabled=false;syncComposerLabels()}
 }
 async function changeEffort(){
   if(!currentSession)return;const next=$('effortSelect').value,sid=sessionId(currentSession);if(!next)return;
-  $('modelSelect').disabled=true;$('effortSelect').disabled=true;syncComposerLabels();
+  $('modelSelect').dataset.saving='true';$('modelSelect').disabled=true;$('effortSelect').disabled=true;syncComposerLabels();
   try{
     if(sid)await api(`/api/providers/${currentProvider}/sessions/${encodeURIComponent(sid)}/active-effort`,{method:'POST',body:JSON.stringify({effort:next})});
     currentEffort=next;localStorage.setItem(`${currentProvider}-effort`,next);syncComposerLabels();setStatus(BigaI18n.t("思考深度已切换"),'ok')
   }catch(e){toast(BigaI18n.t("切换思考深度失败：")+e.message);setStatus(BigaI18n.t("切换思考深度失败：")+e.message,'bad')}
-  finally{fillEffortSelect();$('modelSelect').disabled=false;syncComposerLabels()}
+  finally{delete $('modelSelect').dataset.saving;fillEffortSelect();$('modelSelect').disabled=false;syncComposerLabels()}
 }
 function changePermission(){
   currentPermission=$('permissionSelect').value;const sid=sessionId(currentSession);
@@ -3856,7 +3864,7 @@ $('queueEditorSend').onclick=async()=>{
     }
     clearInterval(state.heartbeat);queueEditorState=null;setOverlay($('queueEditor'),false,renderQueuedMessage);await refreshQueuedMessage();
   }catch(e){toast(BigaI18n.t('发送失败：')+e.message)}
-  finally{state.sending=false;sendingMessage=false;syncSendButton();$('queueEditorText').disabled=false;$('queueEditorClose').disabled=false;renderQueuedMessage()}
+  finally{state.sending=false;sendingMessage=false;setComposerEnabled(providerReadyState.ready);syncSendButton();$('queueEditorText').disabled=false;$('queueEditorClose').disabled=false;renderQueuedMessage()}
 };
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&queueEditorState){e.stopImmediatePropagation();closeQueueEditor()}},true);
 window.addEventListener('pagehide',()=>{
@@ -3904,6 +3912,7 @@ $('profileMenuBtn').onclick=()=>{
 $('profileMenu').onclick=e=>{if(e.target===$('profileMenu'))closeProfileMenu()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('profileMenu').classList.contains('hidden')){closeProfileMenu();e.stopImmediatePropagation()}});
 $('providerGateLogin').onclick=openProviderLoginGuide;$('menuBtn').onclick=openDrawer;$('scrim').onclick=closeDrawer;$('settingsBtn').onclick=()=>{closeDrawer();setOverlay($('settingsPane'),true)};$('accountsBtn').onclick=openAccountSwitch;
+$('initialAccounts').onclick=openAccountSwitch;$('initialWorkspace').onclick=openDrawer;
 function closeSettings(){closeLanguagePopup();setOverlay($('settingsPane'),false);}
 async function refreshConnections(){
   $('connectionsRefresh').disabled=true;
@@ -4135,6 +4144,7 @@ window.visualViewport?.addEventListener('resize',repositionComposerPickers);
 document.addEventListener('click',e=>{if(!$('quotaResetConfirm').contains(e.target)&&!composerPickers.some(p=>p.contains(e.target)))closeComposerPickers()});
 function syncChoiceButtons(select,id){
   const list=$(id),sliding=id==='effortChoices';
+  if(!currentSession){list.replaceChildren();const hint=document.createElement('span');hint.className='small';hint.textContent=BigaI18n.t('请先选择或新建对话。');list.append(hint);return}
   const options=Array.from(select.options),buttons=Array.from(list.querySelectorAll('button'));
   const reuse=sliding&&buttons.length===options.length&&buttons.every((b,i)=>b.textContent===options[i].textContent);
   if(!reuse)list.replaceChildren();
@@ -4152,7 +4162,8 @@ function syncChoiceButtons(select,id){
 function syncComposerLabels(){
   const model=$('modelSelect'),effort=$('effortSelect'),permission=$('permissionSelect');
   $('composerModelLabel').textContent=(model.selectedOptions[0]?.textContent||BigaI18n.t("模型"))+' · '+(effort.selectedOptions[0]?.textContent||BigaI18n.t("未返回"))+($('speedSelect').value==='priority'?' · ⚡':'');
-  if(model.disabled)$('composerModelLabel').textContent+=BigaI18n.t(" · 保存中…");
+  if(!currentSession)$('composerModelLabel').textContent=BigaI18n.t('模型');
+  else if(model.dataset.saving==='true')$('composerModelLabel').textContent+=BigaI18n.t(" · 保存中…");
   $('speedPicker').querySelector('summary').title=BigaI18n.t("账号额度");
   $('modelPicker').querySelector('summary').title=BigaI18n.t("模型：")+$('composerModelLabel').textContent+BigaI18n.t(" · 思考：")+(effort.selectedOptions[0]?.textContent||BigaI18n.t("未返回"));
   $('permissionPicker').querySelector('summary').title=BigaI18n.t("权限：")+(permission.selectedOptions[0]?.textContent||BigaI18n.t("未选择"));
@@ -4168,6 +4179,7 @@ function syncPanelChoices(){
   const names={default:BigaI18n.t("默认模式"),acceptEdits:BigaI18n.t("编辑模式"),bypassPermissions:BigaI18n.t("无限制模式")},desc={default:BigaI18n.t("自动运行受信任命令，修改操作需人工确认。"),acceptEdits:BigaI18n.t("工作区内指令全自动运行，具备沙盒隔离防护。"),bypassPermissions:BigaI18n.t("全系统访问权限，跳过所有确认（请谨慎使用）。"), ':read-only':BigaI18n.t("只读访问；操作确认由 Codex 配置决定。"), ':workspace':BigaI18n.t("可写工作区；操作确认由 Codex 配置决定。"), ':danger-full-access':BigaI18n.t("解除本地沙盒限制；操作确认由 Codex 配置决定。")};
   icons[':read-only']=icons.default;icons[':workspace']=icons.acceptEdits;icons[':danger-full-access']=icons.bypassPermissions;
   const select=$('permissionSelect'),box=$('permissionChoices');box.replaceChildren();
+  if(!currentSession){const hint=document.createElement('span');hint.className='small';hint.textContent=BigaI18n.t('请先选择或新建对话。');box.append(hint);return}
   $('permissionPicker').querySelector('summary svg').innerHTML=icons[select.value]||icons.default;
   $('permissionPicker').querySelector('summary').style.color=['bypassPermissions',':danger-full-access'].includes(select.value)?'var(--stop-color)':'';
   for(const o of select.options){const b=document.createElement('button');b.className='permissionCard';b.dataset.mode=o.value;b.disabled=select.disabled||o.disabled;b.setAttribute('aria-pressed',String(o.selected));b.innerHTML='<span class="permissionMain"><span class="permissionIcon"><svg viewBox="0 0 24 24">'+(icons[o.value]||icons.default)+'</svg></span><span class="permissionInfo"><strong>'+esc(names[o.value]||o.textContent)+'</strong><small>'+esc(o.disabled?BigaI18n.t("当前 Codex 配置不可用。"):(o.dataset.description||desc[o.value]||BigaI18n.t("使用当前提供方的权限设置。")))+'</small></span></span><span class="permissionCheck" aria-hidden="true">✓</span>';b.onclick=e=>{e.stopPropagation();select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}))};box.appendChild(b)}

@@ -1,53 +1,37 @@
 {
-  "version": "1.2.0",
-  "date": "2026.10.02",
+  "version": "1.2.1",
+  "date": "2026.10.03",
   "items": [
     {
-      "type": "NEW",
+      "type": "FIX",
       "text": {
-        "zh-CN": "新增 Windows 桌面操作：截图、读取控件、点击和输入，权限跟随当前 Codex 会话。",
-        "en-US": "Windows desktop control: inspect, capture, click and type with permissions tied to the current Codex session.",
-        "ja-JP": "Windows の画面取得、UI 読み取り、クリック、入力に対応。権限は現在の Codex セッションに従います。"
+        "zh-CN": "修复队列立即发送后输入框无法继续输入的问题。",
+        "en-US": "Fix the composer remaining disabled after sending a queued message immediately.",
+        "ja-JP": "キューを即時送信した後、入力欄を使えなくなる問題を修正。"
       }
     },
     {
       "type": "OPT",
       "text": {
-        "zh-CN": "更新仅下载新增或变化的文件，复用已有依赖，并保留上一版本供失败回退。",
-        "en-US": "Updates download only new or changed files, reuse dependencies and retain the previous version for rollback.",
-        "ja-JP": "追加・変更されたファイルのみ取得。依存関係を再利用し、失敗時に戻せるよう前版を保持します。"
+        "zh-CN": "完善初始页面和未登录提示，仅实际保存模型设置时显示保存中。",
+        "en-US": "Improve initial and signed-out screens; show saving only during model setting changes.",
+        "ja-JP": "初期画面と未ログイン表示を改善。保存中表示はモデル設定の保存時のみ表示。"
       }
     },
     {
       "type": "FIX",
       "text": {
-        "zh-CN": "改善更新临时空间占用与失败处理，新版本删除的文件不再留在新应用中。",
-        "en-US": "Improved update disk usage and failure handling; obsolete files are excluded from the new app.",
-        "ja-JP": "更新時の一時容量と失敗処理を改善。削除されたファイルを新アプリに残しません。"
+        "zh-CN": "首次使用自动创建默认账号目录，改善账号读取失败的详情布局。",
+        "en-US": "Create the default account directory on first use and improve account error details.",
+        "ja-JP": "初回利用時に既定のアカウントフォルダーを作成し、エラー詳細の表示を改善。"
       }
     },
     {
       "type": "OPT",
       "text": {
-        "zh-CN": "权限选项读取 Codex CLI 原生配置，统一权限页样式。",
-        "en-US": "Permission choices follow native Codex CLI profiles with a consistent layout.",
-        "ja-JP": "権限候補を Codex CLI から取得し、画面の表示を統一しました。"
-      }
-    },
-    {
-      "type": "FIX",
-      "text": {
-        "zh-CN": "手动停止后保留已生成的回复，刷新后仍可查看。",
-        "en-US": "Keep partial replies after stopping, including after a page refresh.",
-        "ja-JP": "手動停止時までの回答を保持し、再読み込み後も表示します。"
-      }
-    },
-    {
-      "type": "OPT",
-      "text": {
-        "zh-CN": "模型列表独立滚动；思考文字显示期间隐藏处理中提示，停顿一秒后再显示。",
-        "en-US": "Scroll the model list independently; show the processing hint after visible reasoning pauses for one second.",
-        "ja-JP": "モデル一覧のみスクロール可能に。思考の表示中は処理中表示を隠し、1 秒停止後に表示します。"
+        "zh-CN": "明确桌面操作工具对普通失败与权限拒绝的处理指导。",
+        "en-US": "Clarify desktop tool guidance for ordinary failures and permission denials.",
+        "ja-JP": "デスクトップ操作の通常の失敗と権限拒否への対応指針を明確化。"
       }
     }
   ]

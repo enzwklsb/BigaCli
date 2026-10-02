@@ -1,6 +1,10 @@
 # Desktop operation in BigaCli
 
-Use `bigacli-desktop` MCP tools for native Windows applications. Do not invoke the driver executable directly or change its permission files. The host uses the effective Codex permissions; never bypass a denial through shell, another tool, or another profile.
+Use `bigacli-desktop` MCP tools for native Windows applications. BigaCli maps the user's selected permission profile to each tool; sharing a permission profile does not make their capabilities identical. Do not invoke the driver executable directly or change its permission files.
+
+- Tools may complement each other within the user's authorized scope. An unsupported operation, application error, timeout, or unavailable browser interface does not by itself prohibit using another tool. Inspect the current state before switching tools, especially after a timeout where the first action may already have happened.
+- Distinguish an execution failure from an explicit permission or security-policy denial. For a denial, diagnose and report the enforcing layer and reason when available; do not relabel it as a capability failure or bypass it with another tool. Do not infer a permission denial from an ordinary tool error.
+- Permission changes belong to the user. Never modify BigaCli, Codex, Cua, or another tool's permission settings, approval records, or policy files to grant yourself access. Read-only remains read-only even when another tool could technically perform the write. Full access needs no additional BigaCli desktop approval, but does not override host policies or OS privileges.
 
 Before desktop work, read `vendor/skills/SKILL.md` and `vendor/skills/WINDOWS.md` relative to this file for the pinned driver's native tool contract. BigaCli owns installation and the transport lifecycle: skip upstream installation, update, autostart, recording and browser setup instructions. Use the existing browser connector for website content. No additional model API or account is needed.
 
