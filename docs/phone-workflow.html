@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Long Codex tasks, quota recovery, and a phone workflow — BigaCli</title><meta name="description" content="Set up BigaCli on Windows, connect your phone, and let paused Codex tasks wait for quota recovery and continue automatically."><link rel="canonical" href="https://enzwklsb.github.io/BigaCli/phone-workflow.html"><style>:root{color-scheme:light;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17212d;background:#f5f6f8}body{margin:0}nav,main,footer{max-width:800px;margin:auto;padding:24px}nav{display:flex;justify-content:space-between;gap:16px}a{color:#2452a1;text-underline-offset:3px}main{background:white;border-radius:16px}h1{font-size:clamp(30px,5vw,44px);line-height:1.16;letter-spacing:-1px}h2{margin-top:36px;font-size:25px}p,li{line-height:1.8}li{margin:10px 0}pre{background:#17212d;color:white;border-radius:10px;padding:18px;overflow:auto}code{font-size:14px}blockquote{margin:20px 0;padding:2px 18px;border-left:3px solid #ced7e4;background:#f7f9fc}video{width:100%;border-radius:12px}footer{font-size:13px;color:#596573}@media(max-width:600px){nav,main,footer{padding:18px}main{border-radius:0}}</style></head><body><nav><a href="./?lang=en">BigaCli / demos</a><a href="https://github.com/enzwklsb/BigaCli/releases/latest">Download for Windows</a></nav><main><h1>Let a long Codex task wait for quota, then continue — from your phone</h1>
+<p>I built BigaCli because a long-running coding task should not need someone watching a quota countdown and pressing Continue when it ends.</p>
+<p>Switching accounts helps when another signed-in account still has quota. But there is a second, less flashy case: every eligible account is exhausted. BigaCli can keep the task paused, wait for the selected account&#39;s quota to recover, check it again, and automatically continue the conversation. You can cancel automatic continuation at any time.</p>
+<p>The work runs on your own Windows PC. Your phone is a browser interface for checking progress, sending instructions, managing the queue, and opening the files the agent produces.</p>
+<p>I&#39;m the maintainer. This guide covers BigaCli v1.2.1, an open-source Codex client based on CloudCLI. It does not add quota or remove account limits. Automatic continuation also does not guarantee that an agent will finish an arbitrarily large task without questions, approvals, or other interruptions.</p>
+<h2>1. Start BigaCli on your Windows PC</h2>
+<p>Download <strong>BigaCli-win-x64.zip</strong> from the <a href="https://github.com/enzwklsb/BigaCli/releases/latest">latest GitHub release</a>. Extract it to a writable folder and run <code>start.cmd</code>. The ZIP includes the runtime, so this path does not require a separate Node.js installation.</p>
+<p>Keep the service window open, then open <code>http://localhost:3101</code> on the PC. Add your own Codex account using the account control. No accounts or credentials are included in the download. Login and any verification remain the account owner&#39;s steps.</p>
+<p>If you already use Node.js 22 or later, the alternative is:</p>
+<pre><code class="language-powershell">npm i -g bigacli
+bigacli start
+</code></pre>
+<p>The npm package is a small launcher. Its first launch downloads and verifies the matching Windows application; it is not a tiny download of the entire program. Once installed, use Settings → Check for updates for app updates.</p>
+<h2>2. Open the same workspace on your phone</h2>
+<p>On the same trusted LAN, open <code>http://YOUR-COMPUTER-LAN-IP:3101</code> in your phone&#39;s browser. <code>localhost</code> on the phone refers to the phone, not the PC.</p>
+<p>For access away from home, use your own <a href="https://tailscale.com/download">Tailscale setup</a> on both devices and open <code>http://YOUR-COMPUTER-TAILSCALE-IP:3101</code>. BigaCli does not provide a tunnel, and you do not join my network.</p>
+<p>Keep the PC awake, online, and running BigaCli. Its firewall must permit the connection. The web interface has no separate sign-in gate: use a trusted LAN or private VPN, and do not expose this port directly to the public internet.</p>
+<p>Select your project and conversation. You are controlling the same service from both devices, so you can leave the desk and reopen the task from your phone.</p>
+<h2>3. Give the task a clear finish line</h2>
+<p>For example:</p>
+<blockquote>
+<p>Review the mobile layout of this project. Fix the navigation and file-preview issues you can reproduce, run the relevant checks, and leave a short report of what changed and what still needs my input. Continue through the necessary steps until those goals are met.</p>
+</blockquote>
+<p>Use the model and permission controls appropriate to your task. A long instruction is not a way to override permissions or make every later decision automatic.</p>
+<p>While the agent works, you can queue a follow-up instead of interrupting it. Open a queued message to edit it. The top-right folder control lists files referenced or produced in the conversation, with previews and downloads for supported formats.</p>
+<h2>4. Choose how to handle quota pauses</h2>
+<p>There are two useful cases:</p>
+<ul>
+<li><strong>Another account is eligible:</strong> enable automatic account switching. BigaCli checks that the account is signed in, has available quota, and supports the selected model and reasoning level, then continues the same conversation.</li>
+<li><strong>No eligible account has quota:</strong> keep automatic continuation enabled. The task waits for the selected account&#39;s recovery instead of needing a manual click later. You can still prepare queued instructions while waiting.</li>
+</ul>
+<p>This is the feature I particularly wanted for long tasks: exhausting all accounts does not have to mean the task waits indefinitely for me to notice.</p>
+<p>It is not a pooled or unlimited quota system. Each account retains its own limits. Exhausting either the 5-hour or 7-day window can block that account, and a 5-hour reset does not help if the weekly limit is still exhausted. Unknown quota or unsupported models can also prevent automatic switching.</p>
+<p>Recovery is not promised at the exact second shown by the provider. The current implementation schedules continuation shortly after the reported recovery time and checks quota again. The PC and service must remain available for the task to resume.</p>
+<p>Cancel the recovery reservation if you want the task to remain paused. Waiting is a choice you can turn off.</p>
+<h2>5. Check results when you return</h2>
+<p>Review the conversation, inspect the changes, and open the resulting report or files on the phone. A completed agent response is still something to review before deploying or publishing your own work.</p>
+<p>If the phone cannot connect, first check that the PC can open <code>localhost:3101</code>, then check the address, network/VPN connection, firewall, and whether the PC went to sleep. If a task remains paused, check both quota windows and whether automatic continuation was cancelled; do not repeatedly reset quota as a troubleshooting step.</p>
+<p><a href="https://github.com/enzwklsb/BigaCli">Source and download</a> · <a href="https://enzwklsb.github.io/BigaCli/?lang=en">Short simulated UI demos</a></p>
+<p>The existing quota-switching videos are simulated demos using the UI, not footage of real accounts exhausting quota. They illustrate the intended interaction without consuming reset credits or publishing account information.</p>
+<p>If you try this workflow, I&#39;d especially like to hear what still sends you back to your desk: approvals, file review, queue management, or recovering a long task.</p>
+<h2>Watch the short interaction demo</h2><video controls playsinline preload="metadata" poster="media/auto-poster.png" src="media/bigacli-auto.mp4"></video><p>Simulated quota-switching UI. This clip does not show a real quota recovery.</p></main><footer>Written by the BigaCli maintainer · Guide for v1.2.1 · October 2026</footer></body></html>
