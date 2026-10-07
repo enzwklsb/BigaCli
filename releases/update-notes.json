@@ -1,37 +1,45 @@
 {
-  "version": "1.2.1",
-  "date": "2026.10.03",
+  "version": "1.3.0",
+  "date": "2026.10.08",
   "items": [
     {
-      "type": "FIX",
+      "type": "NEW",
       "text": {
-        "zh-CN": "修复队列立即发送后输入框无法继续输入的问题。",
-        "en-US": "Fix the composer remaining disabled after sending a queued message immediately.",
-        "ja-JP": "キューを即時送信した後、入力欄を使えなくなる問題を修正。"
+        "zh-CN": "手机和平板可从右上角打开电脑桌面，支持局部缩放、拖动和人工处理 Windows 授权窗口；电脑端隐藏此入口。",
+        "en-US": "Open the computer desktop from phones and tablets, with local pinch zoom, panning and manual Windows prompt interaction. The entry is hidden on desktop browsers.",
+        "ja-JP": "スマートフォンとタブレットからパソコンのデスクトップを表示。画面内の拡大・移動と Windows の確認操作に対応し、PC ブラウザーでは入口を非表示にします。"
       }
     },
     {
       "type": "OPT",
       "text": {
-        "zh-CN": "完善初始页面和未登录提示，仅实际保存模型设置时显示保存中。",
-        "en-US": "Improve initial and signed-out screens; show saving only during model setting changes.",
-        "ja-JP": "初期画面と未ログイン表示を改善。保存中表示はモデル設定の保存時のみ表示。"
+        "zh-CN": "简化权限选择页，完整访问选项统一使用红色文字和图标；权限选择逻辑保持不变。",
+        "en-US": "Simplify the permission picker and highlight full access with red text and icons, without changing permission behavior.",
+        "ja-JP": "権限選択画面を簡素化し、フルアクセスの文字とアイコンを赤色で表示。権限の動作は変更しません。"
       }
     },
     {
       "type": "FIX",
       "text": {
-        "zh-CN": "首次使用自动创建默认账号目录，改善账号读取失败的详情布局。",
-        "en-US": "Create the default account directory on first use and improve account error details.",
-        "ja-JP": "初回利用時に既定のアカウントフォルダーを作成し、エラー詳細の表示を改善。"
+        "zh-CN": "改善弱网下账号授权与新对话初始化的恢复，新对话首次发送前不显示在工作树列表。",
+        "en-US": "Improve account sign-in and draft initialization recovery on unstable networks; drafts stay out of the workspace list until the first send.",
+        "ja-JP": "不安定な通信での認証・新規会話初期化の復旧を改善。初回送信前の下書きはワークスペース一覧に表示しません。"
       }
     },
     {
-      "type": "OPT",
+      "type": "FIX",
       "text": {
-        "zh-CN": "明确桌面操作工具对普通失败与权限拒绝的处理指导。",
-        "en-US": "Clarify desktop tool guidance for ordinary failures and permission denials.",
-        "ja-JP": "デスクトップ操作の通常の失敗と権限拒否への対応指針を明確化。"
+        "zh-CN": "修复部分原生会话刷新后用户消息重复显示；所有可用账号额度耗尽时选择最早恢复额度的账号等待。",
+        "en-US": "Fix duplicate user messages after reloading some native conversations; when eligible accounts are exhausted, wait on the account with the earliest quota recovery.",
+        "ja-JP": "一部のネイティブ会話で再読み込み後に発言が重複する問題を修正。全候補の上限到達時は、最も早く利用枠が回復するアカウントで待機します。"
+      }
+    },
+    {
+      "type": "NEW",
+      "text": {
+        "zh-CN": "文件预览支持在电脑上打开或运行文件，操作成功后自动关闭预览。",
+        "en-US": "Open or run previewed files on the host computer; the preview closes after a successful request.",
+        "ja-JP": "プレビュー中のファイルをパソコンで開く・実行する操作に対応。要求が成功するとプレビューを閉じます。"
       }
     }
   ]

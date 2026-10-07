@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<script src="/i18n.js?v=20261002b"></script>
+<script src="/i18n.js?v=20261007-desktop-card"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Codex</title>
 <style>
@@ -164,6 +164,7 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .filePreview.imageMode { background:#000d; padding:48px 16px; flex-direction:column; align-items:stretch; }
 .imageMode .filePreviewHeader { position:absolute; top:max(16px,env(safe-area-inset-top)); right:16px; padding:0; border:0; }
 .imageMode #filePreviewName,.imageMode #filePreviewDownload { display:none; }
+#filePreviewOpen[hidden]{display:none!important}
 .imageMode #closeFilePreview { width:44px; height:44px; background:#18181b; color:white; border:1px solid #fff6; font-size:24px; }
 .imageMode #filePreviewBody { display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .imageMode #filePreviewBody img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:auto; }
@@ -1010,7 +1011,7 @@ html, body { background: var(--bg); color: var(--text); }
 .permissionInfo { flex:1; min-width:0; }
 .permissionInfo strong { display:block; font-size:14px; font-weight:500; line-height:1.5; }
 .permissionInfo small { display:block; margin-top:3px; font-size:12px; line-height:1.5; color:var(--muted); font-weight:400; }
-.permissionCard[data-mode="bypassPermissions"] :is(.permissionIcon,.permissionInfo strong,.permissionInfo small) { color:var(--stop-color); }
+.permissionCard:is([data-mode="bypassPermissions"],[data-mode=":danger-full-access"]) :is(.permissionIcon,.permissionInfo strong,.permissionInfo small,.permissionCheck) { color:var(--stop-color); }
 .permissionCheck { width:15px; height:15px; margin-left:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; opacity:0; transition:opacity .15s ease; }
 .permissionCard[aria-pressed="true"] .permissionCheck { opacity:1; }
 .quotaPanel { padding:14px 16px; border-radius:16px; }
@@ -1100,10 +1101,10 @@ p,.msg-text,.sidebar-desc { font-weight:400; }
 #drawer .searchSnippet { font-size:12px; font-weight:400; color:#6e6e73; }
 #conversationFilesBtn { margin-left:auto; padding:8px; border:0; background:transparent; }
 #conversationFilesPane { height:var(--drawer-height,var(--app-height)); }
-#conversationFilesPane .usageModal { width:min(380px,calc(100vw - 32px)); height:calc(var(--drawer-height,var(--app-height)) * .8); max-height:calc(var(--drawer-height,var(--app-height)) - 32px); padding:0; border:0; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; background:var(--panel); box-shadow:0 10px 30px #00000014; }
+:is(#conversationFilesPane,#remoteDesktopPanel) .usageModal { width:min(380px,calc(100vw - 32px)); height:calc(var(--drawer-height,var(--app-height)) * .8); max-height:calc(var(--drawer-height,var(--app-height)) - 32px); padding:0; border:0; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; background:var(--panel); box-shadow:0 10px 30px #00000014; }
 .conversationFilesHead { padding:16px 20px 8px; flex-shrink:0; font-size:15px; font-weight:600; }
 @media (min-width:900px) {
-  #conversationFilesPane .usageModal { width:min(560px,calc(100vw - 64px)); height:min(720px,80dvh); }
+  :is(#conversationFilesPane,#remoteDesktopPanel) .usageModal { width:min(560px,calc(100vw - 64px)); height:min(720px,80dvh); }
   .filePreview:not(.imageMode) .filePreviewPanel { width:min(1120px,88vw); height:min(840px,84dvh); }
 }
 .conversationFilesSearch { padding:6px 16px 8px; flex-shrink:0; }
@@ -1364,9 +1365,9 @@ button,[role="button"],.picker > summary { border-radius:var(--button-radius)!im
 #quotaSwitchAccount svg { width:18px; height:18px; }
 </style>
 <div class="app">
-  <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区" data-i18n-aria-label="打开工作区"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><button id="conversationFilesBtn" aria-label="当前对话文件" title="当前对话文件" data-i18n-title="当前对话文件" data-i18n-aria-label="当前对话文件"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg></button></div>
+  <div class="mainhead"><button id="menuBtn" class="menuBtn" aria-label="打开工作区" data-i18n-aria-label="打开工作区"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button><div class="headText"><div id="headTitle" class="headTitle">Codex</div></div><button id="conversationFilesBtn" aria-label="当前对话文件" title="当前对话文件" data-i18n-title="当前对话文件" data-i18n-aria-label="当前对话文件"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg></button><button id="remoteDesktopButton" hidden type="button" aria-label="电脑桌面" title="电脑桌面" data-i18n-title="电脑桌面" data-i18n-aria-label="电脑桌面"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M12 16v5M8 21h8"/></svg></button></div>
   <div id="permissionArea"></div>
-  <div id="chat" class="chat"><div class="small"><p data-i18n="连接 Codex 账号，然后选择或新建对话。">连接 Codex 账号，然后选择或新建对话。</p><button id="initialAccounts" data-i18n="Codex 账号">Codex 账号</button> <button id="initialWorkspace" data-i18n="选择或新建对话">选择或新建对话</button></div></div>
+  <div id="chat" class="chat"><div class="small"><p data-i18n="选择或新建对话，开始使用 Codex。">选择或新建对话，开始使用 Codex。</p><button id="initialAccounts" data-i18n="Codex 账号">Codex 账号</button> <button id="initialWorkspace" data-i18n="选择或新建对话">选择或新建对话</button></div></div>
 
   <div id="activity" class="activity">
     <div class="bar">
@@ -1379,6 +1380,7 @@ button,[role="button"],.picker > summary { border-radius:var(--button-radius)!im
     <div id="providerGate" class="providerGate hidden">
       <div id="providerGateText" class="gateText"></div>
       <button id="providerGateLogin" class="primary"><span data-i18n="去登录">去登录</span></button>
+      <button id="providerGateRetry" class="primary hidden"><span data-i18n="重试">重试</span></button>
     </div>
     <div id="recoveryWait" class="hidden"><span></span><button type="button"></button></div>
     <div class="inputShell">
@@ -1848,6 +1850,7 @@ button.primary:hover:not(:disabled),#sendBtn:not(:has(.stopIcon)):hover:not(:dis
     <button id="copyDeviceCode" class="code-card hidden" type="button"><span id="deviceAuthCode" class="code-text"></span><span class="code-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="点击复制验证码">点击复制验证码</span></span></button>
     <button id="openDeviceAuth" class="primary"><span data-i18n="打开验证页面 ↗">打开验证页面 ↗</span></button>
     <div id="deviceAuthState" class="small" role="status"></div>
+    <button id="retryDeviceAuth" class="hidden" type="button"><span data-i18n="重试">重试</span></button>
   </div>
 </div>
 <script src="/biga-search.js"></script>
@@ -1872,8 +1875,16 @@ async function api(path,opts={}){
   if(opts.body && !(opts.body instanceof FormData) && !h.has('Content-Type'))h.set('Content-Type','application/json');
   const r=await fetch(base()+path,{...opts,headers:h});
   const text=await r.text();let data;try{data=JSON.parse(text)}catch{data=text}
-  if(!r.ok){const message=typeof data==='string'?data:data?.error?.message||data?.message||data?.error;const error=new Error(`HTTP ${r.status}\n${typeof message==='string'?BigaI18n.error(message):JSON.stringify(data,null,2)}`);error.code=data?.error?.code||data?.code;throw error;}
+  if(!r.ok){const message=typeof data==='string'?data:data?.error?.message||data?.message||data?.error;const error=new Error(`HTTP ${r.status}\n${typeof message==='string'?BigaI18n.error(message):JSON.stringify(data,null,2)}`);error.code=data?.error?.code||data?.code;error.status=r.status;throw error;}
   return data;
+}
+function isTemporaryRequestError(error){return error instanceof TypeError||error.name==='TimeoutError'||[408,429,500,502,503,504].includes(error.status)}
+// Only repeat reads used by account/model setup; never repeat a login or message POST.
+async function readSetupApi(path){
+  for(let attempt=0;;attempt++){
+    try{return await api(path,{signal:AbortSignal.timeout(30000)})}
+    catch(error){if(attempt>=2||!isTemporaryRequestError(error))throw error;await new Promise(resolve=>setTimeout(resolve,1500*(attempt+1)))}
+  }
 }
 function unwrap(d){return d&&typeof d==='object'&&'data'in d?d.data:d}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
@@ -1919,7 +1930,8 @@ async function previewLocalFile(path,label){
     }
 
     const blob=await r.blob();
-    await openFilePreview(new File([blob],filenameOf(path),{type:blob.type}));
+    const hostPath=path.startsWith('/api/assets/files/')?null:abs?path:projectPath(currentProject).replace(/[\\/]$/,'')+'/'+path;
+    await openFilePreview(new File([blob],filenameOf(path),{type:blob.type}),null,hostPath);
   }catch(e){
     toast(BigaI18n.t("文件读取失败：")+e.message);
   }
@@ -2284,7 +2296,7 @@ function appendToolResult(msg){
 }
 function addError(c,timestamp){addAssistant(c,'error',timestamp)}
 
-let deviceAuthPollTimer=null;
+let deviceAuthPollTimer=null,deviceAuthPolling=false,authFlowProfileId='default';
 let authPopupDismissed=false;
 async function copyText(code){
 
@@ -2318,8 +2330,8 @@ async function copyText(code){
 function accountLabel(a){return a?.label||a?.email||a?.id||BigaI18n.t("Codex账号")}
 async function loadCodexAccounts(){
   try{
-    codexAccounts=unwrap(await api('/api/providers/codex/accounts'))||[];
-    currentSessionAccountConfig=unwrap(await api('/api/providers/codex/accounts/current?sessionId='+encodeURIComponent(sessionId(currentSession)||'')))||currentSessionAccountConfig;
+    codexAccounts=unwrap(await readSetupApi('/api/providers/codex/accounts'))||[];
+    currentSessionAccountConfig=unwrap(await readSetupApi('/api/providers/codex/accounts/current?sessionId='+encodeURIComponent(sessionId(currentSession)||'')))||currentSessionAccountConfig;
     selectedCodexAccountId=currentSessionAccountConfig.currentAccountId||selectedCodexAccountId||'default';
     renderCodexAccounts();
     if(!$('settingsPane').classList.contains('hidden')||!$('accountSwitchPane').classList.contains('hidden')){const accounts=codexAccounts;Promise.all(accounts.filter(a=>a.authenticated).map(async a=>{try{a.quota=unwrap(await api('/api/providers/codex/rate-limits?accountId='+encodeURIComponent(a.id)))}catch{}})).then(()=>{if(codexAccounts===accounts)renderCodexAccounts()});}
@@ -2518,7 +2530,7 @@ function bridgeHeaders(){return {'Content-Type':'application/json'}}
 async function bridgeApi(path,options={}){
   const r=await fetch(path,{...options,headers:{...bridgeHeaders(),...(options.headers||{})}});
   let d=null;try{d=await r.json()}catch{}
-  if(!r.ok)throw new Error(d?.error||d?.message||`${r.status} ${r.statusText}`);
+  if(!r.ok){const error=new Error(d?.error||d?.message||`${r.status} ${r.statusText}`);error.status=r.status;throw error;}
   return d;
 }
 function setAuthModeText(mode){
@@ -2529,6 +2541,7 @@ function setAuthModeText(mode){
 }
 function renderCodexAuthFlow(s){
   if(!s)return;
+  $('retryDeviceAuth').classList.add('hidden');
   const mode=s.mode||s.recommendedMode;
   setAuthModeText(s.recommendedMode||mode);
   const waiting=s.state==='waiting'||s.state==='starting';
@@ -2581,11 +2594,21 @@ async function refreshCodexAuth(){
   if(currentProvider==='codex'&&currentSession)checkCurrentProviderAuth({showGuide:true,accountsLoaded});
 }
 async function pollDeviceAuth(){
-  try{renderCodexAuthFlow(await bridgeApi('/bridge/codex/auth/status'))}
-  catch(e){$('deviceAuthState').textContent=BigaI18n.t("状态检查失败：")+e.message}
+  if(deviceAuthPolling)return;deviceAuthPolling=true;const profileId=authFlowProfileId;
+  try{
+    const s=await bridgeApi('/bridge/codex/auth/status',{signal:AbortSignal.timeout(30000)});
+    if(authPopupDismissed||profileId!==authFlowProfileId)return;
+    if(s.profileId!==profileId||s.state==='idle'){
+      clearInterval(deviceAuthPollTimer);deviceAuthPollTimer=null;
+      $('deviceAuthState').textContent=BigaI18n.t('尚未确认授权启动，请重试。');$('retryDeviceAuth').classList.remove('hidden');return;
+    }
+    renderCodexAuthFlow(s);
+  }catch(e){if(!authPopupDismissed&&profileId===authFlowProfileId)$('deviceAuthState').textContent=BigaI18n.t("状态检查失败：")+e.message}
+  finally{deviceAuthPolling=false}
 }
 function prepareAuthPopup(){
   authPopupDismissed=false;
+  $('retryDeviceAuth').classList.add('hidden');
   setOverlay($('deviceAuthBox'),true);
   $('authFlowHint').classList.add('hidden');
   $('deviceAuthUrl').classList.add('hidden');
@@ -2596,13 +2619,22 @@ function prepareAuthPopup(){
   $('deviceAuthState').textContent='';
 }
 async function startDeviceAuth(profileId=selectedCodexAccountId||'default'){
+  authFlowProfileId=profileId;
   prepareAuthPopup();
   try{
-    const s=await bridgeApi('/bridge/codex/auth/start',{method:'POST',body:JSON.stringify({baseUrl:base(),profileId})});
+    const s=await bridgeApi('/bridge/codex/auth/start',{method:'POST',body:JSON.stringify({baseUrl:base(),profileId}),signal:AbortSignal.timeout(30000)});
     renderCodexAuthFlow(s);
     if(!authPopupDismissed&&!deviceAuthPollTimer&&['starting','waiting'].includes(s.state))deviceAuthPollTimer=setInterval(pollDeviceAuth,1500);
-  }catch(e){$('deviceAuthState').textContent=BigaI18n.t("启动失败：")+e.message;await cleanupPendingAddedAccount()}
+  }catch(e){
+    $('deviceAuthState').textContent=BigaI18n.t("启动失败：")+e.message;
+    if(!isTemporaryRequestError(e)){await cleanupPendingAddedAccount();return;}
+    if(!authPopupDismissed){
+      if(!deviceAuthPollTimer)deviceAuthPollTimer=setInterval(pollDeviceAuth,1500);
+      pollDeviceAuth();
+    }
+  }
 }
+$('retryDeviceAuth').onclick=()=>startDeviceAuth(authFlowProfileId);
 async function cancelDeviceAuth(){
   try{renderCodexAuthFlow(await bridgeApi('/bridge/codex/auth/cancel',{method:'POST',body:JSON.stringify({baseUrl:base()})}))}
   catch(e){toast(BigaI18n.t("取消登录失败：")+e.message)}
@@ -2797,6 +2829,7 @@ function showProviderGate(message,showLogin=true){
 }
 function hideProviderGate(){
   $('providerGate').classList.add('hidden');
+  $('providerGateRetry').classList.add('hidden');
 }
 async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}){
   if(!currentSession||!currentProvider){
@@ -2805,6 +2838,7 @@ async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}
     return false;
   }
 
+  const target=currentSession;
   try{
     let x;
     if(currentProvider==='codex'){
@@ -2813,6 +2847,7 @@ async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}
       if(!a||a.error||a.authenticated===null)throw Error(a?.error||BigaI18n.t('状态读取失败'));
       x={installed:true,authenticated:a?.authenticated===true,email:a?.email,planType:a?.planType};
     }else x=unwrap(await api(`/api/providers/${encodeURIComponent(currentProvider)}/auth/status`));
+    if(currentSession!==target)return false;
     const installed=x?.installed!==false;
     const authenticated=x?.authenticated===true;
     const ready=installed&&authenticated;
@@ -2831,6 +2866,7 @@ async function checkCurrentProviderAuth({showGuide=true,accountsLoaded=false}={}
     setComposerEnabled(true);
     return true;
   }catch(e){
+    if(currentSession!==target)return false;
     providerReadyState={provider:currentProvider,checked:true,ready:false,status:null};
     if(showGuide)showProviderGate(BigaI18n.t('账号状态读取失败：{0}。请稍后重试。',BigaI18n.error(e.message)),false);
     else setComposerEnabled(false);
@@ -3034,7 +3070,6 @@ function renderProjectTree(){
     };
     row.querySelector('.icon-more-btn').onclick=e=>openWorkspaceActions(p,e.currentTarget);
     const add=document.createElement('button');add.className='sub-add';add.innerHTML=("<span style=\"font-size:15px\">+</span><span>"+BigaI18n.t("新建对话")+"</span>");add.onclick=()=>createConversation(p);children.appendChild(add);
-    if(currentSession?.__draft&&projectId(currentProject)===id){const draftRow=document.createElement('div');draftRow.className='sub-item-row active';draftRow.innerHTML=("<span class=\"sub-session truncate\">"+BigaI18n.t("新对话")+"</span>");children.appendChild(draftRow);}
     sessions.forEach(s=>{
       const item=document.createElement('div');item.className='sub-item-row'+(sessionId(currentSession)===sessionId(s)?' active':'');
       item.innerHTML=("<button class=\"sub-session truncate\">"+(esc(shortSessionTitle(recentTitle(s))))+"</button><button class=\"icon-more-btn\" aria-label=\""+BigaI18n.t("对话选项",esc(shortSessionTitle(recentTitle(s))),sidebarMoreIcon)+"\">"+(sidebarMoreIcon)+"</button>");
@@ -3165,17 +3200,31 @@ async function createConversation(project){
   saveComposerDraft();
   const draft={provider:'codex',title:BigaI18n.t("新对话"),__projectId:projectId(project),__draft:true};
   currentProject=project;currentSession=draft;currentProvider='codex';composerDraftKey='';
-  history.replaceState(history.state,'','/'+location.search);
+  history.replaceState(history.state,'','/'+location.search+'#draft='+encodeURIComponent(projectId(project)));
   $('headTitle').textContent=BigaI18n.t("新对话");clearChat();historyState=null;
   restoreComposerDraft(draft);
   pendingAccountLimit=null;setProcessing(false);disableControls();closeDrawer();hideProviderGate();
   expandedProjects.add(projectId(project));renderProjectTree();
-  currentSessionAccountConfig=unwrap(await api('/api/providers/codex/accounts/current'));
-  await loadProviderControls();
-  if(currentSession!==draft)return;
-  await checkCurrentProviderAuth({showGuide:true});
-  if(currentSession===draft)$('input').focus({preventScroll:true});
+  await initializeDraftConversation(draft);
 }
+async function initializeDraftConversation(draft){
+  if(currentSession!==draft||draft.__initializing)return;
+  draft.__initializing=true;draft.__setupFailed=false;$('providerGateRetry').classList.add('hidden');
+  try{
+    const config=unwrap(await readSetupApi('/api/providers/codex/accounts/current'));
+    if(currentSession!==draft)return;
+    currentSessionAccountConfig=config;
+    const controlsReady=await loadProviderControls();
+    if(currentSession!==draft)return;
+    if(!controlsReady)throw new Error(BigaI18n.t('模型/权限配置读取失败，请重试。'));
+    await checkCurrentProviderAuth({showGuide:true});
+    if(currentSession!==draft)return;
+    draft.__setupFailed=providerReadyState.status===null;
+    if(providerReadyState.ready)$('input').focus({preventScroll:true});
+  }catch(e){if(currentSession===draft){draft.__setupFailed=true;showProviderGate(e.message,false)}}
+  finally{draft.__initializing=false;if(currentSession===draft)$('providerGateRetry').classList.toggle('hidden',!draft.__setupFailed)}
+}
+$('providerGateRetry').onclick=()=>{if(currentSession?.__draft)initializeDraftConversation(currentSession)};
 async function materializeConversation(draft,initialMessage){
   if(!sessionId(draft)){
     const result=unwrap(await api('/api/providers/sessions',{method:'POST',body:JSON.stringify({provider:'codex',projectPath:projectPath(currentProject),initialMessage})}));
@@ -3344,10 +3393,10 @@ async function loadProviderControls(){
   const sid=sessionId(currentSession),p=currentProvider;
   try{
     const [modelsResp,capsResp,activeResp,permissionsResp]=await Promise.all([
-      api(`/api/providers/${encodeURIComponent(p)}/models?${currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId):'sessionId='+encodeURIComponent(sid)}`),
-      api('/api/providers/capabilities'),
-      sid?api(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`):Promise.resolve({}),
-      p==='codex'?api('/api/providers/codex/permissions?'+(currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId)+'&cwd='+encodeURIComponent(projectPath(currentProject)):'sessionId='+encodeURIComponent(sid))):Promise.resolve(null)
+      readSetupApi(`/api/providers/${encodeURIComponent(p)}/models?${currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId):'sessionId='+encodeURIComponent(sid)}`),
+      readSetupApi('/api/providers/capabilities'),
+      sid?readSetupApi(`/api/providers/${encodeURIComponent(p)}/sessions/${encodeURIComponent(sid)}/active-model`):Promise.resolve({}),
+      p==='codex'?readSetupApi('/api/providers/codex/permissions?'+(currentSession?.__draft?'accountId='+encodeURIComponent(currentSessionAccountConfig.currentAccountId)+'&cwd='+encodeURIComponent(projectPath(currentProject)):'sessionId='+encodeURIComponent(sid))):Promise.resolve(null)
     ]);
     if(currentSession!==target)return;
     providerModels=unwrap(modelsResp)?.models||null;
@@ -3365,7 +3414,8 @@ async function loadProviderControls(){
     }
     fillModelSelect();fillPermissionSelect();fillEffortSelect();fillSpeedSelect();
     ['modelSelect','permissionSelect'].forEach(id=>$(id).disabled=false);
-  }catch(e){setStatus(BigaI18n.t("模型/权限配置读取失败：")+e.message,'bad')}
+    return true;
+  }catch(e){if(currentSession===target)setStatus(BigaI18n.t("模型/权限配置读取失败：")+e.message,'bad');return false}
 }
 function modelLabel(value){return String(value||'').replace(/^GPT[-\s]*/i,'')}
 function fillModelSelect(){
@@ -3453,6 +3503,7 @@ function connectWs(){
 }
 function resumeChatSync(){
   if(document.hidden)return;
+  if(currentSession?.__draft&&currentSession.__setupFailed)initializeDraftConversation(currentSession);
   drainStreamPlayback();flushFinalReplyGate();flushStreamRenders();
   if(ws?.readyState===1)subscribeCurrent();else connectWs();
 }
@@ -3515,7 +3566,7 @@ function showPermission(m){
   d.innerHTML=("<strong>"+BigaI18n.t("权限请求：{0}",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</strong><pre>"+(esc(pretty(m.input??m.context??'')))+"</pre><div class=\"actions\"><button data-a=\"1\" class=\"primary\">"+BigaI18n.t("允许",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</button><button data-a=\"0\" class=\"danger\">"+BigaI18n.t("拒绝",esc(m.toolName||'Tool'),esc(pretty(m.input??m.context??'')))+"</button></div>");
   d.querySelector('[data-a="1"]').onclick=()=>permissionDecision(m.requestId,true);d.querySelector('[data-a="0"]').onclick=()=>permissionDecision(m.requestId,false);$('permissionArea').appendChild(d)
 }
-function permissionDecision(requestId,allow){sendWs({type:'chat.permission-response',requestId,allow});permissionNode(requestId)?.remove()}
+function permissionDecision(requestId,allow){if(sendWs({type:'chat.permission-response',requestId,allow}))permissionNode(requestId)?.remove();else toast(BigaI18n.t('消息尚未发送，请稍后重试'))}
 function handleEvent(m,bypassFinalGate=false){
   if(pendingChatSend&&(m.sessionId===pendingChatSend.sessionId||!m.sessionId)){
     if(m.kind==='chat_send_accepted'){pendingChatSend.finish();return}
@@ -3585,7 +3636,7 @@ function handleEvent(m,bypassFinalGate=false){
     case'stream_delta':setProcessing(true,m.messageKind==='thinking'?BigaI18n.t("思考中"):BigaI18n.t("正在回复"));renderMessageStream(m);return;
     case'stream_end':renderMessageStream(m,true);streamingEl=null;return;
     case'tool_use':setProcessing(true,'Working');addTool(m.toolName??m.name??'Tool',m.input??m.toolInput??m.content,undefined,m.toolId,m.timestamp);return;
-    case'tool_result':appendToolResult(m);return;
+    case'tool_result':appendToolResult(m);if(/blocked by policy/i.test(pretty(m)))showPolicyHandoff();return;
     case'account_limit':pendingAccountLimit={sessionId:sessionId(currentSession)};return;
     case'error':surfaceRuntimeError(m);checkCurrentProviderAuth({showGuide:true});return;
     case'permission_request':showPermission(m);setProcessing(true,'Waiting for permission');return;
@@ -3641,7 +3692,9 @@ function closeFilePreview(){
   if($('filePreview').classList.contains('hidden'))return;
   hideFilePreview();if(history.state?.bigaFilePreview)history.back();
 }
-async function openFilePreview(file,trigger){
+async function openFilePreview(file,trigger,hostPath=null){
+  $('filePreviewOpen').hidden=!hostPath;$('filePreviewOpen').disabled=false;$('filePreviewOpen').dataset.path=hostPath||'';
+  const openLabel=BigaI18n.t(/\.(cmd|bat|ps1|exe|msi)$/i.test(file.name)?'在电脑上运行':'在电脑上打开');$('filePreviewOpen').title=openLabel;$('filePreviewOpen').setAttribute('aria-label',openLabel);
   disposePreviewUI?.();disposePreviewUI=null;fileViewer?.destroy();fileViewer=null;if(previewImageUrl)URL.revokeObjectURL(previewImageUrl);previewImageUrl=null;previewFile=file;previewTrigger=trigger;$('input').blur();
   if($('filePreview').classList.contains('hidden'))history.pushState({...history.state,bigaFilePreview:true},'');
   const oldBody=$('filePreviewBody'),freshBody=document.createElement('div');freshBody.id='filePreviewBody';oldBody.replaceWith(freshBody);
@@ -3649,6 +3702,10 @@ async function openFilePreview(file,trigger){
   $('filePreview').classList.toggle('imageMode',image);setOverlay($('filePreview'),true);$('filePreviewName').textContent=file.name;$('filePreviewBody').textContent=BigaI18n.t("正在加载预览…");$('filePreviewDownload').disabled=true;$('filePreview').focus({preventScroll:true});
   if(image){const img=document.createElement('img');previewImageUrl=URL.createObjectURL(file);img.src=previewImageUrl;img.alt=file.name;$('filePreviewBody').replaceChildren(img);return;}
   try{
+    if(/\.(cmd|bat|ps1)$/i.test(file.name)){
+      const text=await file.text();if(previewFile!==file)return;
+      const pre=document.createElement('pre');pre.style.cssText='padding:16px;white-space:pre-wrap;overflow-wrap:anywhere';pre.textContent=text;$('filePreviewBody').replaceChildren(pre);$('filePreviewDownload').disabled=false;return;
+    }
     if(/\.html?$/i.test(file.name)){
       const html=await file.text();if(previewFile!==file)return;
       const frame=document.createElement('iframe');frame.title=file.name;frame.setAttribute('sandbox','allow-scripts');frame.referrerPolicy='no-referrer';frame.style.cssText='display:block;width:100%;height:100%;border:0;background:white';frame.srcdoc=html;$('filePreviewBody').replaceChildren(frame);$('filePreviewDownload').disabled=false;return;
@@ -3660,8 +3717,12 @@ async function openFilePreview(file,trigger){
     fileViewer=library.mountViewer($('filePreviewBody'),{file,filename:file.name,options:{preset,autoRenderers:false,rendererMode:'replace',toolbar:{download:false,print:false,exportHtml:false,search:false,theme:false,zoom:true},text:{toolbar:false},ui:{density:'compact',surfaceBackground:'transparent'},theme:document.documentElement.dataset.theme||'light',locale:BigaI18n.language}});
     disposePreviewUI=window.BigaPreviewUI($('filePreviewBody'));
     $('filePreviewDownload').disabled=false;
-  }catch(e){if(previewFile===file)$('filePreviewBody').textContent=BigaI18n.t("预览失败：")+e.message;}
+  }catch(e){if(previewFile===file){$('filePreviewBody').textContent=BigaI18n.t("预览失败：")+e.message;$('filePreviewDownload').disabled=false;}}
 }
+const fileOpenButton=document.createElement('button');fileOpenButton.id='filePreviewOpen';fileOpenButton.type='button';fileOpenButton.hidden=true;fileOpenButton.style.cssText='display:inline-flex;align-items:center;justify-content:center;width:32px;padding:0;background:transparent;color:var(--muted);border:0';
+fileOpenButton.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4m-3-11h6m-3-3 3 3-3 3"/></svg>';
+$('filePreviewDownload').before(fileOpenButton);
+fileOpenButton.onclick=async()=>{const filePath=fileOpenButton.dataset.path,file=previewFile;if(!filePath||fileOpenButton.disabled)return;fileOpenButton.disabled=true;try{await api('/api/file-open',{method:'POST',body:JSON.stringify({path:filePath})});if(previewFile===file)closeFilePreview();toast(BigaI18n.t('已请求在运行 BigaCli 的电脑上打开。'))}catch(error){toast(BigaI18n.t(error.message))}finally{if(fileOpenButton.dataset.path===filePath)fileOpenButton.disabled=false}};
 $('filePreviewDownload').onclick=()=>{if(fileViewer)return fileViewer.downloadOriginalFile().catch(e=>toast(BigaI18n.t("下载失败：")+e.message));if(previewFile){const url=URL.createObjectURL(previewFile),a=document.createElement('a');a.href=url;a.download=previewFile.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}};
 
 $('filePreview').onclick=e=>{if(e.target===$('filePreview'))closeFilePreview()};
@@ -3748,6 +3809,12 @@ async function sendChat(mode='normal'){
     if(currentSession===target){$('input').value='';clearSentDraft();pendingFiles=[];resizeComposerInput();streamingEl=null;scrollBottom();}
   }catch(e){toast(BigaI18n.t("发送失败：")+e.message)}
   finally{sendingMessage=false;$('attachmentBtn').disabled=false;renderPendingFiles();setComposerEnabled(providerReadyState.ready)}
+}
+function showPolicyHandoff(){
+  if($('policyHandoff'))return;
+  const sid=sessionId(currentSession),d=document.createElement('div');d.id='policyHandoff';d.className='permission';
+  const p=document.createElement('p');p.textContent=BigaI18n.t('操作被策略拒绝，未提供授权请求。可查看电脑画面；这不会解除策略限制。');
+  const b=document.createElement('button');b.textContent=BigaI18n.t('打开电脑画面');b.onclick=()=>{if(sessionId(currentSession)===sid)window.BigaDesktop?.open()};d.append(p);if(window.BigaDesktop?.available)d.append(b);$('chat').append(d);
 }
 function stopChat(){streamPlaybackStopped=true;drainStreamPlayback();if(currentSession)sendWs({type:'chat.abort',sessionId:sessionId(currentSession)})}
 function createAttachmentChip(name,image,preview){
@@ -4230,12 +4297,21 @@ document.addEventListener('keydown',e=>{
   else closeDrawer();
 });
 async function restoreCurrentConversation(){
-  const match=location.pathname.match(/^\/session\/([^/]+)\/?$/);if(!match)return;
+  const match=location.pathname.match(/^\/session\/([^/]+)\/?$/);
+  if(!match){
+    const draftProjectId=new URLSearchParams(location.hash.slice(1)).get('draft');
+    if(!draftProjectId)return;
+    const project=allProjects.find(p=>String(projectId(p))===draftProjectId);
+    if(project){try{await createConversation(project)}catch(e){toast(BigaI18n.t("无法恢复当前对话：")+e.message)}}
+    else openDrawer();
+    return;
+  }
   try{const session=unwrap(await api('/api/providers/sessions/'+encodeURIComponent(decodeURIComponent(match[1]))));await openRecentSession(session)}
   catch(e){toast(BigaI18n.t("无法恢复当前对话：")+e.message)}
 }
 connectWs();loadProjects().then(restoreCurrentConversation);
 </script>
+<script type="module" src="/remote-desktop.js?v=20261008-device-access"></script>
 </body>
 </html>
 
@@ -4263,7 +4339,7 @@ connectWs();loadProjects().then(restoreCurrentConversation);
 :root:not([data-theme="dark"]) .inputShell {box-shadow:0 2px 8px #0000000a;}
 :root:not([data-theme="dark"]) :is(.settingsCard,.pickerPanel,.authModal,.usageModal,.sessionActionSheet,.accountConfirm,.quotaConfirm,.sendMenu,.profilePopover,.filePreviewPanel,#workspaceInfo) {--bg:var(--popup-bg);background:var(--popup-bg);color:var(--text);border-color:var(--border-subtle);}
 :root:not([data-theme="dark"]) .accountConfirm {backdrop-filter:none;}
-:root:not([data-theme="dark"]) :is(#settingsPane,#accountSwitchPane) .settingsCard,:root:not([data-theme="dark"]) #languagePopup .sessionActionSheet,:root:not([data-theme="dark"]) #deviceAuthBox .authModal,:root:not([data-theme="dark"]) #conversationFilesPane .usageModal {background:var(--popup-bg);}
+:root:not([data-theme="dark"]) :is(#settingsPane,#accountSwitchPane) .settingsCard,:root:not([data-theme="dark"]) #languagePopup .sessionActionSheet,:root:not([data-theme="dark"]) #deviceAuthBox .authModal,:root:not([data-theme="dark"]) :is(#conversationFilesPane,#remoteDesktopPanel) .usageModal {background:var(--popup-bg);}
 :root:not([data-theme="dark"]) #settingsPane :is(.row-label,.section-title),:root:not([data-theme="dark"]) #settingsPane #settingsTitle {color:var(--text);}
 :root:not([data-theme="dark"]) #settingsPane :is(.section-desc,.small,.footer-links>span) {color:var(--muted);}
 :root:not([data-theme="dark"]) #settingsPane .divider {background:var(--border-subtle);}

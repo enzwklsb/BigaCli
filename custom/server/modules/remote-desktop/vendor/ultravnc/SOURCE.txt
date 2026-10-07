@@ -1,0 +1,7 @@
+Unmodified UltraVNC 1.8.3.0 x64 runtime (winvnc.exe, vnchooks.dll, ddengine64.dll).
+Upstream: https://github.com/ultravnc/UltraVNC
+Release and corresponding source downloads: https://uvnc.com/downloads/ultravnc/172-ultravnc-1-8-3-0.html
+Binary archive: https://uvnc.eu/download/1800/UltraVNC_1830.zip
+Archive SHA-256: 11163a0b9b86321bf6403eb0cf84b81f7230ce32e6291377e1fe5beb987f7e4f
+License: see LICENSE.txt and upstream component source notices.
+noVNC 1.7.0 is distributed separately in ../novnc with its original license notices.

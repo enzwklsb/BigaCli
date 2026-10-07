@@ -145,6 +145,7 @@ class CodexAuthManager {
   }
 
   cancel() {
+    if (this.state === 'success') return this.snapshot();
     if (this.proc && this.proc.exitCode === null && this.loginId) {
       writeJson(this.proc, { id: CANCEL_ID, method: 'account/login/cancel', params: { loginId: this.loginId } });
     }

@@ -38,7 +38,7 @@ export async function readCodexPermissionProfiles(accountId, cwd) {
             data.push(...page.data); cursor = page.nextCursor;
         } while (cursor);
         const { config } = await request('config/read', { cwd, includeLayers: false });
-        return { data, defaultId: config.default_permissions || null };
+        return { data, defaultId: config.default_permissions || null, approvalPolicy: config.approval_policy ?? null, approvalsReviewer: config.approvals_reviewer ?? null };
     } finally {
         clearTimeout(timer); lines.close(); proc.stdin.end(); proc.kill();
     }

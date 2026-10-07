@@ -179,8 +179,13 @@ export async function recoverPendingAccounts(accountId, ticket) {
     const eligible = accounts.filter(a => a.authenticated && a.compatible && a.quotaKnown && !a.limited && (a.usedPercent == null || a.usedPercent < 100) && a.weeklyUsedPercent < 100);
     const pick = accountId ? eligible.find(a => a.id === accountId) : eligible.filter(a => !tried.has(a.id)).sort((a,b) => Math.max(a.usedPercent||0,a.weeklyUsedPercent)-Math.max(b.usedPercent||0,b.weeklyUsedPercent))[0];
     if (!pick) {
-      const targetId = accountId || config.currentAccountId;
+      const earliest = !accountId && config.mode === 'auto' && !eligible.length
+        ? accounts.filter(a => a.authenticated && a.compatible && a.quotaKnown && !a.limited
+          && (a.usedPercent >= 100 || a.weeklyUsedPercent >= 100) && Number.isFinite(a.availableAt) && a.availableAt > 0)
+          .sort((a,b) => a.availableAt - b.availableAt)[0] : null;
+      const targetId = accountId || earliest?.id || config.currentAccountId;
       const account = accounts.find(a => a.id === targetId);
+      if (earliest && targetId !== config.currentAccountId) setSessionCodexAccountConfig(undefined, { accountId: targetId });
       const waiting = { accountId: targetId, label: account?.email || account?.label || targetId, at: account?.availableAt ? Math.max(Date.now(), account.availableAt) + 60000 : null };
       for (const p of Object.values(pending)) {
         const autoContinue = !!p.appointment || !p.paused;

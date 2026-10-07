@@ -3,6 +3,8 @@
 import './load-env.js';
 import bigaUpdateRoutes from './modules/bigacli/update.routes.js';
 import githubRoutes from './modules/github/github.routes.js';
+import fileOpenRoutes from './modules/file-open/file-open.routes.js';
+import {remoteDesktopRoutes,handleRemoteDesktop} from './modules/remote-desktop/remote-desktop.js';
 import { createCodexAuthBridgeRouter } from './modules/codex-shell/codex-auth-bridge.routes.js';
 import fs, { promises as fsPromises } from 'fs';
 import path from 'path';
@@ -96,6 +98,7 @@ createWebSocketServer(server, {
         },
     },
     getPluginPort,
+    handleRemoteDesktop,
 });
 app.use(cors({ exposedHeaders: ['X-Refreshed-Token', 'X-Auth-Error'] }));
 app.use(express.json({
@@ -140,6 +143,7 @@ app.get('/api/file-tree/local-file/content', authenticateToken, (req, res, next)
     });
 });
 app.use('/api/file-tree', authenticateToken, fileTreeRoutes);
+app.use('/api/file-open', authenticateToken, fileOpenRoutes);
 // Projects API Routes (protected)
 app.use('/api/projects', authenticateToken, projectModuleRoutes);
 // Chat attachment upload/serving (global ~/.cloudcli/assets store, protected)
@@ -157,6 +161,7 @@ app.use('/api/settings', authenticateToken, settingsRoutes);
 app.use('/api/system', authenticateToken, systemRoutes);
 app.use('/api/bigacli/update', authenticateToken, bigaUpdateRoutes);
 app.use('/api/github', authenticateToken, githubRoutes);
+app.use('/api/remote-desktop', authenticateToken, remoteDesktopRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 // User API Routes (protected)
 app.use('/api/user', authenticateToken, userRoutes);

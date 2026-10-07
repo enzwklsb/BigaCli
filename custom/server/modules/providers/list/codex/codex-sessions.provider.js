@@ -979,6 +979,7 @@ async function getCodexSessionMessages(sessionId) {
     const turns = createCodexTurnTracker();
     /** Turns whose prompt already carries the anchor, so only the first does. */
     const anchoredTurnIds = new Set();
+    let pendingUserRecord = null;
     const rl = readCodexTranscriptLines(sessionFilePath);
     /** Emits a tool_result row unless the call already produced one. */
     const pushToolResult = (callId, timestamp, output, isError) => {
@@ -1004,6 +1005,24 @@ async function getCodexSessionMessages(sessionId) {
             continue;
         }
         const timestamp = typeof entry.timestamp === 'string' ? entry.timestamp : new Date().toISOString();
+        // Some rollouts write the same input as adjacent response/event records.
+        // Pair only opposite sources in the same turn, once per input. Keep the
+        // event representation: it carries local images and first-prompt anchors.
+        const previousUserRecord = pendingUserRecord;
+        pendingUserRecord = null;
+        const pushUserRecord = (message, turnId) => {
+            const text = extractCodexTextContent(message.message.content);
+            if (turnId && previousUserRecord?.turnId === turnId
+                && previousUserRecord.source !== entry.type && previousUserRecord.text === text) {
+                if (entry.type === 'event_msg') {
+                    delete previousUserRecord.message.turnId;
+                    Object.assign(previousUserRecord.message, message);
+                }
+                return;
+            }
+            messages.push(message);
+            pendingUserRecord = { source: entry.type, turnId, text, message };
+        };
         // Before the type-specific branches: a turn is opened and closed by rows
         // that produce no transcript entry of their own, and each of those
         // branches ends in a `continue`.
@@ -1092,13 +1111,13 @@ async function getCodexSessionMessages(sessionId) {
                 if (isFirstPromptOfTurn) {
                     anchoredTurnIds.add(turnId);
                 }
-                messages.push({
+                pushUserRecord({
                     type: 'user',
                     timestamp,
                     message: { role: 'user', content: payload.message },
                     images: extractCodexUserImages(payload),
                     ...(isFirstPromptOfTurn ? { turnId } : {}),
-                });
+                }, turnId);
             }
             continue;
         }
@@ -1115,8 +1134,8 @@ async function getCodexSessionMessages(sessionId) {
                 ? payload.content.filter((part, index) => kinds[index]?.startsWith('user.')) : [];
             if (content.length) {
                 const turnId = metadata.turn_id || turns.getCurrentTurnId();
-                messages.push({ type: 'user', timestamp, message: { role: 'user', content },
-                    ...(turnId ? { turnId } : {}) });
+                pushUserRecord({ type: 'user', timestamp, message: { role: 'user', content },
+                    ...(turnId ? { turnId } : {}) }, turnId);
             }
             continue;
         }

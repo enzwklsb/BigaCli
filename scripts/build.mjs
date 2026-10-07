@@ -22,6 +22,7 @@ fs.copyFileSync('docs/BIGACLI_AGENT_RULES.md',path.join(out,'dist-server/server/
 fs.copyFileSync('cloudcli/package.json',path.join(out,'package.json'));
 fs.cpSync('ui/vendor',path.join(out,'dist/vendor'),{recursive:true});
 fs.copyFileSync('ui/preview-ui.js',path.join(out,'dist/preview-ui.js'));
+fs.copyFileSync('ui/remote-desktop.js',path.join(out,'dist/remote-desktop.js'));
 fs.writeFileSync(path.join(out,'dist/i18n.js'),'window.BIGA_TRANSLATIONS='+fs.readFileSync('ui/locales.json','utf8')+';\n'+fs.readFileSync('ui/i18n.js','utf8'));
 for(const file of ['LICENSE','NOTICE'])if(fs.existsSync('cloudcli/'+file))fs.copyFileSync('cloudcli/'+file,path.join(out,file));
 const update=fs.readFileSync('ui/update.js','utf8').replaceAll('__BIGA_VERSION__',config.version).replace('__BIGA_RELEASE_NOTES__',JSON.stringify(JSON.parse(fs.readFileSync('releases/update-notes.json','utf8'))).replaceAll('<','\\u003c'));

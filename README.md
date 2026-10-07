@@ -40,6 +40,8 @@ The features below describe the current repository. Older downloads may not incl
 
 ## Features
 
+**New in 1.3.0:** phones and tablets can open the Windows desktop from the monitor icon beside the conversation files button. Pinch and pan the local viewer, interact with the desktop, and tap outside the card to disconnect. Initial enablement requires approval on the PC. Desktop browsers hide this entry. See the [release notes](https://github.com/enzwklsb/BigaCli/releases/tag/v1.3.0) for network recovery and conversation fixes.
+
 1. **Continue across accounts.** Manage independently signed-in Codex accounts and resume within the same conversation, without copying context manually.
 2. **Recover from quota limits.** Switch to an eligible account automatically or wait for quota to recover, including multiple paused conversations. Keep typing and queuing messages while waiting.
 3. **Concise, task-focused communication.** Preset agent instructions favor clear results and the smallest sufficient changes. The concise-response setting controls answer detail.
