@@ -1,45 +1,29 @@
 {
-  "version": "1.3.0",
-  "date": "2026.10.08",
+  "version": "1.3.1",
+  "date": "2026.10.13",
   "items": [
-    {
-      "type": "NEW",
-      "text": {
-        "zh-CN": "手机和平板可从右上角打开电脑桌面，支持局部缩放、拖动和人工处理 Windows 授权窗口；电脑端隐藏此入口。",
-        "en-US": "Open the computer desktop from phones and tablets, with local pinch zoom, panning and manual Windows prompt interaction. The entry is hidden on desktop browsers.",
-        "ja-JP": "スマートフォンとタブレットからパソコンのデスクトップを表示。画面内の拡大・移動と Windows の確認操作に対応し、PC ブラウザーでは入口を非表示にします。"
-      }
-    },
     {
       "type": "OPT",
       "text": {
-        "zh-CN": "简化权限选择页，完整访问选项统一使用红色文字和图标；权限选择逻辑保持不变。",
-        "en-US": "Simplify the permission picker and highlight full access with red text and icons, without changing permission behavior.",
-        "ja-JP": "権限選択画面を簡素化し、フルアクセスの文字とアイコンを赤色で表示。権限の動作は変更しません。"
+        "zh-CN": "点击文件立即打开预览并显示读取状态；超过 20 MB 的文件不自动预览，仍可下载或在电脑上打开。关闭或切换预览时取消原加载。",
+        "en-US": "File previews open immediately with a loading indicator. Files over 20 MB skip preview and remain available to download or open on the computer. Closing or switching previews cancels the previous load.",
+        "ja-JP": "ファイルを押すとすぐにプレビューを開き、読み込み状態を表示します。20 MB を超えるファイルはプレビューせず、ダウンロードやパソコンで開く操作を利用できます。閉じる・切り替える際は元の読み込みを中止します。"
       }
     },
     {
       "type": "FIX",
       "text": {
-        "zh-CN": "改善弱网下账号授权与新对话初始化的恢复，新对话首次发送前不显示在工作树列表。",
-        "en-US": "Improve account sign-in and draft initialization recovery on unstable networks; drafts stay out of the workspace list until the first send.",
-        "ja-JP": "不安定な通信での認証・新規会話初期化の復旧を改善。初回送信前の下書きはワークスペース一覧に表示しません。"
+        "zh-CN": "账号面板打开后立即显示“读取中…”，避免旧额度和“未知”闪现；统一账号与额度面板的中英日读取提示。",
+        "en-US": "The account panel shows Loading immediately, avoiding stale quota values and Unknown during refresh. Loading messages are consistent across account and quota panels in all three languages.",
+        "ja-JP": "アカウント画面を開くとすぐに「読み込み中…」を表示し、更新中に古い利用枠や「不明」が表示される問題を修正。アカウント・利用枠画面の読み込み表示を3言語で統一しました。"
       }
     },
     {
       "type": "FIX",
       "text": {
-        "zh-CN": "修复部分原生会话刷新后用户消息重复显示；所有可用账号额度耗尽时选择最早恢复额度的账号等待。",
-        "en-US": "Fix duplicate user messages after reloading some native conversations; when eligible accounts are exhausted, wait on the account with the earliest quota recovery.",
-        "ja-JP": "一部のネイティブ会話で再読み込み後に発言が重複する問題を修正。全候補の上限到達時は、最も早く利用枠が回復するアカウントで待機します。"
-      }
-    },
-    {
-      "type": "NEW",
-      "text": {
-        "zh-CN": "文件预览支持在电脑上打开或运行文件，操作成功后自动关闭预览。",
-        "en-US": "Open or run previewed files on the host computer; the preview closes after a successful request.",
-        "ja-JP": "プレビュー中のファイルをパソコンで開く・実行する操作に対応。要求が成功するとプレビューを閉じます。"
+        "zh-CN": "电脑桌面加载失败或断连时不再误导重新安装；启用过程中仅检测到授权窗口时显示等待授权。",
+        "en-US": "Desktop viewer loading failures and disconnections no longer suggest reinstalling the service. During setup, waiting for approval is shown only when an approval window is detected.",
+        "ja-JP": "デスクトップの読み込み失敗や切断時に再インストールへ誘導しないよう修正。有効化中は許可画面を検出した場合のみ許可待ちを表示します。"
       }
     }
   ]

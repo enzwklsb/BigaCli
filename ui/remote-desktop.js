@@ -75,7 +75,7 @@ async function connect(){
   rfb.scaleViewport=true;rfb.resizeSession=false;rfb.showDotCursor=true;rfb.background='transparent';
   enableLocalGestures(rfb);
   rfb.addEventListener('connect',()=>{if(current===epoch){label('remoteDesktopStatus','已连接，可直接点击电脑画面。');el('remoteDesktopStatus').hidden=true}});
-  rfb.addEventListener('disconnect',()=>{if(current===epoch){rfb=null;failed=true;el('remoteDesktopScreen').replaceChildren();label('remoteDesktopStatus','连接已断开，请重试；仍失败时可重新启用。');el('remoteDesktopSetup').hidden=false;label('remoteDesktopEnable','重新启用')}});
+  rfb.addEventListener('disconnect',()=>{if(current===epoch){rfb=null;failed=true;el('remoteDesktopScreen').replaceChildren();label('remoteDesktopStatus','连接已断开，请关闭电脑桌面后重新打开。')}});
   rfb.addEventListener('securityfailure',()=>{if(current===epoch)label('remoteDesktopStatus','电脑画面连接失败，请重试。')});
  }catch(error){if(current===epoch){failed=true;el('remoteDesktopStatus').textContent=error.message}}
  finally{if(current===epoch)connecting=false}
@@ -84,12 +84,13 @@ function render(){
  el('remoteDesktopStatus').hidden=!!rfb&&rfb._rfbConnectionState==='connected'&&!status?.error&&!status?.operation;
  label('remoteDesktopTitle','电脑桌面');
  label('remoteDesktopHelp','首次启用需在电脑端允许一次 Windows 授权。之后可在这里查看和点击授权弹窗。小型桌面服务随 Windows 启动，仅监听本机，不改变 Agent 权限。');
- el('remoteDesktopSetup').hidden=!!status?.installed&&!status?.error&&!failed;
- label('remoteDesktopEnable',status?.operation?'正在等待电脑端授权。':status?.installed?'重新启用':'启用电脑画面');
+ el('remoteDesktopSetup').hidden=!!status?.installed&&!status?.error;
+ const operationLabel=status?.needsAttention?'正在等待电脑端授权。':'正在启用电脑桌面，请稍候。';
+ label('remoteDesktopEnable',status?.operation?operationLabel:status?.installed?'重新启用':'启用电脑画面');
  el('remoteDesktopEnable').disabled=!!status?.operation||status?.supported===false;
  if(status?.supported===false)label('remoteDesktopStatus','此功能需要 Windows 10 或以上的 x64 电脑。');
  else if(status?.error)el('remoteDesktopStatus').textContent=t(status.error);
- else if(status?.operation)label('remoteDesktopStatus','正在等待电脑端授权。');
+ else if(status?.operation)label('remoteDesktopStatus',operationLabel);
  else if(!status?.installed)label('remoteDesktopStatus','请先启用电脑画面。');
  label('remoteDesktopNotice','电脑有授权窗口待处理，点击查看');
 }
