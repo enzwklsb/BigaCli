@@ -106,7 +106,8 @@ export async function* streamCodexTurn(input, options, signal) {
         const p = m.params || {};
         if (m.id !== undefined && m.method) {
             const desktopElicitation = m.method === 'mcpServer/elicitation/request' && p.serverName === 'bigacli-desktop' && p.mode === 'form';
-            const nativeDesktopApproval = desktopElicitation && p._meta?.codex_approval_kind === 'mcp_tool_call';
+            const nativeMcpApproval = m.method === 'mcpServer/elicitation/request' && p.mode === 'form' && p._meta?.codex_approval_kind === 'mcp_tool_call';
+            const nativeDesktopApproval = desktopElicitation && nativeMcpApproval;
             const desktopApproval = nativeDesktopApproval || desktopElicitation && p.requestedSchema?.properties?.allow?.type === 'boolean';
             if (desktopApproval && (desktop?.access() !== 'workspaceWrite' || !desktop?.canAsk())) {
                 const allow = desktop?.access() === 'dangerFullAccess';
@@ -115,14 +116,14 @@ export async function* streamCodexTurn(input, options, signal) {
             if (desktopApproval && desktop?.approved()) {
                 send({ id: m.id, result: { action: 'accept', content: nativeDesktopApproval ? {} : { allow: true } } }); return;
             }
-            if (desktopApproval || ['item/commandExecution/requestApproval', 'item/fileChange/requestApproval', 'item/permissions/requestApproval'].includes(m.method)) {
+            if (nativeMcpApproval || desktopApproval || ['item/commandExecution/requestApproval', 'item/fileChange/requestApproval', 'item/permissions/requestApproval'].includes(m.method)) {
                 const requestId = randomUUID(); ownedApprovals.add(requestId);
                 const permissionGrant = m.method === 'item/permissions/requestApproval';
                 const approvalInput = desktopApproval ? { message: p.message, scope: 'turn' } : p;
-                approvals.set(requestId, { requestId, sessionId: options.sessionId, toolName: desktopApproval ? 'desktop_control' : permissionGrant ? 'permissions' : m.method.includes('commandExecution') ? 'command_execution' : 'file_change', input: approvalInput, receivedAt: new Date(), resolve: decision => {
+                approvals.set(requestId, { requestId, sessionId: options.sessionId, toolName: desktopApproval ? 'desktop_control' : nativeMcpApproval ? p.serverName : permissionGrant ? 'permissions' : m.method.includes('commandExecution') ? 'command_execution' : 'file_change', input: approvalInput, receivedAt: new Date(), resolve: decision => {
                     if (signal?.aborted) decision = { allow: false };
                     if (desktopApproval && decision.allow) desktop?.grant();
-                    send({ id: m.id, result: desktopApproval ? { action: decision.allow ? 'accept' : 'decline', content: decision.allow ? (nativeDesktopApproval ? {} : { allow: true }) : null } : permissionGrant ? { permissions: decision.allow ? p.permissions : {}, scope: 'turn' } : { decision: decision.allow ? 'accept' : 'decline' } });
+                    send({ id: m.id, result: nativeMcpApproval || desktopApproval ? { action: decision.allow ? 'accept' : 'decline', content: decision.allow ? (nativeMcpApproval ? {} : { allow: true }) : null } : permissionGrant ? { permissions: decision.allow ? p.permissions : {}, scope: 'turn' } : { decision: decision.allow ? 'accept' : 'decline' } });
                     approvals.delete(requestId); ownedApprovals.delete(requestId);
                 } });
                 message({ kind: 'permission_request', requestId, toolName: approvals.get(requestId).toolName, input: approvalInput });
@@ -187,9 +188,13 @@ export async function* streamCodexTurn(input, options, signal) {
         send({ method: 'initialized' });
         const { config } = await request('config/read', { cwd: options.workingDirectory, includeLayers: false });
         const developerInstructions = [config.developer_instructions, agentRules, desktop?.instructions].filter(Boolean).join('\n\n');
+        const browserConfig = browserUseService.getAgentMcpConfig();
+        if (nativePermissionId(options.permissionMode) === ':danger-full-access') {
+            browserConfig.default_tools_approval_mode = 'approve';
+        }
         const params = { cwd: options.workingDirectory, model: options.model, permissions: nativePermissionId(options.permissionMode) || undefined,
             config: { model_verbosity: getReplyPreference(options.sessionId).verbosity, developer_instructions: developerInstructions,
-                'mcp_servers.bigacli-browser': browserUseService.getAgentMcpConfig(), ...(desktop ? { 'mcp_servers.bigacli-desktop': desktop.config } : {}) } };
+                'mcp_servers.bigacli-browser': browserConfig, ...(desktop ? { 'mcp_servers.bigacli-desktop': desktop.config } : {}) } };
         let result;
         if (options.handoff) {
             try {

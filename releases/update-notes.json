@@ -1,30 +1,9 @@
 {
-  "version": "1.3.1",
-  "date": "2026.10.13",
+  "version": "1.3.2",
+  "date": "2026.10.20",
   "items": [
-    {
-      "type": "OPT",
-      "text": {
-        "zh-CN": "点击文件立即打开预览并显示读取状态；超过 20 MB 的文件不自动预览，仍可下载或在电脑上打开。关闭或切换预览时取消原加载。",
-        "en-US": "File previews open immediately with a loading indicator. Files over 20 MB skip preview and remain available to download or open on the computer. Closing or switching previews cancels the previous load.",
-        "ja-JP": "ファイルを押すとすぐにプレビューを開き、読み込み状態を表示します。20 MB を超えるファイルはプレビューせず、ダウンロードやパソコンで開く操作を利用できます。閉じる・切り替える際は元の読み込みを中止します。"
-      }
-    },
-    {
-      "type": "FIX",
-      "text": {
-        "zh-CN": "账号面板打开后立即显示“读取中…”，避免旧额度和“未知”闪现；统一账号与额度面板的中英日读取提示。",
-        "en-US": "The account panel shows Loading immediately, avoiding stale quota values and Unknown during refresh. Loading messages are consistent across account and quota panels in all three languages.",
-        "ja-JP": "アカウント画面を開くとすぐに「読み込み中…」を表示し、更新中に古い利用枠や「不明」が表示される問題を修正。アカウント・利用枠画面の読み込み表示を3言語で統一しました。"
-      }
-    },
-    {
-      "type": "FIX",
-      "text": {
-        "zh-CN": "电脑桌面加载失败或断连时不再误导重新安装；启用过程中仅检测到授权窗口时显示等待授权。",
-        "en-US": "Desktop viewer loading failures and disconnections no longer suggest reinstalling the service. During setup, waiting for approval is shown only when an approval window is detected.",
-        "ja-JP": "デスクトップの読み込み失敗や切断時に再インストールへ誘導しないよう修正。有効化中は許可画面を検出した場合のみ許可待ちを表示します。"
-      }
-    }
+    {"type":"OPT","text":{"zh-CN":"内置 Codex CLI、SDK 与 Windows 运行时升级至正式版 0.163.0。","en-US":"Updated bundled Codex CLI, SDK and Windows runtime to stable version 0.163.0.","ja-JP":"内蔵 Codex CLI・SDK・Windows ランタイムを正式版 0.163.0 に更新しました。"}},
+    {"type":"FIX","text":{"zh-CN":"正确转发浏览器 MCP 工具授权请求；选择完整访问时同步设置浏览器工具授权策略，减少重复确认。","en-US":"Forward native browser MCP approval requests correctly. Full Access also configures browser tool approval policy to reduce repeated prompts.","ja-JP":"ブラウザー MCP の許可要求を正しく表示。完全アクセス選択時はブラウザーツールの許可設定も連動し、確認の繰り返しを減らします。"}},
+    {"type":"FIX","text":{"zh-CN":"文件预览打开后即可下载，无需等待预览加载完成；SVG 等图片预览显示原文件下载按钮。","en-US":"Downloads are available as soon as file previews open. Image previews, including SVG, show the original-file download button.","ja-JP":"プレビューを開くとすぐにダウンロードできるよう改善。SVG を含む画像プレビューにも元ファイルのダウンロードボタンを表示します。"}}
   ]
 }

@@ -163,7 +163,8 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 #filePreviewBody { flex:1; min-height:0; overflow:hidden; }
 .filePreview.imageMode { background:#000d; padding:48px 16px; flex-direction:column; align-items:stretch; }
 .imageMode .filePreviewHeader { position:absolute; top:max(16px,env(safe-area-inset-top)); right:16px; padding:0; border:0; }
-.imageMode #filePreviewName,.imageMode #filePreviewDownload { display:none; }
+.imageMode #filePreviewName { display:none; }
+.imageMode #filePreviewDownload { display:inline-flex; align-items:center; justify-content:center; min-width:44px; height:44px; padding:0; background:#18181b; color:white; border:1px solid #fff6; }
 #filePreviewOpen[hidden]{display:none!important}
 .imageMode #closeFilePreview { width:44px; height:44px; background:#18181b; color:white; border:1px solid #fff6; font-size:24px; }
 .imageMode #filePreviewBody { display:flex; align-items:center; justify-content:center; pointer-events:none; }
@@ -3694,7 +3695,7 @@ async function openFilePreview(file,trigger,hostPath=null){
   if($('filePreview').classList.contains('hidden'))history.pushState({...history.state,bigaFilePreview:true},'');
   const oldBody=$('filePreviewBody'),freshBody=document.createElement('div');freshBody.id='filePreviewBody';oldBody.replaceWith(freshBody);
   const image=file.type?.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|ico)$/i.test(file.name);
-  $('filePreview').classList.toggle('imageMode',image);setOverlay($('filePreview'),true);$('filePreviewName').textContent=file.name;$('filePreviewBody').textContent=BigaI18n.t("正在加载预览…");$('filePreviewDownload').disabled=true;$('filePreview').focus({preventScroll:true});
+  $('filePreview').classList.toggle('imageMode',image);setOverlay($('filePreview'),true);$('filePreviewName').textContent=file.name;$('filePreviewBody').textContent=BigaI18n.t("正在加载预览…");$('filePreviewDownload').disabled=false;$('filePreview').focus({preventScroll:true});
   try{
     const tooLarge=()=>{if(previewFile!==file)return;$('filePreview').classList.remove('imageMode');$('filePreviewBody').textContent=BigaI18n.t('文件过大，无法预览（上限 20 MB）。请下载后查看。');$('filePreviewDownload').disabled=false;};
     if(file.size>filePreviewLimit){tooLarge();return;}
