@@ -1,9 +1,7 @@
 {
-  "version": "1.3.2",
-  "date": "2026.10.20",
+  "version": "1.3.3",
+  "date": "2026.10.22",
   "items": [
-    {"type":"OPT","text":{"zh-CN":"内置 Codex CLI、SDK 与 Windows 运行时升级至正式版 0.163.0。","en-US":"Updated bundled Codex CLI, SDK and Windows runtime to stable version 0.163.0.","ja-JP":"内蔵 Codex CLI・SDK・Windows ランタイムを正式版 0.163.0 に更新しました。"}},
-    {"type":"FIX","text":{"zh-CN":"正确转发浏览器 MCP 工具授权请求；选择完整访问时同步设置浏览器工具授权策略，减少重复确认。","en-US":"Forward native browser MCP approval requests correctly. Full Access also configures browser tool approval policy to reduce repeated prompts.","ja-JP":"ブラウザー MCP の許可要求を正しく表示。完全アクセス選択時はブラウザーツールの許可設定も連動し、確認の繰り返しを減らします。"}},
-    {"type":"FIX","text":{"zh-CN":"文件预览打开后即可下载，无需等待预览加载完成；SVG 等图片预览显示原文件下载按钮。","en-US":"Downloads are available as soon as file previews open. Image previews, including SVG, show the original-file download button.","ja-JP":"プレビューを開くとすぐにダウンロードできるよう改善。SVG を含む画像プレビューにも元ファイルのダウンロードボタンを表示します。"}}
+    {"type":"FIX","text":{"zh-CN":"支持读取 Codex 压缩历史及其父对话记录，修复部分对话历史空白、只显示额度提示的问题。","en-US":"Read compressed Codex history and parent transcripts, fixing conversations that appeared empty or showed only quota notices.","ja-JP":"Codex の圧縮履歴と親会話の記録に対応し、一部の会話で履歴が空白になったり利用枠の通知だけが表示されたりする問題を修正しました。"}}
   ]
 }

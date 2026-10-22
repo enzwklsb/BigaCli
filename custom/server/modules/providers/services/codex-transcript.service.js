@@ -1,5 +1,7 @@
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
+import { Readable } from 'node:stream';
+import { createZstdDecompress } from 'node:zlib';
 import { getConnection } from '../../database/index.js';
 
 function resolveTranscript(threadId) {
@@ -13,12 +15,34 @@ function resolveTranscript(threadId) {
     return row.jsonl_path;
 }
 
+async function* readTranscriptBytes(filePath, endByte) {
+    const compressed = filePath.endsWith('.zst') || (!existsSync(filePath) && existsSync(filePath + '.zst'));
+    const file = createReadStream(compressed && !filePath.endsWith('.zst') ? filePath + '.zst' : filePath);
+    const stream = compressed ? file.pipe(createZstdDecompress()) : file;
+    if (compressed) file.on('error', error => stream.destroy(error));
+    let remaining = endByte ?? Infinity;
+    try {
+        for await (const chunk of stream) {
+            // Parent offsets refer to uncompressed bytes, not the .zst file.
+            if (chunk.length >= remaining) {
+                yield chunk.subarray(0, remaining);
+                return;
+            }
+            remaining -= chunk.length;
+            yield chunk;
+        }
+    } finally {
+        stream.destroy();
+        file.destroy();
+    }
+}
+
 // Codex paginated forks reference a byte-bounded parent transcript rather
 // than copying it. Feed that native history into the existing CloudCLI parser.
 export async function* readCodexTranscriptLines(filePath, resolveParent = resolveTranscript, endByte, ancestors = new Set()) {
     if (ancestors.has(filePath)) throw new Error('对话历史存在循环引用');
     const chain = new Set(ancestors).add(filePath);
-    const stream = createReadStream(filePath, endByte === undefined ? {} : { end: endByte - 1 });
+    const stream = Readable.from(readTranscriptBytes(filePath, endByte));
     const lines = createInterface({ input: stream, crlfDelay: Infinity });
     try {
         let first = true;
