@@ -32,5 +32,6 @@ export function spawnCodex(spawn, args, options = {}) {
     const merged = [...resolved.pathDirs, ...existing.filter((entry) => !resolved.pathDirs.includes(entry))];
     baseEnv[key] = merged.join(path.delimiter);
   }
-  return spawn(resolved.executablePath, args, { ...options, env: baseEnv });
+  // Windows process creation requires the namespace prefix beyond MAX_PATH.
+  return spawn(path.toNamespacedPath(resolved.executablePath), args, { ...options, env: baseEnv });
 }

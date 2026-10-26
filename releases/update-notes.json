@@ -1,7 +1,7 @@
 {
-  "version": "1.3.3",
-  "date": "2026.10.22",
+  "version": "1.3.4",
+  "date": "2026.10.27",
   "items": [
-    {"type":"FIX","text":{"zh-CN":"支持读取 Codex 压缩历史及其父对话记录，修复部分对话历史空白、只显示额度提示的问题。","en-US":"Read compressed Codex history and parent transcripts, fixing conversations that appeared empty or showed only quota notices.","ja-JP":"Codex の圧縮履歴と親会話の記録に対応し、一部の会話で履歴が空白になったり利用枠の通知だけが表示されたりする問題を修正しました。"}}
+    {"type":"FIX","text":{"zh-CN":"修复 Windows 安装目录过深时 Codex 启动报 ENOENT、无法添加账号的问题。","en-US":"Fixed Codex failing to start with ENOENT and blocking account setup when installed in a deeply nested Windows folder.","ja-JP":"Windows の深い階層にインストールした際、Codex が ENOENT エラーで起動できず、アカウントを追加できない問題を修正しました。"}}
   ]
 }
