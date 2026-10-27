@@ -1,7 +1,7 @@
 {
-  "version": "1.3.4",
+  "version": "1.3.5",
   "date": "2026.10.27",
   "items": [
-    {"type":"FIX","text":{"zh-CN":"修复 Windows 安装目录过深时 Codex 启动报 ENOENT、无法添加账号的问题。","en-US":"Fixed Codex failing to start with ENOENT and blocking account setup when installed in a deeply nested Windows folder.","ja-JP":"Windows の深い階層にインストールした際、Codex が ENOENT エラーで起動できず、アカウントを追加できない問題を修正しました。"}}
+    {"type":"FIX","text":{"zh-CN":"修复深层 Windows 安装目录中登录后仍无法执行命令的问题：从短路径启动完整 Codex 原生组件，避免 code-mode host 报 os error 3。","en-US":"Fixed command execution still failing after login in deeply nested Windows folders. The complete native Codex package now starts from a short path, avoiding code-mode host os error 3.","ja-JP":"Windows の深い階層でログイン後もコマンドを実行できない問題を修正。Codex のネイティブパッケージ全体を短いパスから起動し、code-mode host の os error 3 を回避します。"}}
   ]
 }
