@@ -32,10 +32,10 @@ function remarkPunctuationStrong() {
 const external = href => /^(https?:|mailto:|tel:|#)/i.test(href || '');
 function transformUrl(url, key) {
   // Markdown encodes Windows backslashes as %5C before URL filtering.
-  if (key === 'href' && /^[A-Za-z]:(?:%5c|[\\/])/i.test(url)) {
+  if ((key === 'href' || key === 'src') && /^[A-Za-z]:(?:%5c|[\\/])/i.test(url)) {
     return url.replace(/%5c|\\/gi, '/');
   }
-  return key === 'href' && (/^file:\/\//i.test(url) || !/^[a-z][a-z\d+.-]*:/i.test(url))
+  return (key === 'href' || key === 'src') && (/^file:\/\//i.test(url) || !/^[a-z][a-z\d+.-]*:/i.test(url))
     ? url : defaultUrlTransform(url);
 }
 const components = {
@@ -44,7 +44,15 @@ const components = {
     ? <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
     : <a href="#" className="file-link" data-file={href} data-name={typeof children === 'string' ? children : href}>{children}</a>,
 };
-export function render(source) {
-  return renderToStaticMarkup(<ReactMarkdown remarkPlugins={[remarkGfm,remarkPunctuationStrong]} components={components}
+export function render(source, {imageUrl = src => src} = {}) {
+  const img = ({src, alt, title}) => {
+    if (!src) return <span>{alt}</span>;
+    const local = !/^(?:https?:)?\/\//i.test(src);
+    return <button type="button" className="markdownImage thumbnailButton" data-file={local ? src : undefined}
+      data-image-url={local ? undefined : src} data-name={alt || src} title={title || alt || src}>
+      <img src={local ? imageUrl(src) : src} alt={alt || src} loading="lazy" />
+    </button>;
+  };
+  return renderToStaticMarkup(<ReactMarkdown remarkPlugins={[remarkGfm,remarkPunctuationStrong]} components={{...components, img}}
     urlTransform={transformUrl}>{source}</ReactMarkdown>);
 }

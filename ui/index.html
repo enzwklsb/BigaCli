@@ -153,6 +153,7 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .attachmentChip.imageChip { position: relative; border: none; padding: 0; width: 76px; height: 76px; }
 .imageChip .thumbnailButton { padding: 0; width: 76px; height: 76px; overflow: hidden;  }
 .thumbnailButton img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.markdownImage.thumbnailButton {display:inline-block;width:76px;height:76px;padding:0;border:0;border-radius:8px;overflow:hidden;vertical-align:middle;cursor:zoom-in;}
 .attachmentChip .removeAttachment { position: absolute; right: 2px; top: 2px; min-width: 24px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: #18181bcc; color: white; }
 .filePreview { position:fixed; inset:0; z-index:110; background:var(--popup-shade); display:flex; align-items:center; justify-content:center; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
 .filePreviewPanel { width:90vw; height:84dvh; max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px); min-height:0; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden; }
@@ -1910,15 +1911,8 @@ async function previewLocalFile(path,label){
     // Absolute paths are intentionally downloaded through CloudCLI's
     // authenticated local-file stream endpoint. They do NOT need to belong
     // to a registered CloudCLI project.
-    let url;
-    if(path.startsWith('/api/assets/files/')){
-      url=base()+path;
-    }else if(abs){
-      url=base()+`/api/file-tree/local-file/content?path=${encodeURIComponent(path)}`;
-    }else{
-      if(!currentProject)throw new Error(BigaI18n.t("尚未选择项目，无法解析相对路径"));
-      url=base()+`/api/file-tree/projects/${encodeURIComponent(projectId(currentProject))}/files/content?path=${encodeURIComponent(path)}`;
-    }
+    if(!abs&&!currentProject)throw new Error(BigaI18n.t("尚未选择项目，无法解析相对路径"));
+    const url=localFileContentUrl(path);
 
     const hostPath=path.startsWith('/api/assets/files/')?null:abs?path:projectPath(currentProject).replace(/[\\/]$/,'')+'/'+path;
     await openFilePreview({name:filenameOf(path),url},null,hostPath);
@@ -1926,7 +1920,15 @@ async function previewLocalFile(path,label){
     toast(BigaI18n.t("文件读取失败：")+e.message);
   }
 }
-document.addEventListener('click',e=>{const a=e.target.closest?.('.file-link');if(a){e.preventDefault();previewLocalFile(a.dataset.file,a.dataset.name)}});
+function localFileContentUrl(path){
+  if(path.startsWith('/api/assets/files/'))return base()+path;
+  return /^[a-z]:[\\/]|^\//i.test(path)?base()+'/api/file-tree/local-file/content?path='+encodeURIComponent(path):base()+'/api/file-tree/projects/'+encodeURIComponent(projectId(currentProject))+'/files/content?path='+encodeURIComponent(path);
+}
+document.addEventListener('click',e=>{
+  const image=e.target.closest?.('.markdownImage');
+  if(image){e.preventDefault();if(image.dataset.file)previewLocalFile(image.dataset.file,image.dataset.name);else if(image.dataset.imageUrl)openFilePreview({name:filenameOf(image.dataset.imageUrl.split(/[?#]/)[0]),type:'image/*',url:image.dataset.imageUrl},image);return;}
+  const a=e.target.closest?.('.file-link');if(a){e.preventDefault();previewLocalFile(a.dataset.file,a.dataset.name)}
+});
 function collectConversationFiles(messages){
   const files=new Map();let sender,timestamp;
   function add(path,name){if(!path||/^(https?:|data:|#)/i.test(path))return;path=decodeFileHref(path);if(!path||/[\\/]$/.test(path))return;const key=sender+':'+(/^[a-z]:/i.test(path)?normPath(path):path);name=name||filenameOf(path);const type=(name.match(/\.([a-z0-9]+)$/i)||filenameOf(path).match(/\.([a-z0-9]+)$/i))?.[1].toLowerCase()||'other';files.delete(key);files.set(key,{path,name,sender,type,timestamp});}
@@ -1937,7 +1939,7 @@ function collectConversationFiles(messages){
     for(const file of [...(message.files||[]),...(message.attachments||[]),...(message.images||[])])add(file.path,file.name);
     const content=typeof message.content==='string'?message.content:'';
     const doc=new DOMParser().parseFromString(md(content),'text/html');
-    for(const link of doc.querySelectorAll('.file-link'))add(link.dataset.file,filenameOf(decodeFileHref(link.dataset.file)));
+    for(const link of doc.querySelectorAll('.file-link,.markdownImage[data-file]'))add(link.dataset.file,filenameOf(decodeFileHref(link.dataset.file)));
     for(const code of doc.querySelectorAll('code')){const value=code.textContent.trim();if(/^(?:[a-z]:[\\/]|\/|\.\.?\/)[^\r\n]+\.[a-z0-9]{1,12}$/i.test(value))add(value);}
     for(const node of doc.querySelectorAll('a,code,pre'))node.remove();
     for(const match of doc.body.textContent.matchAll(/(?:^|[\s（(：:])((?:[a-z]:[\\/]|\/|\.\.?\/)[^\s<>"'，。；）)]+\.[a-z0-9]{1,12})(?=$|[\s，。；）)])/gi))add(match[1]);
@@ -1993,7 +1995,7 @@ $('conversationFilesBtn').onclick=async()=>{
 };
 
 /* 轻量 Markdown：支持本地文件链接 */
-function md(src){return BigaMarkdown.render(String(src??''))}
+function md(src){return BigaMarkdown.render(String(src??''),{imageUrl:path=>localFileContentUrl(decodeFileHref(path))})}
 const messageStreams=new Map();
 // Presentation-only buffer: never delays transport, permissions or user actions.
 const streamPlayback=[];let streamPlaybackFrame=null,streamPlaybackLast=0,streamPlaybackStopped=false;
@@ -3842,7 +3844,7 @@ function appendSentAttachments(node,attachments){
     const preview=()=>{if(path)previewLocalFile(path,name);else openFilePreview({name,url:data})};
     const chip=createAttachmentChip(name,image,preview);chip.attachmentKey=key;list.appendChild(chip);
     if(image){const img=chip.querySelector('img');if(data){img.src=data;continue;}
-      const url=path.startsWith('/api/assets/files/')?base()+path:/^[a-z]:[\\/]|^\//i.test(path)?base()+'/api/file-tree/local-file/content?path='+encodeURIComponent(path):base()+'/api/file-tree/projects/'+encodeURIComponent(projectId(currentProject))+'/files/content?path='+encodeURIComponent(path);
+      const url=localFileContentUrl(path);
       fetch(url,{headers:headers()}).then(r=>{if(!r.ok)throw Error(BigaI18n.t("读取失败"));return r.blob()}).then(blob=>{const reader=new FileReader();reader.onload=()=>{img.src=reader.result};reader.readAsDataURL(blob)}).catch(()=>{img.alt=BigaI18n.t("图片读取失败，点击重试");});
     }
   }
