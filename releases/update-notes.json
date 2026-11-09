@@ -1,7 +1,7 @@
 {
-  "version": "1.3.6",
-  "date": "2026.11.05",
+  "version": "1.3.7",
+  "date": "2026.11.09",
   "items": [
-    {"type":"FIX","text":{"zh-CN":"修复助手回复中本地图片无法显示的问题：在正文原位置显示缩略图，点击可放大预览和下载；旧消息同样生效。","en-US":"Fixed local images not loading in assistant replies. Inline thumbnails now open the shared zoom and download preview, including in existing messages.","ja-JP":"アシスタントの返信内でローカル画像が表示されない問題を修正。本文中にサムネイルを表示し、クリックで共通の拡大プレビューとダウンロードを利用できます。過去のメッセージにも適用されます。"}}
+    {"type":"FIX","text":{"zh-CN":"修复图片预览下载时可能跳转而未保存的问题：已加载的图片直接下载，不重复请求原图；超大文件仍可直接下载。","en-US":"Fixed image preview downloads navigating away instead of saving. Loaded images download directly without fetching the original again; oversized files still download directly.","ja-JP":"画像プレビューのダウンロード時に保存されず画面が遷移する問題を修正。読み込み済みの画像は再取得せず保存でき、大容量ファイルの直接ダウンロードも維持します。"}}
   ]
 }
