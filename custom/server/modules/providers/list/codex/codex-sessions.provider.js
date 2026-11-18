@@ -1,9 +1,8 @@
-import fsSync from 'node:fs';
 import { mergeInterruptedReplies } from '../../services/codex-interrupted.service.js';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import readline from 'node:readline';
 import { readCodexTranscriptLines } from '../../services/codex-transcript.service.js';
+import { codexTranscriptKey } from '../../services/codex-history-files.service.js';
 import { sessionsDb } from '../../../../modules/database/index.js';
 import { codexAppServer } from '../../../../modules/providers/list/codex/codex-app-server.client.js';
 import { parseFilesInputTag, toImageAttachments } from '../../../../shared/image-attachments.js';
@@ -729,7 +728,7 @@ async function findFileWithSuffix(directory, suffix, depth) {
             subdirectories.push(path.join(directory, entry.name));
             continue;
         }
-        if (entry.name.endsWith(suffix)) {
+        if (codexTranscriptKey(entry.name).endsWith(suffix)) {
             return path.join(directory, entry.name);
         }
     }
@@ -755,14 +754,7 @@ async function readCodexSubagentTranscript(filePath) {
     const activity = [];
     const transcript = { activity };
     const pendingResults = new Map();
-    let fileStream;
-    try {
-        fileStream = fsSync.createReadStream(filePath);
-    }
-    catch {
-        return transcript;
-    }
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    const rl = readCodexTranscriptLines(filePath);
     for await (const line of rl) {
         if (!line.trim()) {
             continue;
@@ -1952,7 +1944,7 @@ export class CodexSessionsProvider {
         catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             console.warn(`[CodexProvider] Failed to load session ${sessionId}:`, message);
-            return { messages: [], total: 0, hasMore: false, offset: 0, limit: null };
+            throw new AppError('无法读取对话历史：' + message, { code: 'HISTORY_READ_FAILED', statusCode: 500 });
         }
         const normalized = [];
         const nativeSession = sessionsDb.getSessionById(sessionId);

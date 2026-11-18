@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { isRegisteredLocalAttachment } from '../../../shared/local-attachments.js';
 import { prepareQueueSend } from '../../scheduled-messages/services/queued-message.service.js';
 import { recoveryState, cancelRecovery, isRecoverySwitching } from '../../providers/services/codex-recovery.service.js';
 import { getSessionCodexAccountConfig } from '../../providers/services/codex-account.service.js';
@@ -30,10 +31,11 @@ export function filterAttachmentsToUploadStore(attachments, assetsRootOverride) 
             !path.isAbsolute(relative) &&
             !relative.includes(path.sep) &&
             !relative.includes('/');
-        if (!isDirectChild) {
+        const allowed=isDirectChild||(!assetsRootOverride&&isRegisteredLocalAttachment(descriptor.path));
+        if (!allowed) {
             console.warn(`[Chat] Dropping attachment outside the upload store: ${descriptor.path}`);
         }
-        return isDirectChild;
+        return allowed;
     });
 }
 /** Backward-compatible image filter consumed by existing websocket tests. */

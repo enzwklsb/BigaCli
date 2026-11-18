@@ -9,6 +9,7 @@ import { nativePermissionId } from './codex-permissions.service.js';
 import { getReplyPreference } from '../../bigacli/preferences.service.js';
 import { browserUseService } from '../../browser-use/browser-use.service.js';
 import { createDesktopContext } from '../../desktop-use/desktop-use.service.js';
+import { firstResponseWaitText, clientUpgradeText, describeCodexRequestError } from './codex-request-status.service.js';
 
 // Native App Server events adapted to the existing CloudCLI runtime contract.
 const approvals = new Map();
@@ -82,6 +83,7 @@ export async function* streamCodexTurn(input, options, signal) {
     const pending = new Map(), queue = [], ownedApprovals = new Set();
     const messagePhases = new Map();
     let nextId = 0, wake, failure, closed = false, finished = false, stderr = '', threadId = options.threadId, turnId, tokenUsage, lastError;
+    let responseNoticeTimer, receivedProgress = false, requestNoticeVisible = false;
     const push = event => { queue.push(event); wake?.(); wake = null; };
     const fail = error => { failure = error; wake?.(); wake = null; for (const p of pending.values()) p.reject(error); pending.clear(); };
     const send = message => { if (!proc.stdin.destroyed) proc.stdin.write(JSON.stringify(message) + '\n'); };
@@ -91,8 +93,22 @@ export async function* streamCodexTurn(input, options, signal) {
         pending.set(id, { resolve: value => { clearTimeout(timer); resolve(value); }, reject: error => { clearTimeout(timer); reject(error); } });
         send({ id, method, params });
     });
-    const message = data => push({ type: 'normalized', message: data });
-    const errorValue = error => ({ ...error, message: error?.codexErrorInfo === 'usageLimitExceeded' ? 'usage_limit_exceeded' : (error?.message || 'Codex turn failed') });
+    const message = data => {
+        if (data.kind !== 'request_wait' && (data.content || ['activity_start', 'permission_request', 'status'].includes(data.kind))) {
+            receivedProgress = true;
+            clearTimeout(responseNoticeTimer);
+            if (requestNoticeVisible) {
+                requestNoticeVisible = false;
+                push({ type: 'normalized', message: { kind: 'request_wait', text: '' } });
+            }
+        }
+        push({ type: 'normalized', message: data });
+    };
+    const errorValue = error => {
+        const description = describeCodexRequestError(error, false);
+        const message = description.text === clientUpgradeText ? description.text + '\n' + description.detail : error?.message || 'Codex turn failed';
+        return { ...error, message: error?.codexErrorInfo === 'usageLimitExceeded' ? 'usage_limit_exceeded' : message };
+    };
     proc.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-4000); });
     proc.stdin.on('error', fail);
     proc.on('error', fail);
@@ -101,7 +117,7 @@ export async function* streamCodexTurn(input, options, signal) {
         let m; try { m = JSON.parse(line); } catch { return; }
         if (!m.method && m.id !== undefined) {
             const p = pending.get(m.id); if (!p) return; pending.delete(m.id);
-            m.error ? p.reject(new Error(m.error.message || JSON.stringify(m.error))) : p.resolve(m.result); return;
+            m.error ? p.reject(new Error(errorValue(m.error).message)) : p.resolve(m.result); return;
         }
         const p = m.params || {};
         if (m.id !== undefined && m.method) {
@@ -131,7 +147,14 @@ export async function* streamCodexTurn(input, options, signal) {
             return;
         }
         if (m.method === 'thread/tokenUsage/updated') { tokenUsage = p.tokenUsage; return; }
-        if (m.method === 'error') { lastError = errorValue(p.error); return; }
+        if (m.method === 'error') {
+            lastError = errorValue(p.error);
+            receivedProgress = true;
+            clearTimeout(responseNoticeTimer);
+            requestNoticeVisible = true;
+            message({ kind: 'request_wait', ...describeCodexRequestError(lastError, p.willRetry) });
+            return;
+        }
         if (m.method === 'turn/started') { turnId = p.turn?.id; push({ type: 'turn.started' }); return; }
         if (p.item?.type === 'contextCompaction' && ['item/started', 'item/completed'].includes(m.method)) {
             message({ kind: 'status', text: m.method === 'item/started' ? '正在压缩上下文' : '正在处理' });
@@ -220,6 +243,11 @@ export async function* streamCodexTurn(input, options, signal) {
         threadId = result.thread.id;
         yield { type: 'thread.started', thread_id: threadId };
         const userInput = typeof input === 'string' ? [{ type: 'text', text: input }] : input.map(item => item.type === 'local_image' ? { type: 'localImage', path: item.path } : { type: 'text', text: item.text });
+        responseNoticeTimer = setTimeout(() => {
+            if (receivedProgress || finished || signal?.aborted) return;
+            requestNoticeVisible = true;
+            message({ kind: 'request_wait', text: firstResponseWaitText });
+        }, 60000);
         const started = await request('turn/start', { threadId, input: userInput, serviceTierForTurn: options.serviceTier || 'default', ...(options.modelReasoningEffort ? { effort: options.modelReasoningEffort } : {}), summary: 'auto' });
         turnId ||= started.turn?.id;
         activeTurns.set(options.sessionId, input => {
@@ -233,6 +261,7 @@ export async function* streamCodexTurn(input, options, signal) {
             await new Promise(resolve => { wake = resolve; });
         }
     } finally {
+        clearTimeout(responseNoticeTimer);
         desktop?.close();
         activeTurns.delete(options.sessionId);
         signal?.removeEventListener('abort', abort);

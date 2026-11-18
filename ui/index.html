@@ -111,6 +111,10 @@ input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--te
 .markdown code { background: var(--bg); padding: 2px 5px; border-radius: 4px; font: .9em var(--font-mono); }
 .markdown pre, .toolbox pre { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px; overflow-x: auto; font: 13px/1.6 var(--font-mono); touch-action: pan-x pan-y; overscroll-behavior-x: contain; overscroll-behavior-y: auto; -webkit-overflow-scrolling: touch; }
 .markdown pre code { padding: 0; background: transparent; font: inherit; }
+.codeBlock,.quoteBlock {position:relative;margin:12px 0;min-width:0;}
+.quoteBlock>blockquote {padding-top:36px;}
+.codeBlock>pre {margin:0;padding-top:38px;}
+.codeBlockCopy {position:absolute;top:4px;right:4px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);}
 .markdown a { color: var(--blue); text-underline-offset: 3px; }
 .markdown .tableScroll { max-width: 100%; overflow-x: auto; margin: 12px 0; touch-action: pan-x pan-y; overscroll-behavior-x: contain; overscroll-behavior-y: auto; -webkit-overflow-scrolling: touch; }
 .markdown table { border-collapse: collapse; min-width: 100%; font-size: inherit; }
@@ -1925,6 +1929,8 @@ function localFileContentUrl(path){
   return /^[a-z]:[\\/]|^\//i.test(path)?base()+'/api/file-tree/local-file/content?path='+encodeURIComponent(path):base()+'/api/file-tree/projects/'+encodeURIComponent(projectId(currentProject))+'/files/content?path='+encodeURIComponent(path);
 }
 document.addEventListener('click',e=>{
+  const copy=e.target.closest?.('.codeBlockCopy');
+  if(copy){e.preventDefault();const content=copy.parentElement.querySelector(':scope>pre code,:scope>blockquote');copyText(content.tagName==='CODE'?content.textContent:content.innerText).then(ok=>{if(ok)showCopySuccess(copy);else toast(BigaI18n.t("复制失败，请手动选择文字复制"))});return;}
   const image=e.target.closest?.('.markdownImage');
   if(image){e.preventDefault();if(image.dataset.file)previewLocalFile(image.dataset.file,image.dataset.name);else if(image.dataset.imageUrl)openFilePreview({name:filenameOf(image.dataset.imageUrl.split(/[?#]/)[0]),type:'image/*',url:image.dataset.imageUrl},image);return;}
   const a=e.target.closest?.('.file-link');if(a){e.preventDefault();previewLocalFile(a.dataset.file,a.dataset.name)}
@@ -1995,7 +2001,7 @@ $('conversationFilesBtn').onclick=async()=>{
 };
 
 /* 轻量 Markdown：支持本地文件链接 */
-function md(src){return BigaMarkdown.render(String(src??''),{imageUrl:path=>localFileContentUrl(decodeFileHref(path))})}
+function md(src){return BigaMarkdown.render(String(src??''),{imageUrl:path=>localFileContentUrl(decodeFileHref(path)),copyLabel:BigaI18n.t('复制')})}
 const messageStreams=new Map();
 // Presentation-only buffer: never delays transport, permissions or user actions.
 const streamPlayback=[];let streamPlaybackFrame=null,streamPlaybackLast=0,streamPlaybackStopped=false;
@@ -2027,7 +2033,7 @@ function receiveChatEvent(m){
   const current=!m.sessionId||m.sessionId===sessionId(currentSession);
   if(!current){handleEvent(m);return;}
   if(kind==='chat_run_started'){drainStreamPlayback();streamPlaybackStopped=false;}
-  if(document.hidden||m.replayed||streamPlaybackStopped||['error','protocol_error','permission_request','chat_subscribed'].includes(kind)||m.aborted){drainStreamPlayback();handleEvent(m);return;}
+    if(document.hidden||m.replayed||streamPlaybackStopped||['error','protocol_error','permission_request','chat_subscribed','request_wait'].includes(kind)||m.aborted){drainStreamPlayback();handleEvent(m);return;}
   if(kind==='stream_delta'){
     const now=performance.now(),chars=Array.from(String(m.content||'')),tail=streamPlayback.at(-1);
     if(tail?.chars&&tail.message.itemId===m.itemId&&tail.message.phase===m.phase&&tail.message.messageKind===m.messageKind){tail.chars=tail.chars.concat(chars);tail.until=now+1000;tail.message=m;}
@@ -3590,9 +3596,10 @@ function handleEvent(m,bypassFinalGate=false){
     if(startsFinal&&beginFinalReplyGate(m.itemId)){finalReplyGateQueue.push(m);return}
   }
   switch(eventKind){
+    case'request_wait':
     case'account_handoff':{
       setProcessing(true,'Thinking');clearProcessActivity();
-      if(m.text){ensureProcessGroup();const activity=processGroup.querySelector('.processActivity');const label=document.createElement('span');label.className='processActivityText';label.textContent=BigaI18n.t(m.text);activity.replaceChildren(label);activity.hidden=false;scrollBottom()}
+      if(m.text){ensureProcessGroup();const activity=processGroup.querySelector('.processActivity');const label=document.createElement('span');label.className=eventKind==='request_wait'?'small':'processActivityText';label.textContent=BigaI18n.t(m.text);if(m.detail){label.style.whiteSpace='pre-wrap';label.append(document.createTextNode('\n'+BigaI18n.error(m.detail)))}activity.replaceChildren(label);activity.hidden=false;scrollBottom()}
       return;
     }
     case'chat_subscribed':
@@ -3751,13 +3758,13 @@ function renderPendingFiles(){
       else if(file.path){fetch(base()+'/api/file-tree/local-file/content?path='+encodeURIComponent(file.path),{headers:headers()}).then(r=>{if(!r.ok)throw Error('image');return r.blob()}).then(blob=>{if(!pendingFiles.includes(file))return;if(!attachmentUrls.has(file))attachmentUrls.set(file,URL.createObjectURL(blob));img.src=attachmentUrls.get(file)}).catch(()=>{});}
       else{attachmentUrls.set(file,URL.createObjectURL(file));img.src=attachmentUrls.get(file);}
     }
-    const upload=attachmentUploads.get(file);if(upload&&upload.status!=='ready'){const status=document.createElement('span');status.className='small';status.textContent=upload.status==='error'?BigaI18n.t("上传失败"):BigaI18n.t("上传中…");chip.appendChild(status)}
+    const upload=attachmentUploads.get(file);if(upload&&upload.status!=='ready'){const status=document.createElement('span');status.className='small';status.textContent=upload.status==='error'?BigaI18n.t(upload.error?.message||"上传失败"):BigaI18n.t("上传中…");chip.appendChild(status)}
     const remove=document.createElement('button');remove.className='removeAttachment';remove.textContent='×';remove.setAttribute('aria-label',BigaI18n.t("移除 ")+file.name);remove.disabled=sendingMessage;
-    remove.onclick=()=>{pendingFiles.splice(index,1);saveAttachmentDraft();renderPendingFiles()};
+    remove.onclick=async()=>{remove.disabled=true;file.removing=true;const files=pendingFiles,key=composerDraftKey;try{const upload=attachmentUploads.get(file),attachment=await upload?.promise;if(attachment&&!attachment.localReference)await api('/api/assets/files/'+encodeURIComponent(filenameOf(attachment.path)),{method:'DELETE'});const i=files.indexOf(file);if(i>=0)files.splice(i,1);saveAttachmentDraft(key,files);renderPendingFiles()}catch(error){toast(BigaI18n.t(error.message));remove.disabled=false}finally{file.removing=false}};
     chip.appendChild(remove);list.appendChild(chip);
   });
 }
-$('attachmentBtn').onclick=()=>{if(!sendingMessage)$('attachmentInput').click()};
+$('attachmentBtn').onclick=async()=>{if(sendingMessage)return;const button=$('attachmentBtn');button.disabled=true;try{const local=await api('/api/assets/local-picker');if(!local.available){$('attachmentInput').click();return}const result=await api('/api/assets/local-picker',{method:'POST',headers:{Origin:location.origin}});const files=result.attachments.map(attachment=>{const file={...attachment,type:attachment.mimeType};attachmentUploads.set(file,{status:'ready',attachment,promise:Promise.resolve(attachment)});return file});addPendingFiles(files);saveAttachmentDraft()}catch(error){toast(error.message)}finally{button.disabled=sendingMessage}};
 $('attachmentInput').onchange=()=>{
   const files=Array.from($('attachmentInput').files||[]);$('attachmentInput').value='';
   addPendingFiles(files);
@@ -3765,7 +3772,7 @@ $('attachmentInput').onchange=()=>{
 function addPendingFiles(files){
   if(sendingMessage)return;
   if(pendingFiles.length+files.length>10)return toast(BigaI18n.t("每条消息最多添加 10 个附件"));
-  if(files.some(f=>f.size>10*1024*1024))return toast(BigaI18n.t("单个附件不能超过 10MB"));
+  if(files.some(f=>f.size>512*1024*1024))return toast(BigaI18n.t("单个附件不能超过 512MB"));
   pendingFiles.push(...files);files.forEach(file=>prepareAttachment(file));renderPendingFiles();
 }
 const attachmentUploads=new WeakMap();
@@ -3782,6 +3789,7 @@ $('input').addEventListener('paste',e=>{
 });
 $('input').addEventListener('input',resizeComposerInput);
 async function sendChat(mode='normal'){
+  if(pendingFiles.some(file=>file.removing))return;
   if((processing||recoveryLocked())&&mode==='normal'){if($('input').value.trim()||pendingFiles.length)openSendMenu();return;}
   if(recoveryLocked()&&mode!=='queue')return;
   if($('modelSelect').disabled)return toast(BigaI18n.t("模型设置正在读取或保存，请稍后发送。"));
@@ -3795,7 +3803,7 @@ async function sendChat(mode='normal'){
     let attachments=[];
     if(files.length){
       attachments=await Promise.all(files.map(file=>prepareAttachment(file)));
-      if(attachments.some(a=>!a))throw new Error(BigaI18n.t("附件上传失败，请移除失败附件后重新选择"));
+      if(attachments.some(a=>!a))throw new Error(BigaI18n.t(files.map(file=>attachmentUploads.get(file)?.error?.message).find(Boolean)||"附件上传失败，请移除失败附件后重新选择"));
     }
     if(currentSession!==target)return toast(BigaI18n.t("对话已切换，消息尚未发送"));
     if(target.__draft){
@@ -4201,6 +4209,8 @@ function animateElement(panel,frames,open,duration,onfinish=()=>{}){
   return animation;
 }
 function setOverlay(overlay,open,onfinish=()=>{}){
+  // Image previews skip the card animation, so restore its interaction separately.
+  if(open&&overlay.id==='filePreview')overlay.querySelector('.filePreviewPanel').inert=false;
   const hidden=overlay.classList.contains('hidden');
   if(open&&!hidden&&!overlay.popupClosing||!open&&(hidden||overlay.popupClosing))return;
   overlay.popupClosing=!open;overlay.inert=!open;

@@ -4,10 +4,12 @@ const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
 const { zstdCompressSync } = require('node:zlib');
+const { pathToFileURL } = require('node:url');
 
 (async () => {
     const source = fs.readFileSync(path.join(__dirname, '../custom/server/modules/providers/services/codex-transcript.service.js'), 'utf8')
-        .replace("import { getConnection } from '../../database/index.js';", "function getConnection() { throw Error('Test must not access the application database'); }");
+        .replace("import { getConnection } from '../../database/index.js';", "function getConnection() { throw Error('Test must not access the application database'); }")
+        .replace("'./codex-history-files.service.js'", JSON.stringify(pathToFileURL(path.join(__dirname, '../custom/server/modules/providers/services/codex-history-files.service.js')).href));
     const { readCodexTranscriptLines: read } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bigacli-transcript-'));
     try {
@@ -32,7 +34,7 @@ const { zstdCompressSync } = require('node:zlib');
         const childMeta = JSON.stringify({ type: 'session_meta', payload: { history_base: { thread_id: 'parent', end_byte_offset: boundary } } });
         fs.writeFileSync(child, childMeta + '\n');
         assert.deepEqual(await collect(child), [...plain, childMeta]);
-        await assert.rejects(collect(path.join(root, 'missing.jsonl')), /ENOENT/);
+        await assert.rejects(collect(path.join(root, 'missing.jsonl')), { code: 'ENOENT' });
         fs.writeFileSync(path.join(root, 'broken.jsonl.zst'), 'invalid zstd');
         await assert.rejects(collect(path.join(root, 'broken.jsonl')));
         console.log('PASS: plain/compressed history, uncompressed byte boundary, parent history, missing/corrupt file errors');

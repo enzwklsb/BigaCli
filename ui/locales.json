@@ -1,4 +1,13 @@
 {
+  "尚未收到模型响应。请检查网络或模型容量；若刚切换到新模型，请检查 BigaCli 更新（包含 Codex CLI），确认客户端兼容性。": ["No model response yet. Check connectivity or model capacity. If you just selected a new model, check for a BigaCli update (including Codex CLI) for client compatibility.", "モデルからの応答がまだありません。ネットワークやモデルの混雑状況をご確認ください。新しいモデルに切り替えた場合は、BigaCli（Codex CLIを含む）の更新をご確認ください。"],
+  "当前模型容量已满，Codex 正在等待重试。你可以停止任务后换用其他模型，或继续等待。": ["The selected model is at capacity. Codex is waiting to retry. Stop the task to choose another model, or keep waiting.", "選択したモデルが混雑しており、Codexは再試行を待っています。タスクを停止して別のモデルに切り替えるか、そのままお待ちください。"],
+  "当前模型容量已满，请稍后重试或换用其他模型。": ["The selected model is at capacity. Try again later or choose another model.", "選択したモデルが混雑しています。時間をおいて再試行するか、別のモデルを選択してください。"],
+  "当前 Codex CLI 版本不满足模型要求，请检查 BigaCli 更新后再使用该模型。": ["This model requires a newer Codex CLI. Check for a BigaCli update before using it.", "このモデルには新しいCodex CLIが必要です。BigaCliの更新を確認してからご利用ください。"],
+  "模型请求遇到错误，Codex 正在重试。": ["The model request encountered an error. Codex is retrying.", "モデルへのリクエストでエラーが発生しました。Codexが再試行しています。"],
+  "模型请求失败。": ["The model request failed.", "モデルへのリクエストに失敗しました。"],
+  "Codex 未返回错误详情。": ["Codex did not provide error details.", "Codexからエラーの詳細が返されませんでした。"],
+  "单个附件不能超过 512MB": ["Each attachment must be 512 MB or smaller", "添付ファイルは1件512 MB以下にしてください"],
+  "磁盘空间不足，无法上传文件。请清理运行 BigaCli 的电脑磁盘后重试。": ["Not enough disk space to upload. Free space on the computer running BigaCli and try again.", "ディスクの空き容量が不足しています。BigaCliを実行しているパソコンの空き容量を増やして再試行してください。"],
   "重试": ["Retry", "再試行"],
   "尚未确认授权启动，请重试。": ["Login start could not be confirmed. Please try again.", "ログイン開始を確認できません。再試行してください。"],
   "模型/权限配置读取失败，请重试。": ["Could not load model or permission settings. Please try again.", "モデル・権限設定を取得できません。再試行してください。"],

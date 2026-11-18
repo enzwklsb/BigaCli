@@ -1,7 +1,12 @@
 {
-  "version": "1.3.7",
-  "date": "2026.11.09",
+  "version": "1.3.8",
+  "date": "2026.11.18",
   "items": [
-    {"type":"FIX","text":{"zh-CN":"修复图片预览下载时可能跳转而未保存的问题：已加载的图片直接下载，不重复请求原图；超大文件仍可直接下载。","en-US":"Fixed image preview downloads navigating away instead of saving. Loaded images download directly without fetching the original again; oversized files still download directly.","ja-JP":"画像プレビューのダウンロード時に保存されず画面が遷移する問題を修正。読み込み済みの画像は再取得せず保存でき、大容量ファイルの直接ダウンロードも維持します。"}}
+    {"type":"OPT","text":{"zh-CN":"内置 Codex CLI、SDK 和 Windows 执行组件升级至 0.167.1。","en-US":"Updated the bundled Codex CLI, SDK, and Windows runtime to 0.167.1.","ja-JP":"同梱のCodex CLI、SDK、Windows実行コンポーネントを0.167.1に更新しました。"}},
+    {"type":"NEW","text":{"zh-CN":"代码框和引用框支持一键复制。","en-US":"Copy code blocks and block quotes in one click.","ja-JP":"コードブロックと引用をワンクリックでコピーできます。"}},
+    {"type":"OPT","text":{"zh-CN":"附件上限提高至512 MB，明确提示磁盘不足；移除待发送附件时删除上传副本。本机文件可直接引用原路径，预览上限仍为20 MB。","en-US":"Raised the attachment limit to 512 MB, clarified disk-space errors, and remove uploaded copies when attachments are discarded. Files selected on the host can be referenced in place. The preview limit remains 20 MB.","ja-JP":"添付の上限を512 MBに引き上げ、容量不足の案内と未送信添付の削除に対応しました。ホスト上のファイルは元のパスを参照でき、プレビューの上限は20 MBです。"}},
+    {"type":"FIX","text":{"zh-CN":"恢复压缩历史的列表索引和消息读取，支持压缩的分支历史。","en-US":"Restored indexing and reading of compressed Codex histories, including fork ancestry.","ja-JP":"圧縮されたCodex履歴の一覧とメッセージ表示を修正し、分岐元の履歴にも対応しました。"}},
+    {"type":"FIX","text":{"zh-CN":"修复关闭普通文件预览后，图片下载和在电脑上打开按钮无法点击的问题。","en-US":"Fixed image download and open-on-PC buttons after closing a regular file preview.","ja-JP":"通常のファイルプレビューを閉じた後に、画像のダウンロードとPCで開くボタンが反応しない問題を修正しました。"}},
+    {"type":"FIX","text":{"zh-CN":"显示模型容量不足、重试和客户端兼容提示，长时间未收到响应时提供检查指引。","en-US":"Show model capacity, retry, and client compatibility messages, with guidance when the first response is delayed.","ja-JP":"モデルの混雑、再試行、クライアントの互換性を表示し、応答が遅い場合に確認方法を案内します。"}}
   ]
 }

@@ -16,6 +16,7 @@ window.BigaI18n=(()=>{
   function setLanguage(value){if(!supported.includes(value))return;language=value;localStorage.setItem('bigacli-language',value);apply();}
   function error(value){
     if(typeof value!=='string')return value;
+    if(value==='磁盘空间不足，无法上传文件。请清理运行 BigaCli 的电脑磁盘后重试。')return t(value);
     if(/\bENOSPC\b|\bSQLITE_FULL\b|no space left on device|database or disk is full|os error 112|磁盘空间不足/i.test(value))return t('磁盘空间不足，任务已暂停。请清理空间后重试。');
     if(window.BIGA_TRANSLATIONS[value])return t(value);
     const separator=value.indexOf('：');

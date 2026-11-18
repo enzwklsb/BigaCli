@@ -289,7 +289,7 @@ export async function queryCodex(command, options = {}, ws, context) {
         }, abortController.signal);
         for await (const event of events) {
             if (event.type === 'turn.completed' || event.type === 'turn.failed' || event.type === 'item.completed' ||
-                event.type === 'normalized' && (event.message.content || ['activity_start', 'final_answer_start', 'permission_request'].includes(event.message.kind))) {
+                event.type === 'normalized' && (event.message.content || ['activity_start', 'final_answer_start', 'permission_request', 'request_wait'].includes(event.message.kind))) {
                 finishHandoffStatus();
             }
             // Capture thread/session id lazily from the stream (Codex emits this asynchronously).

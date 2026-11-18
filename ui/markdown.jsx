@@ -44,7 +44,10 @@ const components = {
     ? <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
     : <a href="#" className="file-link" data-file={href} data-name={typeof children === 'string' ? children : href}>{children}</a>,
 };
-export function render(source, {imageUrl = src => src} = {}) {
+export function render(source, {imageUrl = src => src, copyLabel = 'Copy'} = {}) {
+  const copyButton = <button type="button" className="codeBlockCopy" aria-label={copyLabel} title={copyLabel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>;
+  const pre = ({children}) => <div className="codeBlock"><pre>{children}</pre>{copyButton}</div>;
+  const blockquote = ({children}) => <div className="quoteBlock"><blockquote>{children}</blockquote>{copyButton}</div>;
   const img = ({src, alt, title}) => {
     if (!src) return <span>{alt}</span>;
     const local = !/^(?:https?:)?\/\//i.test(src);
@@ -53,6 +56,6 @@ export function render(source, {imageUrl = src => src} = {}) {
       <img src={local ? imageUrl(src) : src} alt={alt || src} loading="lazy" />
     </button>;
   };
-  return renderToStaticMarkup(<ReactMarkdown remarkPlugins={[remarkGfm,remarkPunctuationStrong]} components={{...components, img}}
+  return renderToStaticMarkup(<ReactMarkdown remarkPlugins={[remarkGfm,remarkPunctuationStrong]} components={{...components, img, pre, blockquote}}
     urlTransform={transformUrl}>{source}</ReactMarkdown>);
 }
